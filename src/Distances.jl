@@ -38,6 +38,8 @@ export
     WeightedHamming,
     SqMahalanobis,
     Mahalanobis,
+    BhattacharyyaDist,
+    HellingerDist,
 
     # convenient functions
     euclidean,
@@ -61,13 +63,16 @@ export
     wminkowski,
     whamming,
     sqmahalanobis,
-    mahalanobis
+    mahalanobis,
+    bhattacharyya,
+    hellinger
 
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
 include("wmetrics.jl")
 include("mahalanobis.jl")
+include("bhattacharyya.jl")
 
 end # module end
 

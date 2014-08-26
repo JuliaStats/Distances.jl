@@ -21,6 +21,8 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Jensen-Shannon divergence
 * Mahalanobis distance
 * Squared Mahalanobis distance
+* Bhattacharyya distance
+* Hellinger distance
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
@@ -130,6 +132,8 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  KLDivergence        |  kl_divergence(x, y) | sum(p .* log(p ./ q)) |
 |  JSDivergence        |  js_divergence(x, y) | KL(x, m) / 2 + KL(y, m) / 2 with m = (x + y) / 2 |
 |  SpanNormDist        |  spannorm_dist(x, y) | max(x - y) - min(x - y ) |
+|  BhattacharyyaDist   |  bhattacharyya(x, y) | -log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))) |
+|  HellingerDist       |  hellinger(x, y)     | sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))) |
 |  Mahalanobis         |  mahalanobis(x, y, Q)    | sqrt((x - y)' * Q * (x - y)) |
 |  SqMahalanobis       |  sqmahalanobis(x, y, Q)  |  (x - y)' * Q * (x - y)  |
 |  WeightedEuclidean   |  euclidean(x, y, w)      | sqrt(sum((x - y).^2 .* w))  |

@@ -10,6 +10,26 @@ using Base.Test
 
 
 # test individual metrics
+a = 1
+b = 2
+@test sqeuclidean(a, a) == 0.
+@test sqeuclidean(a, b) == 1.
+
+@test euclidean(a, a) == 0.
+@test euclidean(a, b) == 1.
+
+@test cityblock(a, a) == 0.
+@test cityblock(a, b) == 1.
+
+@test chebyshev(a, a) == 0.
+@test chebyshev(a, b) == 1.
+
+@test minkowski(a, a, 2) == 0.
+@test minkowski(a, b, 2) == 1.
+
+@test hamming(a, a) == 0
+@test hamming(a, b) == 1
+
 
 x = [4., 5., 6., 7.]
 y = [3., 9., 8., 1.]
@@ -92,6 +112,33 @@ Q = Q * Q'  # make sure Q is positive-definite
 @test mahalanobis(x, x, Q) == 0.
 @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
 
+# Bhattacharyya and Hellinger distances are defined for discrete 
+# probability distributions so to calculate the expected values 
+# we need to normalize vectors.
+px = x ./ sum(x)
+py = y ./ sum(y)
+expected_bc_x_y = sum(sqrt(px .* py))
+@test_approx_eq_eps Distances.bhattacharyya_coeff(x, y) expected_bc_x_y 1.0e-12
+@test_approx_eq_eps bhattacharyya(x, y) (-log(expected_bc_x_y)) 1.0e-12
+@test_approx_eq_eps hellinger(x, y) sqrt(1 - expected_bc_x_y) 1.0e-12
+
+pa = a ./ sum(a)
+pb = b ./ sum(b)
+expected_bc_a_b = sum(sqrt(pa .* pb))
+@test_approx_eq_eps Distances.bhattacharyya_coeff(a, b) expected_bc_a_b 1.0e-12
+@test_approx_eq_eps bhattacharyya(a, b) (-log(expected_bc_a_b)) 1.0e-12
+@test_approx_eq_eps hellinger(a, b) sqrt(1 - expected_bc_a_b) 1.0e-12
+
+pp = p ./ sum(p)
+pq = q ./ sum(q)
+expected_bc_p_q = sum(sqrt(pp .* pq))
+@test_approx_eq_eps Distances.bhattacharyya_coeff(p, q) expected_bc_p_q 1.0e-12
+@test_approx_eq_eps bhattacharyya(p, q) (-log(expected_bc_p_q)) 1.0e-12
+@test_approx_eq_eps hellinger(p, q) sqrt(1 - expected_bc_p_q) 1.0e-12
+
+# Ensure it is semimetric
+@test_approx_eq_eps bhattacharyya(x, y) bhattacharyya(y, x) 1.0e-12
+
 
 # test column-wise metrics
 
@@ -137,6 +184,9 @@ end
 @test_colwise KLDivergence() P Q 1.0e-13
 @test_colwise JSDivergence() P Q 1.0e-13
 @test_colwise SpanNormDist() X Y 1.0e-12
+
+@test_colwise BhattacharyyaDist() X Y 1.0e-12
+@test_colwise HellingerDist() X Y 1.0e-12
 
 w = rand(m)
 
@@ -196,6 +246,9 @@ end
 @test_pairwise ChiSqDist() X Y 1.0e-12
 @test_pairwise KLDivergence() P Q 1.0e-13
 @test_pairwise JSDivergence() P Q 1.0e-13
+
+@test_pairwise BhattacharyyaDist() X Y 1.0e-12
+@test_pairwise HellingerDist() X Y 1.0e-12
 
 w = rand(m)
 

@@ -58,6 +58,9 @@ Q = Q' * Q
 @bench_pairwise_dist 10 KLDivergence() x y
 @bench_pairwise_dist  5 JSDivergence() x y
 
+@bench_pairwise_dist 10 BhattacharyyaDist() x y
+@bench_pairwise_dist 10 HellingerDist() x y
+
 @bench_pairwise_dist 20 WeightedSqEuclidean(w) x y
 @bench_pairwise_dist 20 WeightedEuclidean(w) x y
 @bench_pairwise_dist 20 WeightedCityblock(w) x y
