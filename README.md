@@ -4,7 +4,7 @@
 
 A Julia package for evaluating distances(metrics) between vectors.
 
-This package also provides carefully optimized functions to compute column-wise and pairwise distances, which is often faster than a straightforward loop implementation by one or two orders of magnitude. (See the benchmark section below for details).
+This package also provides optimized functions to compute column-wise and pairwise distances, which are often substantially faster than a straightforward loop implementation. (See the benchmark section below for details).
 
 ## Supported distances
 
