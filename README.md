@@ -1,5 +1,6 @@
 # Distances.jl
 
+
 [![Build Status](https://travis-ci.org/JuliaStats/Distances.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/Distances.jl)
 
 A Julia package for evaluating distances(metrics) between vectors.
@@ -23,6 +24,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Squared Mahalanobis distance
 * Bhattacharyya distance
 * Hellinger distance
+* Jensen-Shannon metric
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
@@ -141,6 +143,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedCityblock   |  cityblock(x, y, w)      | sum(abs(x - y) .* w)  |
 |  WeightedMinkowski   |  minkowski(x, y, w, p)   | sum(abs(x - y).^p .* w) ^ (1/p)  |
 |  WeightedHamming     |  hamming(x, y, w)        | sum((x .!= y) .* w)  |
+|  JSMetric            |  js_metric(X)        | entropy(X ./ m) - sum(colwise(entropy,X)) / m|
   
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way.
 
