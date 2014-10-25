@@ -60,6 +60,7 @@ q = rand(12)
 @test hamming(a, b) == 4
 
 @test_approx_eq_eps cosine_dist(x, x) 0.0 1.0e-12
+@test_throws DimensionMismatch cosine_dist(1.:2, 1.:3)
 @test_approx_eq_eps cosine_dist(x, y) (1.0 - 112. / sqrt(19530.)) 1.0e-12
 
 @test_approx_eq_eps corr_dist(x, x) 0. 1.0e-12
@@ -112,8 +113,8 @@ Q = Q * Q'  # make sure Q is positive-definite
 @test mahalanobis(x, x, Q) == 0.
 @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
 
-# Bhattacharyya and Hellinger distances are defined for discrete 
-# probability distributions so to calculate the expected values 
+# Bhattacharyya and Hellinger distances are defined for discrete
+# probability distributions so to calculate the expected values
 # we need to normalize vectors.
 px = x ./ sum(x)
 py = y ./ sum(y)

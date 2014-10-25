@@ -135,7 +135,7 @@ cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
 
 # Chebyshev
 
-function evaluate(dist::Chebyshev, a::AbstractVector, b::AbstractVector) 
+function evaluate(dist::Chebyshev, a::AbstractVector, b::AbstractVector)
     n = get_common_len(a, b)
     s = 0.
     for i = 1:n
@@ -153,7 +153,7 @@ chebyshev{T <: Number}(a::T, b::T) = evaluate(Chebyshev(), a, b)
 
 # Minkowski
 
-function evaluate(dist::Minkowski, a::AbstractVector, b::AbstractVector) 
+function evaluate(dist::Minkowski, a::AbstractVector, b::AbstractVector)
     n = get_common_len(a, b)
     s = 0.
     p = dist.p
@@ -188,7 +188,7 @@ hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 # Cosine dist
 
 function evaluate{T<:FloatingPoint}(dist::CosineDist, a::AbstractVector{T}, b::AbstractVector{T})
-    n = length(a)
+    n = get_common_len(a, b)
     ab = zero(T)
     a2 = zero(T)
     b2 = zero(T)
@@ -228,7 +228,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
         end
         @inbounds r[j,j] = 0
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i] 
+            @inbounds r[i,j] = r[j,i]
         end
     end
     r
