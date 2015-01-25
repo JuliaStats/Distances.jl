@@ -51,13 +51,17 @@ evaluate{T <: Number}(dist::SqEuclidean, a::T, b::T) = abs2(a-b)
 sqeuclidean{T <: Number}(a::T, b::T) = evaluate(SqEuclidean(), a, b)
 
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)
-    sa2 = sumsq_percol(a)
-    sb2 = sumsq_percol(b)
-    for j = 1 : nb
-        for i = 1 : na
-            @inbounds r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
+    sa2 = sumabs2(a, 1)
+    sb2 = sumabs2(b, 1)
+    pdist!(r, sa2, sb2)
+end
+
+function pdist!(r, sa2, sb2)
+    for j = 1 : size(r,2)
+        sb = sb2[j]
+        @simd for i = 1 : size(r,1)
+            @inbounds r[i,j] = sa2[i] + sb - 2 * r[i,j]
         end
     end
     r
@@ -328,5 +332,3 @@ function evaluate(dist::SpanNormDist, a::AbstractVector, b::AbstractVector)
 end
 
 spannorm_dist(a::AbstractVector, b::AbstractVector) = evaluate(SpanNormDist(), a, b)
-
-
