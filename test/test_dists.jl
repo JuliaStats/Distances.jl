@@ -140,6 +140,12 @@ expected_bc_p_q = sum(sqrt(pp .* pq))
 # Ensure it is semimetric
 @test_approx_eq_eps bhattacharyya(x, y) bhattacharyya(y, x) 1.0e-12
 
+# Jensen Shannon metric
+ 
+P = reshape([px,px,px],4,3)
+@test js_metric(P) == 0.0
+
+
 
 # test column-wise metrics
 
