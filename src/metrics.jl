@@ -61,7 +61,8 @@ function pdist!(r, sa2, sb2)
     for j = 1 : size(r,2)
         sb = sb2[j]
         @simd for i = 1 : size(r,1)
-            @inbounds r[i,j] = sa2[i] + sb - 2 * r[i,j]
+            @inbounds v = sa2[i] + sb - 2 * r[i,j]
+            @inbounds r[i,j] = isnan(v) ? NaN : max(v, 0.)
         end
     end
     r
@@ -77,7 +78,8 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
         end
         @inbounds r[j,j] = 0
         for i = j+1 : n
-            @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+            @inbounds v = sa2[i] + sa2[j] - 2 * r[i,j]
+            @inbounds r[i,j] = isnan(v) ? NaN : max(v, 0.)
         end
     end
     r
