@@ -39,7 +39,7 @@ type SpanNormDist <: SemiMetric end
 function sumsqdiff(a::AbstractVector, b::AbstractVector)
     n = get_common_len(a, b)::Int
     s = 0.
-    for i = 1:n
+    @simd for i = 1:n
         @inbounds s += abs2(a[i] - b[i])
     end
     s
