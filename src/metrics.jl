@@ -142,13 +142,16 @@ cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
 function evaluate(dist::Chebyshev, a::AbstractVector, b::AbstractVector)
     n = get_common_len(a, b)
     s = 0.
-    for i = 1:n
-        @inbounds ai = abs(a[i] - b[i])
-        if ai > s
+    @inbounds for i = 1:n
+        ai = abs(a[i] - b[i])
+        if isnan(ai)
+            s = NaN
+            break
+        elseif ai > s
             s = ai
         end
     end
-    s
+    return s
 end
 chebyshev(a::AbstractVector, b::AbstractVector) = evaluate(Chebyshev(), a, b)
 evaluate{T <: Number}(dist::Chebyshev, a::T, b::T) = abs(a-b)

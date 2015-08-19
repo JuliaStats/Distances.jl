@@ -265,3 +265,23 @@ Q = Q * Q'  # make sure Q is positive-definite
 @test_pairwise SqMahalanobis(Q) X Y 1.0e-13
 @test_pairwise Mahalanobis(Q) X Y 1.0e-13
 
+
+
+# test NaN
+a = 1.0
+b = NaN
+@test isnan(sqeuclidean(a, b))
+@test isnan(euclidean(a, b))
+@test isnan(cityblock(a, b))
+@test isnan(chebyshev(a, b))
+@test isnan(minkowski(a, b, 2))
+@test hamming(a, b) == 1
+
+a = [1.0]
+b = [NaN]
+@test isnan(sqeuclidean(a, b))
+@test isnan(euclidean(a, b))
+@test isnan(cityblock(a, b))
+@test isnan(chebyshev(a, b))
+@test isnan(minkowski(a, b, 2))
+@test hamming(a, b) == 1
