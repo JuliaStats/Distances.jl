@@ -13,7 +13,7 @@ result_type{T}(::SqMahalanobis{T}, T1::Type, T2::Type) = T
 
 # SqMahalanobis
 
-function evaluate{T<:FloatingPoint}(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:AbstractFloat}(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector)
     Q = dist.qmat
     z = a - b
     return dot(z, Q * z)
@@ -21,14 +21,14 @@ end
 
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(SqMahalanobis(Q), a, b)
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m::Int, n::Int = get_colwise_dims(size(Q, 1), r, a, b)
     z = a - b
     dot_percol!(r, Q * z, z)
 end
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
     Q = dist.qmat
     m::Int, n::Int = get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
@@ -36,7 +36,7 @@ function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::SqMahalanobis{T}, a:
     dot_percol!(r, Q * z, z)
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m::Int, na::Int, nb::Int = get_pairwise_dims(size(Q, 1), r, a, b)
 
@@ -54,7 +54,7 @@ function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::SqMahalanobis{T}, 
     r
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
     Q = dist.qmat
     m::Int, n::Int = get_pairwise_dims(size(Q, 1), r, a)
 
@@ -77,25 +77,25 @@ end
 
 # Mahalanobis
 
-function evaluate{T<:FloatingPoint}(dist::Mahalanobis{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:AbstractFloat}(dist::Mahalanobis{T}, a::AbstractVector, b::AbstractVector)
     sqrt(evaluate(SqMahalanobis(dist.qmat), a, b))
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(Mahalanobis(Q), a, b)
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(pairwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix)
     sqrt!(pairwise!(r, SqMahalanobis(dist.qmat), a))
 end
 

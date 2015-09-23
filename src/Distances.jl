@@ -1,6 +1,8 @@
+isdefined(Base, :__precompile__) && __precompile__()
+
 module Distances
 
-using ArrayViews
+using ArrayViews, Compat
 
 export
     # generic types/functions
@@ -75,5 +77,3 @@ include("mahalanobis.jl")
 include("bhattacharyya.jl")
 
 end # module end
-
-

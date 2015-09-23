@@ -7,24 +7,24 @@
 #
 ###########################################################
 
-type WeightedEuclidean{T<:FloatingPoint} <: Metric
+type WeightedEuclidean{T<:AbstractFloat} <: Metric
     weights::Vector{T}
 end
 
-type WeightedSqEuclidean{T<:FloatingPoint} <: SemiMetric
+type WeightedSqEuclidean{T<:AbstractFloat} <: SemiMetric
     weights::Vector{T}
 end
 
-type WeightedCityblock{T<:FloatingPoint} <: Metric
+type WeightedCityblock{T<:AbstractFloat} <: Metric
     weights::Vector{T}
 end
 
-type WeightedMinkowski{T<:FloatingPoint} <: Metric
+type WeightedMinkowski{T<:AbstractFloat} <: Metric
     weights::Vector{T}
     p::Real
 end
 
-type WeightedHamming{T<:FloatingPoint} <: Metric
+type WeightedHamming{T<:AbstractFloat} <: Metric
     weights::Vector{T}
 end
 
@@ -53,10 +53,10 @@ function wsumsqdiff(w::AbstractVector, a::AbstractVector, b::AbstractVector)
     s
 end
 
-evaluate{T<:FloatingPoint}(dist::WeightedSqEuclidean{T}, a::AbstractVector, b::AbstractVector) = wsumsqdiff(dist.weights, a, b)
+evaluate{T<:AbstractFloat}(dist::WeightedSqEuclidean{T}, a::AbstractVector, b::AbstractVector) = wsumsqdiff(dist.weights, a, b)
 wsqeuclidean(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedSqEuclidean(w), a, b)
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
     w = dist.weights
     m::Int, na::Int, nb::Int = get_pairwise_dims(length(w), r, a, b)
 
@@ -72,7 +72,7 @@ function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::WeightedSqEuclidea
     r
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix)
     w = dist.weights
     m::Int, n::Int = get_pairwise_dims(length(w), r, a)
 
@@ -94,32 +94,32 @@ end
 
 # Weighted Euclidean
 
-function evaluate{T<:FloatingPoint}(dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:AbstractFloat}(dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractVector)
     sqrt(evaluate(WeightedSqEuclidean(dist.weights), a, b))
 end
 
 weuclidean(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedEuclidean(w), a, b)
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
 
-function colwise!{T<:FloatingPoint}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
 
-function pairwise!{T<:FloatingPoint}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix)
+function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix)
     sqrt!(pairwise!(r, WeightedSqEuclidean(dist.weights), a))
 end
 
 
 # Weighted Cityblock
 
-function evaluate{T<:FloatingPoint}(dist::WeightedCityblock{T}, a::AbstractVector, b::AbstractVector) 
+function evaluate{T<:AbstractFloat}(dist::WeightedCityblock{T}, a::AbstractVector, b::AbstractVector) 
     w = dist.weights
     n = get_common_len(w, a, b)::Int
     s = 0.
@@ -133,7 +133,7 @@ wcityblock(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(W
 
 # WeightedMinkowski
 
-function evaluate{T<:FloatingPoint}(dist::WeightedMinkowski{T}, a::AbstractVector, b::AbstractVector) 
+function evaluate{T<:AbstractFloat}(dist::WeightedMinkowski{T}, a::AbstractVector, b::AbstractVector) 
     w = dist.weights
     p = dist.p
     n = get_common_len(w, a, b)
@@ -149,7 +149,7 @@ wminkowski(a::AbstractVector, b::AbstractVector, w::AbstractVector, p::Real) = e
 
 # WeightedHamming
 
-function evaluate{T<:FloatingPoint}(dist::WeightedHamming{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:AbstractFloat}(dist::WeightedHamming{T}, a::AbstractVector, b::AbstractVector)
     n = length(a)
     w = dist.weights
 
