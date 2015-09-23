@@ -191,7 +191,7 @@ hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 
 # Cosine dist
 
-function evaluate{T<:FloatingPoint}(dist::CosineDist, a::AbstractVector{T}, b::AbstractVector{T})
+function evaluate{T<:AbstractFloat}(dist::CosineDist, a::AbstractVector{T}, b::AbstractVector{T})
     n = get_common_len(a, b)
     ab = zero(T)
     a2 = zero(T)
@@ -266,7 +266,7 @@ end
 
 # Chi-square distance
 
-function evaluate{T<:FloatingPoint}(dist::ChiSqDist, a::AbstractVector{T}, b::AbstractVector{T})
+function evaluate{T<:AbstractFloat}(dist::ChiSqDist, a::AbstractVector{T}, b::AbstractVector{T})
     r = zero(T)
     for i = 1 : length(a)
         @inbounds ai = a[i]
@@ -281,7 +281,7 @@ chisq_dist(a::AbstractVector, b::AbstractVector) = evaluate(ChiSqDist(), a, b)
 
 # KL divergence
 
-function evaluate{T<:FloatingPoint}(dist::KLDivergence, a::AbstractVector{T}, b::AbstractVector{T})
+function evaluate{T<:AbstractFloat}(dist::KLDivergence, a::AbstractVector{T}, b::AbstractVector{T})
     r = zero(T)
     for i = 1 : length(a)
         @inbounds ai = a[i]
@@ -298,7 +298,7 @@ kl_divergence(a::AbstractVector, b::AbstractVector) = evaluate(KLDivergence(), a
 
 # JS divergence
 
-function evaluate{T<:FloatingPoint}(dist::JSDivergence, a::AbstractVector{T}, b::AbstractVector{T})
+function evaluate{T<:AbstractFloat}(dist::JSDivergence, a::AbstractVector{T}, b::AbstractVector{T})
     r = zero(T)
     n = length(a)
     for i = 1 : n
