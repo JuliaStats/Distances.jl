@@ -6,64 +6,122 @@
 #   Metric types
 #
 ###########################################################
+typealias RealAbstractArray{T <: AbstractFloat} AbstractArray{T}
 
-type WeightedEuclidean{T<:AbstractFloat} <: Metric
-    weights::Vector{T}
+
+type WeightedEuclidean{W <: RealAbstractArray} <: Metric
+    weights::W
 end
 
-type WeightedSqEuclidean{T<:AbstractFloat} <: SemiMetric
-    weights::Vector{T}
+type WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+    weights::W
 end
 
-type WeightedCityblock{T<:AbstractFloat} <: Metric
-    weights::Vector{T}
+type WeightedCityblock{W <: RealAbstractArray} <: Metric
+    weights::W
 end
 
-type WeightedMinkowski{T<:AbstractFloat} <: Metric
-    weights::Vector{T}
-    p::Real
+type WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
+    weights::W
+    p::T
 end
 
-type WeightedHamming{T<:AbstractFloat} <: Metric
-    weights::Vector{T}
+type WeightedHamming{W <: RealAbstractArray} <: Metric
+    weights::W
 end
 
-result_type{T}(::WeightedEuclidean{T}, T1::Type, T2::Type) = T
-result_type{T}(::WeightedSqEuclidean{T}, T1::Type, T2::Type) = T
-result_type{T}(::WeightedCityblock{T}, T1::Type, T2::Type) = T
-result_type{T}(::WeightedMinkowski{T}, T1::Type, T2::Type) = T
-result_type{T}(::WeightedHamming{T}, T1::Type, T2::Type) = T
 
-
+typealias UnionWeightedMetrics{W} @compat(Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}})
+Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
-#   Specialized distances
+# Evaluate
 #
 ###########################################################
 
+function evaluate{T <: Number}(dist::UnionWeightedMetrics, a::T, b::T)
+    eval_end(dist, eval_op(dist, a, b, one(eltype(dist))))
+end
+function result_type{T1, T2}(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2})
+    typeof(evaluate(dist, one(T1), one(T2)))
+end
+function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+    zero(result_type(d, a, b))
+end
+eval_end(d::UnionWeightedMetrics, s) = s
 
-# Weighted squared Euclidean
 
-function wsumsqdiff(w::AbstractVector, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(w, a, b)::Int
-    s = 0.
-    for i = 1:n
-        @inbounds s += abs2(a[i] - b[i]) * w[i]
+
+function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
-    s
+    if length(a) != length(d.weights)
+        throw(DimensionMismatch("arrays have length $(length(a)) but weights have length $(length(d.weights))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    if size(a) == size(b)
+        for I in eachindex(a, b, d.weights)
+            @inbounds ai = a[I]
+            @inbounds bi = b[I]
+            @inbounds wi = d.weights[I]
+            s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+        end
+    else
+        for (Ia, Ib, Iw) in zip(eachindex(a), eachindex(b), eachindex(d.weights))
+            @inbounds ai = a[Ia]
+            @inbounds bi = b[Ib]
+            @inbounds wi = d.weights[Iw]
+            s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+        end
+    end    
+    return eval_end(d, s)
 end
 
-evaluate{T<:AbstractFloat}(dist::WeightedSqEuclidean{T}, a::AbstractVector, b::AbstractVector) = wsumsqdiff(dist.weights, a, b)
-wsqeuclidean(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedSqEuclidean(w), a, b)
+# Squared Euclidean
+@compat @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
+@compat @inline eval_reduce(::WeightedSqEuclidean, s1, s2) = s1 + s2
+wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedSqEuclidean(w), a, b)
 
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+# Weighted Euclidean
+@compat @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
+@compat @inline eval_reduce(::WeightedEuclidean, s1, s2) = s1 + s2
+@compat @inline eval_end(::WeightedEuclidean, s) = sqrt(s)
+weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedEuclidean(w), a, b)
+
+# City Block
+@compat @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
+@compat @inline eval_reduce(::WeightedCityblock, s1, s2) = s1 + s2
+wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedCityblock(w), a, b)
+
+# Minkowski
+@compat @inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi) .^ dist.p * wi
+@compat @inline eval_reduce(::WeightedMinkowski, s1, s2) = s1 + s2
+eval_end(dist::WeightedMinkowski, s) = s .^ (1/dist.p)
+wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
+
+# WeightedHamming
+@compat @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
+@compat @inline eval_reduce(::WeightedHamming, s1, s2) = s1 + s2
+whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedHamming(w), a, b)
+
+###########################################################
+#
+#   Specialized
+#
+###########################################################
+
+# SqEuclidean
+function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     w = dist.weights
     m::Int, na::Int, nb::Int = get_pairwise_dims(length(w), r, a, b)
 
     sa2 = wsumsq_percol(w, a)
     sb2 = wsumsq_percol(w, b)
     At_mul_B!(r, a, b .* w)
-
     for j = 1 : nb
         for i = 1 : na
             @inbounds r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
@@ -71,8 +129,7 @@ function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidea
     end
     r
 end
-
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidean{T}, a::AbstractMatrix)
+function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatrix)
     w = dist.weights
     m::Int, n::Int = get_pairwise_dims(length(w), r, a)
 
@@ -91,75 +148,16 @@ function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedSqEuclidea
     r
 end
 
-
-# Weighted Euclidean
-
-function evaluate{T<:AbstractFloat}(dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractVector)
-    sqrt(evaluate(WeightedSqEuclidean(dist.weights), a, b))
-end
-
-weuclidean(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedEuclidean(w), a, b)
-
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+# Euclidean
+function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
-
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::WeightedEuclidean{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
-
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!(r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
-
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::WeightedEuclidean{T}, a::AbstractMatrix)
+function pairwise!(r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix)
     sqrt!(pairwise!(r, WeightedSqEuclidean(dist.weights), a))
 end
-
-
-# Weighted Cityblock
-
-function evaluate{T<:AbstractFloat}(dist::WeightedCityblock{T}, a::AbstractVector, b::AbstractVector) 
-    w = dist.weights
-    n = get_common_len(w, a, b)::Int
-    s = 0.
-    for i = 1:n
-        @inbounds s += w[i] * abs(a[i] - b[i])
-    end
-    s
-end
-wcityblock(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedCityblock(w), a, b)
-
-
-# WeightedMinkowski
-
-function evaluate{T<:AbstractFloat}(dist::WeightedMinkowski{T}, a::AbstractVector, b::AbstractVector) 
-    w = dist.weights
-    p = dist.p
-    n = get_common_len(w, a, b)
-    s = 0.
-    for i = 1:n
-        @inbounds s += w[i] * (abs(a[i] - b[i]) .^ p)
-    end
-    s .^ inv(p)
-end
-
-wminkowski(a::AbstractVector, b::AbstractVector, w::AbstractVector, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
-
-
-# WeightedHamming
-
-function evaluate{T<:AbstractFloat}(dist::WeightedHamming{T}, a::AbstractVector, b::AbstractVector)
-    n = length(a)
-    w = dist.weights
-
-    r = zero(T)
-    for i = 1 : n
-        @inbounds if a[i] != b[i]
-            r += w[i]
-        end
-    end
-    return r
-end
-
-whamming(a::AbstractVector, b::AbstractVector, w::AbstractVector) = evaluate(WeightedHamming(w), a, b)

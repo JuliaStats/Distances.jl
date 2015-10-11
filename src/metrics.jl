@@ -11,12 +11,11 @@ type SqEuclidean <: SemiMetric end
 type Chebyshev <: Metric end
 type Cityblock <: Metric end
 
-type Minkowski <: Metric
-    p::Real
+type Minkowski{T <: Real} <: Metric
+    p::T
 end
 
 type Hamming <: Metric end
-result_type(::Hamming, T1::Type, T2::Type) = Int
 
 type CosineDist <: SemiMetric end
 type CorrDist <: SemiMetric end
@@ -27,36 +26,164 @@ type JSDivergence <: SemiMetric end
 
 type SpanNormDist <: SemiMetric end
 
+typealias UnionMetrics @compat(Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist})
 
 ###########################################################
 #
-#   Specialized distances
+#  Define Evaluate
+#
+###########################################################
+
+if VERSION < v"0.4.0-dev+1624"
+    eachindex(A::AbstractArray...) = 1:length(A[1])
+end
+
+function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    if size(a) == size(b)
+        for I in eachindex(a, b)
+            @inbounds ai = a[I]
+            @inbounds bi = b[I]
+            s = eval_reduce(d, s, eval_op(d, ai, bi))
+        end
+    else
+        for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+            @inbounds ai = a[Ia]
+            @inbounds bi = b[Ib]
+            s = eval_reduce(d, s, eval_op(d, ai, bi))
+        end
+    end    
+    return eval_end(d, s)
+end
+result_type{T1, T2}(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) = 
+    typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
+eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) = 
+    zero(result_type(d, a, b))
+eval_end(d::UnionMetrics, s) = s
+
+evaluate{T <: Number}(dist::UnionMetrics, a::T, b::T) = eval_end(dist, eval_op(dist, a, b))
+
+# SqEuclidean
+@compat @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
+@compat @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
+
+sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
+sqeuclidean{T <: Number}(a::T, b::T) = evaluate(SqEuclidean(), a, b)
+
+# Euclidean
+@compat @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
+@compat @inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
+eval_end(::Euclidean, s) = sqrt(s)
+euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
+euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
+
+# Cityblock
+@compat @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
+@compat @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
+cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
+cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
+
+# Chebyshev
+@compat @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
+@compat @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
+# if only NaN, will output NaN
+@compat @inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
+chebyshev{T <: Number}(a::T, b::T) = evaluate(Chebyshev(), a, b)
+
+# Minkowski
+@compat @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi) .^ dist.p
+@compat @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
+eval_end(dist::Minkowski, s) = s .^ (1/dist.p)
+minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
+minkowski{T <: Number}(a::T, b::T, p::Real) = evaluate(Minkowski(p), a, b)
+
+# Hamming
+@compat @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
+@compat @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
+hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
+hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
+
+# Cosine dist
+function eval_start{T<:AbstractFloat}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
+    zero(T), zero(T), zero(T)
+end
+@compat @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
+@compat @inline function eval_reduce(::CosineDist, s1, s2)
+    a1, b1, c1 = s1
+    a2, b2, c2 = s2
+    return a1 + a2, b1 + b2, c1 + c2
+end
+function eval_end(::CosineDist, s)
+    ab, a2, b2 = s
+    max(1 - ab / (sqrt(a2) * sqrt(b2)), zero(eltype(ab)))
+end
+cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
+
+# Correlation Dist
+_centralize(x::AbstractArray) = x .- mean(x)
+evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
+corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
+
+# ChiSqDist
+@compat @inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
+@compat @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
+chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
+
+# KLDivergence
+@compat @inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
+@compat @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
+kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
+
+# JSDivergence
+@compat @inline function eval_op{T}(::JSDivergence, ai::T, bi::T) 
+    u = (ai + bi) / 2
+    ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
+    tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
+    tu = u > 0 ? u * log(u) : zero(log(one(T)))
+    ta + tb - tu
+end
+@compat @inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
+js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, b)
+
+# SpanNormDist
+function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
+    a[1] - b[1], a[1]- b[1]
+end
+@compat @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
+@compat @inline function eval_reduce(::SpanNormDist, s1, s2)
+    min_d, max_d = s1
+    if s2 > max_d
+        max_d = s2
+    elseif s2 < min_d
+        min_d = s2
+    end
+    return min_d, max_d
+end
+eval_end(::SpanNormDist, s) = s[2] - s[1]
+spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
+result_type(dist::SpanNormDist, T1::Type, T2::Type) = typeof(eval_op(dist, one(T1), one(T2)))
+
+
+###########################################################
+#
+#  Special method
 #
 ###########################################################
 
 # SqEuclidean
-
-function sumsqdiff(a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)::Int
-    s = 0.
-    @simd for i = 1:n
-        @inbounds s += abs2(a[i] - b[i])
-    end
-    s
-end
-
-evaluate(dist::SqEuclidean, a::AbstractVector, b::AbstractVector) = sumsqdiff(a, b)
-sqeuclidean(a::AbstractVector, b::AbstractVector) = evaluate(SqEuclidean(), a, b)
-evaluate{T <: Number}(dist::SqEuclidean, a::T, b::T) = abs2(a-b)
-sqeuclidean{T <: Number}(a::T, b::T) = evaluate(SqEuclidean(), a, b)
-
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     At_mul_B!(r, a, b)
     sa2 = sumabs2(a, 1)
     sb2 = sumabs2(b, 1)
     pdist!(r, sa2, sb2)
 end
-
 function pdist!(r, sa2, sb2)
     for j = 1 : size(r,2)
         sb = sb2[j]
@@ -66,7 +193,6 @@ function pdist!(r, sa2, sb2)
     end
     r
 end
-
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m::Int, n::Int = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
@@ -84,12 +210,6 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
 end
 
 # Euclidean
-
-evaluate(dist::Euclidean, a::AbstractVector, b::AbstractVector) = sqrt(sumsqdiff(a, b))
-euclidean(a::AbstractVector, b::AbstractVector) = evaluate(Euclidean(), a, b)
-evaluate{T <: Number}(dist::Euclidean, a::T, b::T) = abs(a-b)
-euclidean{T <: Number}(a::T, b::T) = evaluate(Euclidean(), a, b)
-
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)
@@ -103,7 +223,6 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     end
     r
 end
-
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m::Int, n::Int = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
@@ -121,94 +240,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     r
 end
 
-
-# Cityblock
-
-function evaluate(dist::Cityblock, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)::Int
-    s = 0.
-    for i = 1:n
-        @inbounds s += abs(a[i] - b[i])
-    end
-    s
-end
-cityblock(a::AbstractVector, b::AbstractVector) = evaluate(Cityblock(), a, b)
-evaluate{T <: Number}(dist::Cityblock, a::T, b::T) = abs(a-b)
-cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
-
-
-# Chebyshev
-
-function evaluate(dist::Chebyshev, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)
-    s = 0.
-    for i = 1:n
-        @inbounds ai = abs(a[i] - b[i])
-        if ai > s
-            s = ai
-        end
-    end
-    s
-end
-chebyshev(a::AbstractVector, b::AbstractVector) = evaluate(Chebyshev(), a, b)
-evaluate{T <: Number}(dist::Chebyshev, a::T, b::T) = abs(a-b)
-chebyshev{T <: Number}(a::T, b::T) = evaluate(Chebyshev(), a, b)
-
-
-# Minkowski
-
-function evaluate(dist::Minkowski, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)
-    s = 0.
-    p = dist.p
-    for i = 1:n
-        @inbounds s += abs(a[i] - b[i]) .^ p
-    end
-    s .^ inv(p)
-end
-minkowski(a::AbstractVector, b::AbstractVector, p::Real) = evaluate(Minkowski(p), a, b)
-evaluate{T <: Number}(dist::Minkowski, a::T, b::T) = abs(a-b)
-minkowski{T <: Number}(a::T, b::T, p::Real) = evaluate(Minkowski(p), a, b)
-
-
-# Hamming
-
-function evaluate(dist::Hamming, a::AbstractVector, b::AbstractVector)
-    n = length(a)
-    r = 0
-    for i = 1 : n
-        @inbounds if a[i] != b[i]
-            r += 1
-        end
-    end
-    r
-end
-
-hamming(a::AbstractVector, b::AbstractVector) = evaluate(Hamming(), a, b)
-evaluate{T <: Number}(dist::Hamming, a::T, b::T) = a != b ? 1 : 0
-hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
-
-
-# Cosine dist
-
-function evaluate{T<:AbstractFloat}(dist::CosineDist, a::AbstractVector{T}, b::AbstractVector{T})
-    n = get_common_len(a, b)
-    ab = zero(T)
-    a2 = zero(T)
-    b2 = zero(T)
-
-    for i = 1:n
-        @inbounds ai = a[i]
-        @inbounds bi = b[i]
-        ab += ai * bi
-        a2 += ai * ai
-        b2 += bi * bi
-    end
-    max(1 - ab / (sqrt(a2) * sqrt(b2)), 0)
-end
-
-cosine_dist(a::AbstractVector, b::AbstractVector) = evaluate(CosineDist(), a, b)
-
+# CosineDist
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)
@@ -221,7 +253,6 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
     end
     r
 end
-
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
@@ -238,97 +269,23 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     r
 end
 
-
-# Correlation Dist
-
-_centralize(x::AbstractVector) = x .- mean(x)
-_centralize(x::AbstractMatrix) = x .- mean(x, 1)
-
-evaluate(dist::CorrDist, a::AbstractVector, b::AbstractVector) = cosine_dist(_centralize(a), _centralize(b))
-corr_dist(a::AbstractVector, b::AbstractVector) = evaluate(CorrDist(), a, b)
-
-function colwise!(r::AbstractArray, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize(a), _centralize(b))
+# CorrDist
+_centralize_colwise(x::AbstractVector) = x .- mean(x)
+_centralize_colwise(x::AbstractMatrix) = x .- mean(x, 1)
+function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
+    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-
-function colwise!(r::AbstractArray, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize(a), _centralize(b))
+function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
+    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-
 function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize(a), _centralize(b))
+    pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-
 function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize(a))
+    pairwise!(r, CosineDist(), _centralize_colwise(a))
 end
 
 
-# Chi-square distance
-
-function evaluate{T<:AbstractFloat}(dist::ChiSqDist, a::AbstractVector{T}, b::AbstractVector{T})
-    r = zero(T)
-    for i = 1 : length(a)
-        @inbounds ai = a[i]
-        @inbounds bi = b[i]
-        r += abs2(ai - bi) / (ai + bi)
-    end
-    r
-end
-
-chisq_dist(a::AbstractVector, b::AbstractVector) = evaluate(ChiSqDist(), a, b)
 
 
-# KL divergence
 
-function evaluate{T<:AbstractFloat}(dist::KLDivergence, a::AbstractVector{T}, b::AbstractVector{T})
-    r = zero(T)
-    for i = 1 : length(a)
-        @inbounds ai = a[i]
-        @inbounds bi = b[i]
-        if ai > 0
-            r += ai * log(ai / bi)
-        end
-    end
-    r
-end
-
-kl_divergence(a::AbstractVector, b::AbstractVector) = evaluate(KLDivergence(), a, b)
-
-
-# JS divergence
-
-function evaluate{T<:AbstractFloat}(dist::JSDivergence, a::AbstractVector{T}, b::AbstractVector{T})
-    r = zero(T)
-    n = length(a)
-    for i = 1 : n
-        @inbounds ai = a[i]
-        @inbounds bi = b[i]
-        u = (ai + bi) / 2
-        ta = ai > 0 ? ai * log(ai) / 2 : 0
-        tb = bi > 0 ? bi * log(bi) / 2 : 0
-        tu = u > 0 ? u * log(u) : 0
-        r += (ta + tb - tu)
-    end
-    r
-end
-
-js_divergence(a::AbstractVector, b::AbstractVector) = evaluate(JSDivergence(), a, b)
-
-
-# SpanNorm
-
-function evaluate(dist::SpanNormDist, a::AbstractVector, b::AbstractVector)
-    max_d = min_d = a[1] - b[1]
-    for i = 1 : length(a)
-        @inbounds di = a[i] - b[i]
-        if di > max_d
-            max_d = di
-        elseif di < min_d
-            min_d = di
-        end
-    end
-    max_d - min_d
-end
-
-spannorm_dist(a::AbstractVector, b::AbstractVector) = evaluate(SpanNormDist(), a, b)
