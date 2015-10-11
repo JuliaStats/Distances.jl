@@ -11,7 +11,7 @@ type SqEuclidean <: SemiMetric end
 type Chebyshev <: Metric end
 type Cityblock <: Metric end
 type Jaccard <: Metric end
-type Tanimoto <: Metric end
+type RogersTanimoto <: Metric end
 
 immutable Minkowski{T <: Real} <: Metric
     p::T
@@ -253,8 +253,8 @@ function evaluate(dist::Jaccard, a::AbstractVector, b::AbstractVector)
     numerator = 0
     denominator = 0
     for i = 1:n
-        ai = a[i]
-        bi = b[i]
+        @inbounds ai = a[i]
+        @inbounds bi = b[i]
         if ai > bi
           numerator += bi
           denominator += ai
@@ -270,22 +270,24 @@ jaccard(a::AbstractVector, b::AbstractVector) = evaluate(Jaccard(), a, b)
 
 # Tanimoto
 
-function tanimoto(dist::Tanimoto, a::AbstractVector, b::AbstractVector)
+function evaluate{T <: Bool}(dist::RogersTanimoto, a::AbstractVector, b::AbstractVector)
     n = get_common_len(a, b)::Int
-    aa = 0
-    ab = 0
-    bb = 0
+    tt = 0
+    tf = 0
+    ft = 0
+    ff = 0
     for i = 1:n
-        ai = a[i]
-        bi = b[i]
-        ab += ai * bi
-        aa += ai * ai
-        bb += bi * bi
+        @inbounds tt += (a[i] && b[i])
+        @inbounds tf += (a[i] && !b[i])
+        @inbounds ft += (!a[i] && b[i])
+        @inbounds ff += (!a[i] && !b[i])
     end
-    1 - (ab / (aa + bb - ab))
+    numerator = 2(tf + ft)
+    denominator = ntt + nff + 2(ntf + nft)
+    numerator / denominator
 end
 
-tanimoto(a::AbstractVector, b::AbstractVector) = evaluate(Tanimoto(), a, b)
+rogerstanimoto(a::AbstractVector, b::AbstractVector) = evaluate(RogersTanimoto(), a, b)
 
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)

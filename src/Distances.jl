@@ -25,7 +25,7 @@ export
     Chebyshev,
     Minkowski,
     Jaccard,
-    Tanimoto,
+    RogersTanimoto,
 
     Hamming,
     CosineDist,
@@ -50,7 +50,7 @@ export
     sqeuclidean,
     cityblock,
     jaccard,
-    tanimoto,
+    rogerstanimoto,
     chebyshev,
     minkowski,
     mahalanobis,
