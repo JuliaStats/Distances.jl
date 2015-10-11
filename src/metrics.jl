@@ -10,6 +10,8 @@ type Euclidean <: Metric end
 type SqEuclidean <: SemiMetric end
 type Chebyshev <: Metric end
 type Cityblock <: Metric end
+type Jaccard <: Metric end
+type Tanimoto <: Metric end
 
 immutable Minkowski{T <: Real} <: Metric
     p::T
@@ -244,7 +246,47 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     r
 end
 
-# CosineDist
+# Jaccard
+
+function evaluate(dist::Jaccard, a::AbstractVector, b::AbstractVector)
+    n = get_common_len(a, b)::Int
+    numerator = 0
+    denominator = 0
+    for i = 1:n
+        ai = a[i]
+        bi = b[i]
+        if ai > bi
+          numerator += bi
+          denominator += ai
+        else
+          numerator += ai
+          denominator += bi
+        end
+    end
+    1 - (numerator / denominator)
+end
+
+jaccard(a::AbstractVector, b::AbstractVector) = evaluate(Jaccard(), a, b)
+
+# Tanimoto
+
+function tanimoto(dist::Tanimoto, a::AbstractVector, b::AbstractVector)
+    n = get_common_len(a, b)::Int
+    aa = 0
+    ab = 0
+    bb = 0
+    for i = 1:n
+        ai = a[i]
+        bi = b[i]
+        ab += ai * bi
+        aa += ai * ai
+        bb += bi * bi
+    end
+    1 - (ab / (aa + bb - ab))
+end
+
+tanimoto(a::AbstractVector, b::AbstractVector) = evaluate(Tanimoto(), a, b)
+
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)

@@ -47,6 +47,12 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test euclidean(x, x) == 0.
     @test euclidean(x, y) == sqrt(57.)
 
+    @test jaccard(x, x) == 0
+    @test jaccard(x, y) == 13./28
+
+    @test tanimoto(x, x) == 0
+    @test tanimoto(x, y) == 57./128
+
     @test cityblock(x, x) == 0.
     @test cityblock(x, y) == 13.
 
