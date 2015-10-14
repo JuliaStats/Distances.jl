@@ -6,18 +6,6 @@
 #
 ###########################################################
 
-function get_common_len(a::AbstractVector, b::AbstractVector)
-    n = length(a)
-    length(b) == n || throw(DimensionMismatch("The lengths of a and b must match."))
-    return n
-end
-
-function get_common_len(a::AbstractVector, b::AbstractVector, c::AbstractVector)
-    n = length(a)
-    length(b) == length(c) == n || throw(DimensionMismatch("The lengths of a and b must match."))
-    return n
-end
-
 function get_common_ncols(a::AbstractMatrix, b::AbstractMatrix)
     na = size(a, 2)
     size(b, 2) == na || throw(DimensionMismatch("The number of columns in a and b must match."))
