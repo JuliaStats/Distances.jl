@@ -247,7 +247,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
     ra = sqrt!(sumsq_percol(a))
     rb = sqrt!(sumsq_percol(b))
     for j = 1 : nb
-        for i = 1 : na
+        @simd for i = 1 : na
             @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * rb[j]), 0)
         end
     end
@@ -258,7 +258,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     At_mul_B!(r, a, a)
     ra = sqrt!(sumsq_percol(a))
     for j = 1 : n
-        for i = j+1 : n
+        @simd for i = j+1 : n
             @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
         end
         @inbounds r[j,j] = 0

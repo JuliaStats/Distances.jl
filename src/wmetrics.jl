@@ -77,7 +77,7 @@ function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
             @inbounds wi = d.weights[Iw]
             s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
         end
-    end    
+    end
     return eval_end(d, s)
 end
 
@@ -123,7 +123,7 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
     sb2 = wsumsq_percol(w, b)
     At_mul_B!(r, a, b .* w)
     for j = 1 : nb
-        for i = 1 : na
+        @simd for i = 1 : na
             @inbounds r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
         end
     end
@@ -141,7 +141,7 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
             @inbounds r[i,j] = r[j,i]
         end
         @inbounds r[j,j] = 0
-        for i = j+1 : n
+        @simd for i = j+1 : n
             @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
         end
     end

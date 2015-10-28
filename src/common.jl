@@ -19,14 +19,14 @@ function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix
 end
 
 function get_colwise_dims(r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
-    length(a) == size(b, 1) || 
+    length(a) == size(b, 1) ||
         throw(DimensionMismatch("The length of a must match the number of rows in b."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
 end
 
 function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
-    size(a, 1) == length(b) || 
+    size(a, 1) == length(b) ||
         throw(DimensionMismatch("The length of b must match the number of rows in a."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
@@ -57,7 +57,7 @@ function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::Abstra
 end
 
 function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
-    length(a) == size(b, 1) == d || 
+    length(a) == size(b, 1) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
@@ -91,8 +91,8 @@ end
 #
 ###########################################################
 
-function sqrt!(a::Array)
-    for i = 1:length(a)
+function sqrt!(a::AbstractArray)
+    @simd for i in eachindex(a)
         @inbounds a[i] = sqrt(a[i])
     end
     a
@@ -127,7 +127,7 @@ end
 function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     m = size(a,1)
     n = size(a,2)
-    size(b) == (m,n) && length(r) == n || 
+    size(b) == (m,n) && length(r) == n ||
         throw(DimensionMismatch("Inconsistent array dimensions."))
     for j = 1:n
         aj = view(a,:,j)

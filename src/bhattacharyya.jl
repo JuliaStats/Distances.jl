@@ -16,7 +16,7 @@ function bhattacharyya_coeff{T<:Number}(a::AbstractVector{T}, b::AbstractVector{
     asum = zero(T)
     bsum = zero(T)
 
-    for i = 1:n
+    @simd for i = 1:n
         @inbounds ai = a[i]
         @inbounds bi = b[i]
         sqab += sqrt(ai * bi)
@@ -24,7 +24,7 @@ function bhattacharyya_coeff{T<:Number}(a::AbstractVector{T}, b::AbstractVector{
         bsum += bi
     end
 
-    sqab / sqrt(asum * bsum) 
+    sqab / sqrt(asum * bsum)
 end
 
 bhattacharyya_coeff{T <: Number}(a::T, b::T) = throw("Bhattacharyya coefficient cannot be calculated for scalars")

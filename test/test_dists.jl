@@ -39,7 +39,7 @@ p[p .< 0.3] = 0.
 q = rand(12)
 a = [1., 2., 1., 3., 2., 1.]
 b = [1., 3., 0., 2., 2., 0.]
-for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]), 
+for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
                 ([4., 5., 6., 7.], [3. 8.; 9. 1.]))
     @test sqeuclidean(x, x) == 0.
     @test sqeuclidean(x, y) == 57.
@@ -108,12 +108,12 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test whamming(a, a, w) == 0.
     @test whamming(a, b, w) == sum((a .!= b) .* w)
 
-  
+
 end
 
 
 
-# test NaN behavior 
+# test NaN behavior
 a = [NaN, 0]; b = [0, NaN]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
 a = [NaN, 0]; b = [0, 1]
@@ -134,19 +134,19 @@ b = Float64[]
 @test minkowski(a, b, 2) == 0.
 @test isa(minkowski(a, b, 2), Float64)
 @test hamming(a, b) == 0.0
-@test isa(hamming(a, b), Int) 
+@test isa(hamming(a, b), Int)
 
 w = Float64[]
-@test isa(whamming(a, b, w), Float64) 
+@test isa(whamming(a, b, w), Float64)
 
 
 
 a = [1, 0]; b = [2]
-@test_throws DimensionMismatch sqeuclidean(a, b) 
+@test_throws DimensionMismatch sqeuclidean(a, b)
 a = [1, 0]; b = [2.0] ; w = [3.0]
-@test_throws DimensionMismatch wsqeuclidean(a, b, w) 
+@test_throws DimensionMismatch wsqeuclidean(a, b, w)
 a = [1, 0]; b = [2.0, 4.0] ; w = [3.0]
-@test_throws DimensionMismatch wsqeuclidean(a, b, w) 
+@test_throws DimensionMismatch wsqeuclidean(a, b, w)
 
 
 
