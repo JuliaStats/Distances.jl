@@ -11,7 +11,7 @@ type SqEuclidean <: SemiMetric end
 type Chebyshev <: Metric end
 type Cityblock <: Metric end
 
-type Minkowski{T <: Real} <: Metric
+immutable Minkowski{T <: Real} <: Metric
     p::T
 end
 
