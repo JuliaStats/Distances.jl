@@ -47,7 +47,7 @@ function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     end
     s = eval_start(d, a, b)
     if size(a) == size(b)
-        for I in eachindex(a, b)
+        @simd for I in eachindex(a, b)
             @inbounds ai = a[I]
             @inbounds bi = b[I]
             s = eval_reduce(d, s, eval_op(d, ai, bi))
@@ -58,12 +58,12 @@ function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
             @inbounds bi = b[Ib]
             s = eval_reduce(d, s, eval_op(d, ai, bi))
         end
-    end    
+    end
     return eval_end(d, s)
 end
-result_type{T1, T2}(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) = 
+result_type{T1, T2}(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) =
     typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
-eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) = 
+eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
 
@@ -142,7 +142,7 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # JSDivergence
-@compat @inline function eval_op{T}(::JSDivergence, ai::T, bi::T) 
+@compat @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
     u = (ai + bi) / 2
     ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
     tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
@@ -247,7 +247,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
     ra = sqrt!(sumsq_percol(a))
     rb = sqrt!(sumsq_percol(b))
     for j = 1 : nb
-        for i = 1 : na
+        @simd for i = 1 : na
             @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * rb[j]), 0)
         end
     end
@@ -258,7 +258,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     At_mul_B!(r, a, a)
     ra = sqrt!(sumsq_percol(a))
     for j = 1 : n
-        for i = j+1 : n
+        @simd for i = j+1 : n
             @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
         end
         @inbounds r[j,j] = 0

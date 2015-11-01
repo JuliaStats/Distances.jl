@@ -47,8 +47,8 @@ function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, 
     At_mul_B!(r, a, Qb)
 
     for j = 1 : nb
-        for i = 1 : na
-            r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
+        @simd for i = 1 : na
+            @inbounds r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
         end
     end
     r
@@ -64,11 +64,11 @@ function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, 
 
     for j = 1 : n
         for i = 1 : j-1
-            r[i,j] = r[j,i]
+            @inbounds r[i,j] = r[j,i]
         end
         r[j,j] = 0
         for i = j+1 : n
-            r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+            @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
         end
     end
     r
