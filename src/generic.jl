@@ -24,7 +24,7 @@ abstract Metric <: SemiMetric
 
 # Generic functions
 
-result_type(::PreMetric, T1::Type, T2::Type) = Float64
+result_type(::PreMetric, ::AbstractArray, ::AbstractArray) = Float64
 
 
 # Generic column-wise evaluation
@@ -62,19 +62,19 @@ end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
-    r = Array(result_type(metric, eltype(a), eltype(b)), n)
+    r = Array(result_type(metric, a, b), n)
     colwise!(r, metric, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
     n = size(b, 2)
-    r = Array(result_type(metric, eltype(a), eltype(b)), n)
+    r = Array(result_type(metric, a, b), n)
     colwise!(r, metric, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
-    r = Array(result_type(metric, eltype(a), eltype(b)), n)
+    r = Array(result_type(metric, a, b), n)
     colwise!(r, metric, a, b)
 end
 
@@ -117,19 +117,19 @@ end
 function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     m = size(a, 2)
     n = size(b, 2)
-    r = Array(result_type(metric, eltype(a), eltype(b)), (m, n))
+    r = Array(result_type(metric, a, b), (m, n))
     pairwise!(r, metric, a, b)
 end
 
 function pairwise(metric::PreMetric, a::AbstractMatrix)
     n = size(a, 2)
-    r = Array(result_type(metric, eltype(a), eltype(a)), (n, n))
+    r = Array(result_type(metric, a, a), (n, n))
     pairwise!(r, metric, a)
 end
 
 function pairwise(metric::SemiMetric, a::AbstractMatrix)
     n = size(a, 2)
-    r = Array(result_type(metric, eltype(a), eltype(a)), (n, n))
+    r = Array(result_type(metric, a, a), (n, n))
     pairwise!(r, metric, a)
 end
 
