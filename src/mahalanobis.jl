@@ -1,10 +1,10 @@
 # Mahalanobis distances
 
-type Mahalanobis{T} <: Metric
+immutable Mahalanobis{T} <: Metric
     qmat::Matrix{T}
 end
 
-type SqMahalanobis{T} <: SemiMetric
+immutable SqMahalanobis{T} <: SemiMetric
     qmat::Matrix{T}
 end
 
