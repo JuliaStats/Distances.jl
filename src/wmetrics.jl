@@ -9,24 +9,24 @@
 typealias RealAbstractArray{T <: AbstractFloat} AbstractArray{T}
 
 
-type WeightedEuclidean{W <: RealAbstractArray} <: Metric
+immutable WeightedEuclidean{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-type WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+immutable WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
     weights::W
 end
 
-type WeightedCityblock{W <: RealAbstractArray} <: Metric
+immutable WeightedCityblock{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-type WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
+immutable WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
     weights::W
     p::T
 end
 
-type WeightedHamming{W <: RealAbstractArray} <: Metric
+immutable WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
