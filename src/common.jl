@@ -98,10 +98,10 @@ function sqrt!(a::AbstractArray)
     a
 end
 
-function sumsq_percol(a::AbstractMatrix)
+function sumsq_percol{T}(a::AbstractMatrix{T})
     m = size(a, 1)
     n = size(a, 2)
-    r = Array(Float64, n)
+    r = Array(T, n)
     for j = 1:n
         aj = view(a,:,j)
         r[j] = dot(aj, aj)
@@ -109,14 +109,15 @@ function sumsq_percol(a::AbstractMatrix)
     return r
 end
 
-function wsumsq_percol(w::AbstractArray, a::AbstractMatrix)
+function wsumsq_percol{T1, T2}(w::AbstractArray{T1}, a::AbstractMatrix{T2})
     m = size(a, 1)
     n = size(a, 2)
-    r = Array(Float64, n)
+    T = typeof(one(T1)*one(T2))
+    r = Array(T, n)
     for j = 1:n
         aj = view(a,:,j)
-        s = 0.
-        for i = 1:m
+        s = zero(T)
+        @simd for i = 1:m
             @inbounds s += w[i] * abs2(aj[i])
         end
         r[j] = s
