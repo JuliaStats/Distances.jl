@@ -64,7 +64,7 @@ function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     end
     s = eval_start(d, a, b)
     if size(a) == size(b)
-        for I in eachindex(a, b, d.weights)
+        @simd for I in eachindex(a, b, d.weights)
             @inbounds ai = a[I]
             @inbounds bi = b[I]
             @inbounds wi = d.weights[I]
