@@ -8,8 +8,8 @@ immutable SqMahalanobis{T} <: SemiMetric
     qmat::Matrix{T}
 end
 
-result_type{T}(::Mahalanobis{T}, T1::Type, T2::Type) = T
-result_type{T}(::SqMahalanobis{T}, T1::Type, T2::Type) = T
+result_type{T}(::Mahalanobis{T}, ::AbstractArray, ::AbstractArray) = T
+result_type{T}(::SqMahalanobis{T}, ::AbstractArray, ::AbstractArray) = T
 
 # SqMahalanobis
 

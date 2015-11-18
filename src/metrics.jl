@@ -130,6 +130,7 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
 _centralize(x::AbstractArray) = x .- mean(x)
 evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
+result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
 @compat @inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
@@ -166,9 +167,12 @@ end
     end
     return min_d, max_d
 end
+
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
-result_type(dist::SpanNormDist, T1::Type, T2::Type) = typeof(eval_op(dist, one(T1), one(T2)))
+function result_type{T1, T2}(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2})
+    typeof(eval_op(dist, one(T1), one(T2)))
+end
 
 
 ###########################################################
