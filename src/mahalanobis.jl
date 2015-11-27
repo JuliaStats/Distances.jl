@@ -23,14 +23,14 @@ sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluat
 
 function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
-    m::Int, n::Int = get_colwise_dims(size(Q, 1), r, a, b)
+    m, n = get_colwise_dims(size(Q, 1), r, a, b)
     z = a - b
     dot_percol!(r, Q * z, z)
 end
 
 function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
     Q = dist.qmat
-    m::Int, n::Int = get_colwise_dims(size(Q, 1), r, a, b)
+    m, n = get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
     Qz = Q * z
     dot_percol!(r, Q * z, z)
@@ -38,7 +38,7 @@ end
 
 function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
-    m::Int, na::Int, nb::Int = get_pairwise_dims(size(Q, 1), r, a, b)
+    m, na, nb = get_pairwise_dims(size(Q, 1), r, a, b)
 
     Qa = Q * a
     Qb = Q * b
@@ -56,7 +56,7 @@ end
 
 function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
     Q = dist.qmat
-    m::Int, n::Int = get_pairwise_dims(size(Q, 1), r, a)
+    m, n = get_pairwise_dims(size(Q, 1), r, a)
 
     Qa = Q * a
     sa2 = dot_percol(a, Qa)
@@ -98,5 +98,3 @@ end
 function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix)
     sqrt!(pairwise!(r, SqMahalanobis(dist.qmat), a))
 end
-
-
