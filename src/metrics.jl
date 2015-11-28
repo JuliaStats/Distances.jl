@@ -28,7 +28,7 @@ type JSDivergence <: SemiMetric end
 
 type SpanNormDist <: SemiMetric end
 
-typealias UnionMetrics @compat(Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist})
+typealias UnionMetrics @compat(Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist})
 
 ###########################################################
 #
@@ -157,7 +157,7 @@ js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, 
 
 # SpanNormDist
 function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
-    a[1] - b[1], a[1]- b[1]
+    a[1] - b[1], a[1] - b[1]
 end
 @compat @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
 @compat @inline function eval_reduce(::SpanNormDist, s1, s2)
@@ -248,46 +248,44 @@ end
 
 # Jaccard
 
-function evaluate(dist::Jaccard, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)::Int
-    numerator = 0
-    denominator = 0
-    for i = 1:n
-        @inbounds ai = a[i]
-        @inbounds bi = b[i]
-        if ai > bi
-          numerator += bi
-          denominator += ai
-        else
-          numerator += ai
-          denominator += bi
-        end
-    end
-    1 - (numerator / denominator)
+@compat @inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
+@compat @inline function eval_op(::Jaccard, s1, s2)
+    denominator = max(s1, s2)
+    numerator = min(s1, s2)
+    numerator, denominator
 end
-
-jaccard(a::AbstractVector, b::AbstractVector) = evaluate(Jaccard(), a, b)
+@compat @inline function eval_reduce(::Jaccard, s1, s2)
+    a = s1[1] + s2[1]
+    b = s1[2] + s2[2]
+    a, b
+end
+@compat @inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
+jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 # Tanimoto
 
-function evaluate{T <: Bool}(dist::RogersTanimoto, a::AbstractVector, b::AbstractVector)
-    n = get_common_len(a, b)::Int
-    tt = 0
-    tf = 0
-    ft = 0
-    ff = 0
-    for i = 1:n
-        @inbounds tt += (a[i] && b[i])
-        @inbounds tf += (a[i] && !b[i])
-        @inbounds ft += (!a[i] && b[i])
-        @inbounds ff += (!a[i] && !b[i])
-    end
-    numerator = 2(tf + ft)
-    denominator = ntt + nff + 2(ntf + nft)
+@compat @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@compat @inline function eval_op(::RogersTanimoto, s1, s2)
+  tt = s1 && s2
+  tf = s1 && !s2
+  ft = !s1 && s2
+  ff = !s1 && !s2
+  tt, tf, ft, ff
+end
+@compat @inline function eval_reduce(::RogersTanimoto, s1, s2)
+    a = s1[1] + s2[1]
+    b = s1[2] + s2[2]
+    c = s1[3] + s2[3]
+    d = s1[4] + s1[4]
+    a, b, c, d
+end
+@compat @inline function eval_end(::RogersTanimoto, a)
+    numerator = 2(a[2] + a[3])
+    denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
+rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
 
-rogerstanimoto(a::AbstractVector, b::AbstractVector) = evaluate(RogersTanimoto(), a, b)
 
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)

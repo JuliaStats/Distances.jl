@@ -32,6 +32,10 @@ b = 2
 @test hamming(a, a) == 0
 @test hamming(a, b) == 1
 
+bt = [true, false, true]
+bf = [false, true, true]
+@test rogerstanimoto(bt, bt) == 0
+@test rogerstanimoto(bt, bf) == 4./5
 
 
 p = rand(12)
@@ -63,10 +67,6 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test_throws DimensionMismatch cosine_dist(1.:2, 1.:3)
     @test_approx_eq_eps cosine_dist(x, y) (1.0 - 112. / sqrt(19530.)) 1.0e-12
 
-    bt = [true, false, true]
-    bf = [false, true, true]
-    @test rogerstanimoto(bt, bt) == 0
-    @test rogerstanimoto(bt, bf) == 4./5
 
     @test_approx_eq_eps corr_dist(x, x) 0. 1.0e-12
     @test_approx_eq corr_dist(x, y) cosine_dist(x .- mean(x), vec(y) .- mean(y))

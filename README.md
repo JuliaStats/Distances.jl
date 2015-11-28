@@ -132,6 +132,8 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Chebyshev           |  chebyshev(x, y)     | max(abs(x - y)) |
 |  Minkowski           |  minkowski(x, y, p)  | sum(abs(x - y).^p) ^ (1/p) |
 |  Hamming             |  hamming(x, y)       | sum(x .!= y) |
+|  Rogers-Tanimoto     |  rogerstanimoto(x, y)| (2(ntf + nft)) / (2(ntf + nft) + ntt + nff) |
+|  Jaccard             |  jaccard(x, y)       | 1 - (sum(min(xi, yi)) / sum(max(xi, yi))) |
 |  CosineDist          |  cosine_dist(x, y)   | 1 - dot(x, y) / (norm(x) * norm(y)) |
 |  CorrDist            |  corr_dist(x, y)     | cosine_dist(x - mean(x), y - mean(y)) |
 |  ChiSqDist           |  chisq_dist(x, y)    | sum((x - y).^2 / (x + y)) |
