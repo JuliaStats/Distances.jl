@@ -198,7 +198,7 @@ function pdist!(r, sa2, sb2)
     r
 end
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
-    m::Int, n::Int = get_pairwise_dims(r, a)
+    m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
     for j = 1 : n
@@ -215,7 +215,7 @@ end
 
 # Euclidean
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::AbstractMatrix)
-    m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
+    m, na, nb = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)
     sa2 = sumsq_percol(a)
     sb2 = sumsq_percol(b)
@@ -228,7 +228,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     r
 end
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
-    m::Int, n::Int = get_pairwise_dims(r, a)
+    m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
     for j = 1 : n
@@ -246,7 +246,7 @@ end
 
 # CosineDist
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
-    m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
+    m, na, nb = get_pairwise_dims(r, a, b)
     At_mul_B!(r, a, b)
     ra = sqrt!(sumsq_percol(a))
     rb = sqrt!(sumsq_percol(b))
@@ -288,8 +288,3 @@ end
 function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
     pairwise!(r, CosineDist(), _centralize_colwise(a))
 end
-
-
-
-
-

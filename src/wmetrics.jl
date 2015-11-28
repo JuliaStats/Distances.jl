@@ -117,7 +117,7 @@ whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(Weight
 # SqEuclidean
 function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     w = dist.weights
-    m::Int, na::Int, nb::Int = get_pairwise_dims(length(w), r, a, b)
+    m, na, nb = get_pairwise_dims(length(w), r, a, b)
 
     sa2 = wsumsq_percol(w, a)
     sb2 = wsumsq_percol(w, b)
@@ -131,7 +131,7 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
 end
 function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatrix)
     w = dist.weights
-    m::Int, n::Int = get_pairwise_dims(length(w), r, a)
+    m, n = get_pairwise_dims(length(w), r, a)
 
     sa2 = wsumsq_percol(w, a)
     At_mul_B!(r, a, a .* w)
