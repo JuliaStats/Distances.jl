@@ -177,6 +177,46 @@ function result_type{T1, T2}(dist::SpanNormDist, ::AbstractArray{T1}, ::Abstract
 end
 
 
+# Jaccard
+
+@compat @inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
+@compat @inline function eval_op(::Jaccard, s1, s2)
+    denominator = max(s1, s2)
+    numerator = min(s1, s2)
+    numerator, denominator
+end
+@compat @inline function eval_reduce(::Jaccard, s1, s2)
+    a = s1[1] + s2[1]
+    b = s1[2] + s2[2]
+    a, b
+end
+@compat @inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
+jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
+
+# Tanimoto
+
+@compat @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@compat @inline function eval_op(::RogersTanimoto, s1, s2)
+  tt = s1 && s2
+  tf = s1 && !s2
+  ft = !s1 && s2
+  ff = !s1 && !s2
+  tt, tf, ft, ff
+end
+@compat @inline function eval_reduce(::RogersTanimoto, s1, s2)
+    a = s1[1] + s2[1]
+    b = s1[2] + s2[2]
+    c = s1[3] + s2[3]
+    d = s1[4] + s1[4]
+    a, b, c, d
+end
+@compat @inline function eval_end(::RogersTanimoto, a)
+    numerator = 2(a[2] + a[3])
+    denominator = a[1] + a[4] + 2(a[2] + a[3])
+    numerator / denominator
+end
+rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
+
 ###########################################################
 #
 #  Special method
@@ -229,6 +269,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     end
     r
 end
+
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m::Int, n::Int = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
@@ -246,46 +287,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     r
 end
 
-# Jaccard
-
-@compat @inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
-@compat @inline function eval_op(::Jaccard, s1, s2)
-    denominator = max(s1, s2)
-    numerator = min(s1, s2)
-    numerator, denominator
-end
-@compat @inline function eval_reduce(::Jaccard, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
-    a, b
-end
-@compat @inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
-jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
-
-# Tanimoto
-
-@compat @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
-@compat @inline function eval_op(::RogersTanimoto, s1, s2)
-  tt = s1 && s2
-  tf = s1 && !s2
-  ft = !s1 && s2
-  ff = !s1 && !s2
-  tt, tf, ft, ff
-end
-@compat @inline function eval_reduce(::RogersTanimoto, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
-    c = s1[3] + s2[3]
-    d = s1[4] + s1[4]
-    a, b, c, d
-end
-@compat @inline function eval_end(::RogersTanimoto, a)
-    numerator = 2(a[2] + a[3])
-    denominator = a[1] + a[4] + 2(a[2] + a[3])
-    numerator / denominator
-end
-rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
-
+# CosineDist
 
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m::Int, na::Int, nb::Int = get_pairwise_dims(r, a, b)
@@ -330,8 +332,3 @@ end
 function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
     pairwise!(r, CosineDist(), _centralize_colwise(a))
 end
-
-
-
-
-
