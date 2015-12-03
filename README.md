@@ -14,7 +14,9 @@ This package also provides optimized functions to compute column-wise and pairwi
 
 * Euclidean distance
 * Squared Euclidean distance
-* Cityblock distance 
+* Cityblock distance
+* Jaccard distance
+* Rogers-Tanimoto distance
 * Chebyshev distance
 * Minkowski distance
 * Hamming distance
@@ -47,7 +49,7 @@ Here, dist is an instance of a distance type. For example, the type for Euclidea
 
 ```julia
 r = evaluate(Euclidean(), x, y)
-``` 
+```
 
 Common distances also come with convenient functions for distance evaluation. For example, you may also compute Euclidean distance between two vectors as below
 
@@ -103,26 +105,26 @@ Please pay attention to the difference, the functions for inplace computation ar
 
 ## Distance type hierarchy
 
-The distances are organized into a type hierarchy. 
+The distances are organized into a type hierarchy.
 
 At the top of this hierarchy is an abstract class **PreMetric**, which is defined to be a function ``d`` that satisfies
 
 	d(x, x) == 0  for all x
 	d(x, y) >= 0  for all x, y
-	
+
 **SemiMetric** is a abstract type that refines **PreMetric**. Formally, a *semi-metric* is a *pre-metric* that is also symmetric, as
 
 	d(x, y) == d(y, x)  for all x, y
-	
+
 **Metric** is a abstract type that further refines **SemiMetric**. Formally, a *metric* is a *semi-metric* that also satisfies triangle inequality, as
 
 	d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
-	
+
 This type system has practical significance. For example, when computing pairwise distances between a set of vectors, you may only perform computation for half of the pairs, and derive the values immediately for the remaining halve by leveraging the symmetry of *semi-metrics*.
 
 Each distance corresponds to a distance type. The type name and the corresponding mathematical definitions of the distances are listed in the following table.
 
-| type name            |  convenient syntax   | math definition     | 
+| type name            |  convenient syntax   | math definition     |
 | -------------------- | -------------------- | --------------------|
 |  Euclidean           |  euclidean(x, y)     | sqrt(sum((x - y) .^ 2)) |
 |  SqEuclidean         |  sqeuclidean(x, y)   | sum((x - y).^2) |
@@ -130,9 +132,11 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Chebyshev           |  chebyshev(x, y)     | max(abs(x - y)) |
 |  Minkowski           |  minkowski(x, y, p)  | sum(abs(x - y).^p) ^ (1/p) |
 |  Hamming             |  hamming(x, y)       | sum(x .!= y) |
+|  Rogers-Tanimoto     |  rogerstanimoto(x, y)| 2(sum(x&!y) + sum(!x&y)) / (2(sum(x&!y) + sum(!x&y)) + sum(x&y) + sum(!x&!y)) |
+|  Jaccard             |  jaccard(x, y)       | 1 - sum(min(x, y)) / sum(max(x, y)) |
 |  CosineDist          |  cosine_dist(x, y)   | 1 - dot(x, y) / (norm(x) * norm(y)) |
 |  CorrDist            |  corr_dist(x, y)     | cosine_dist(x - mean(x), y - mean(y)) |
-|  ChiSqDist           |  chisq_dist(x, y)    | sum((x - y).^2 / (x + y)) | 
+|  ChiSqDist           |  chisq_dist(x, y)    | sum((x - y).^2 / (x + y)) |
 |  KLDivergence        |  kl_divergence(x, y) | sum(p .* log(p ./ q)) |
 |  JSDivergence        |  js_divergence(x, y) | KL(x, m) / 2 + KL(y, m) / 2 with m = (x + y) / 2 |
 |  SpanNormDist        |  spannorm_dist(x, y) | max(x - y) - min(x - y ) |
@@ -145,7 +149,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedCityblock   |  cityblock(x, y, w)      | sum(abs(x - y) .* w)  |
 |  WeightedMinkowski   |  minkowski(x, y, w, p)   | sum(abs(x - y).^p .* w) ^ (1/p)  |
 |  WeightedHamming     |  hamming(x, y, w)        | sum((x .!= y) .* w)  |
-  
+
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way.
 
 

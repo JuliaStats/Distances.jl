@@ -24,6 +24,8 @@ export
     Cityblock,
     Chebyshev,
     Minkowski,
+    Jaccard,
+    RogersTanimoto,
 
     Hamming,
     CosineDist,
@@ -47,6 +49,8 @@ export
     euclidean,
     sqeuclidean,
     cityblock,
+    jaccard,
+    rogerstanimoto,
     chebyshev,
     minkowski,
     mahalanobis,
