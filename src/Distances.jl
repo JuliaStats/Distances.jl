@@ -1,8 +1,6 @@
-isdefined(Base, :__precompile__) && __precompile__()
+__precompile__()
 
 module Distances
-
-using ArrayViews, Compat
 
 export
     # generic types/functions

@@ -28,17 +28,14 @@ type JSDivergence <: SemiMetric end
 
 type SpanNormDist <: SemiMetric end
 
-typealias UnionMetrics @compat(Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist})
+
+typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist}
 
 ###########################################################
 #
 #  Define Evaluate
 #
 ###########################################################
-
-if VERSION < v"0.4.0-dev+1624"
-    eachindex(A::AbstractArray...) = 1:length(A[1])
-end
 
 function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     if length(a) != length(b)
@@ -72,43 +69,43 @@ eval_end(d::UnionMetrics, s) = s
 evaluate{T <: Number}(dist::UnionMetrics, a::T, b::T) = eval_end(dist, eval_op(dist, a, b))
 
 # SqEuclidean
-@compat @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
-@compat @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
+@inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
+@inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
 sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
 sqeuclidean{T <: Number}(a::T, b::T) = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
-@compat @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
-@compat @inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
+@inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
+@inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 
 # Cityblock
-@compat @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
-@compat @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
+@inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
+@inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
 cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
 
 # Chebyshev
-@compat @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
-@compat @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
+@inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
+@inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-@compat @inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+@inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
 chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev{T <: Number}(a::T, b::T) = evaluate(Chebyshev(), a, b)
 
 # Minkowski
-@compat @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi) .^ dist.p
-@compat @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
+@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi) .^ dist.p
+@inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s .^ (1/dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski{T <: Number}(a::T, b::T, p::Real) = evaluate(Minkowski(p), a, b)
 
 # Hamming
-@compat @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
-@compat @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
+@inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
+@inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 
@@ -116,8 +113,8 @@ hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 function eval_start{T<:AbstractFloat}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
     zero(T), zero(T), zero(T)
 end
-@compat @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
-@compat @inline function eval_reduce(::CosineDist, s1, s2)
+@inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
+@inline function eval_reduce(::CosineDist, s1, s2)
     a1, b1, c1 = s1
     a2, b2, c2 = s2
     return a1 + a2, b1 + b2, c1 + c2
@@ -135,32 +132,32 @@ corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
-@compat @inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
-@compat @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
+@inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
+@inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
 # KLDivergence
-@compat @inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
-@compat @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
+@inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
+@inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # JSDivergence
-@compat @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
+@inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
     u = (ai + bi) / 2
     ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
     tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
     tu = u > 0 ? u * log(u) : zero(log(one(T)))
     ta + tb - tu
 end
-@compat @inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
+@inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
 js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, b)
 
 # SpanNormDist
 function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
-@compat @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
-@compat @inline function eval_reduce(::SpanNormDist, s1, s2)
+@inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
+@inline function eval_reduce(::SpanNormDist, s1, s2)
     min_d, max_d = s1
     if s2 > max_d
         max_d = s2
@@ -179,38 +176,38 @@ end
 
 # Jaccard
 
-@compat @inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
-@compat @inline function eval_op(::Jaccard, s1, s2)
+@inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
+@inline function eval_op(::Jaccard, s1, s2)
     denominator = max(s1, s2)
     numerator = min(s1, s2)
     numerator, denominator
 end
-@compat @inline function eval_reduce(::Jaccard, s1, s2)
+@inline function eval_reduce(::Jaccard, s1, s2)
     a = s1[1] + s2[1]
     b = s1[2] + s2[2]
     a, b
 end
-@compat @inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
+@inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
 jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 # Tanimoto
 
-@compat @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
-@compat @inline function eval_op(::RogersTanimoto, s1, s2)
+@inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@inline function eval_op(::RogersTanimoto, s1, s2)
   tt = s1 && s2
   tf = s1 && !s2
   ft = !s1 && s2
   ff = !s1 && !s2
   tt, tf, ft, ff
 end
-@compat @inline function eval_reduce(::RogersTanimoto, s1, s2)
+@inline function eval_reduce(::RogersTanimoto, s1, s2)
     a = s1[1] + s2[1]
     b = s1[2] + s2[2]
     c = s1[3] + s2[3]
     d = s1[4] + s1[4]
     a, b, c, d
 end
-@compat @inline function eval_end(::RogersTanimoto, a)
+@inline function eval_end(::RogersTanimoto, a)
     numerator = 2(a[2] + a[3])
     denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator

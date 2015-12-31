@@ -1,3 +1,1 @@
-julia 0.3
-ArrayViews 0.4.8-
-Compat
+julia 0.4
