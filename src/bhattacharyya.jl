@@ -41,5 +41,5 @@ bhattacharyya{T <: Number}(a::T, b::T) = evaluate(BhattacharyyaDist(), a, b)
 # Hellinger distance
 evaluate{T<:Number}(dist::HellingerDist, a::AbstractVector{T}, b::AbstractVector{T}) = sqrt(1 - bhattacharyya_coeff(a, b))
 hellinger(a::AbstractVector, b::AbstractVector) = evaluate(HellingerDist(), a, b)
-evaluate{T <: Number}(dist::BhattacharyyaDist, a::T, b::T) = throw("Hellinger distance cannot be calculated for scalars")
+evaluate{T <: Number}(dist::HellingerDist, a::T, b::T) = throw("Hellinger distance cannot be calculated for scalars")
 hellinger{T <: Number}(a::T, b::T) = evaluate(HellingerDist(), a, b)
