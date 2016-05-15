@@ -4,12 +4,13 @@
 #   pairwise_bench_results.txt  => pairwise_bench_results.csv
 #
 
+using Compat: String
 
 function parse_results(lines, title1, title2)
     # just a handy function, without a lot of error handling stuff
     # assuming everything is correct
 
-    records = Array((ASCIIString, Float64, Float64, Float64), 0)
+    records = Array((String, Float64, Float64, Float64), 0)
 
     state = 0
 
@@ -51,7 +52,7 @@ function parse_results(lines, title1, title2)
 end
 
 
-function collect(title::ASCIIString, title1, title2)
+function collect(title::String, title1, title2)
     println("Processing $title ...")
     infile = string(title, ".txt")
     outfile = string(title, ".csv")
