@@ -179,9 +179,9 @@ end
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline eval_start{T}(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) = zero(T), zero(T)
 @inline function eval_op(::Jaccard, s1, s2)
-    denominator = max(s1, s2)
-    numerator = min(s1, s2)
-    numerator, denominator
+    abs_m = abs(s1 - s2)
+    abs_p = abs(s1 + s2)
+    abs_p - abs_m, abs_p + abs_m
 end
 @inline function eval_reduce(::Jaccard, s1, s2)
     @inbounds a = s1[1] + s2[1]
