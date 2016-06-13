@@ -246,13 +246,13 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
-    for j = 1 : n
+    @inbounds for j = 1 : n
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
-        @inbounds r[j,j] = 0
+        r[j,j] = 0
         for i = j+1 : n
-            @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+            r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
         end
     end
     r
@@ -264,10 +264,10 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     At_mul_B!(r, a, b)
     sa2 = sumsq_percol(a)
     sb2 = sumsq_percol(b)
-    for j = 1 : nb
+    @inbounds for j = 1 : nb
         for i = 1 : na
-            @inbounds v = sa2[i] + sb2[j] - 2 * r[i,j]
-            @inbounds r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            v = sa2[i] + sb2[j] - 2 * r[i,j]
+            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
         end
     end
     r
@@ -277,14 +277,14 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
-    for j = 1 : n
+    @inbounds for j = 1 : n
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
         @inbounds r[j,j] = 0
         for i = j+1 : n
-            @inbounds v = sa2[i] + sa2[j] - 2 * r[i,j]
-            @inbounds r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            v = sa2[i] + sa2[j] - 2 * r[i,j]
+            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
         end
     end
     r
@@ -308,13 +308,13 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     ra = sqrt!(sumsq_percol(a))
-    for j = 1 : n
+    @inbounds for j = 1 : n
         @simd for i = j+1 : n
-            @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
+            r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
         end
-        @inbounds r[j,j] = 0
+        r[j,j] = 0
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
     end
     r
