@@ -108,6 +108,10 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test whamming(a, b, w) == sum((a .!= b) .* w)
 end
 
+@inferred evaluate(Jaccard(), rand(3), rand(3))
+@inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
+@inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
+
 end # testset
 
 
@@ -188,28 +192,28 @@ q = rand(12)
 px = x ./ sum(x)
 py = y ./ sum(y)
 expected_bc_x_y = sum(sqrt(px .* py))
-@test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y 
-@test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y)) 
-@test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y) 
+@test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
+@test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
+@test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
 
 
 
 pa = a ./ sum(a)
 pb = b ./ sum(b)
 expected_bc_a_b = sum(sqrt(pa .* pb))
-@test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b 
-@test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b)) 
-@test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b) 
+@test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
+@test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
+@test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
 
 pp = p ./ sum(p)
 pq = q ./ sum(q)
 expected_bc_p_q = sum(sqrt(pp .* pq))
-@test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q 
-@test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q)) 
-@test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q) 
+@test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
+@test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
+@test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
 
 # Ensure it is semimetric
-@test bhattacharyya(x, y) ≈ bhattacharyya(y, x) 
+@test bhattacharyya(x, y) ≈ bhattacharyya(y, x)
 
 end #testset
 

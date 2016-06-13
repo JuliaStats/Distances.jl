@@ -176,18 +176,22 @@ end
 
 # Jaccard
 
-@inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
+@inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
+@inline eval_start{T}(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) = zero(T), zero(T)
 @inline function eval_op(::Jaccard, s1, s2)
     denominator = max(s1, s2)
     numerator = min(s1, s2)
     numerator, denominator
 end
 @inline function eval_reduce(::Jaccard, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
+    @inbounds a = s1[1] + s2[1]
+    @inbounds b = s1[2] + s2[2]
     a, b
 end
-@inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
+@inline function eval_end(::Jaccard, a)
+    @inbounds v = 1 - (a[1]/a[2])
+    return v
+end
 jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 # Tanimoto
@@ -201,15 +205,17 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
   tt, tf, ft, ff
 end
 @inline function eval_reduce(::RogersTanimoto, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
-    c = s1[3] + s2[3]
-    d = s1[4] + s1[4]
+    @inbounds begin
+        a = s1[1] + s2[1]
+        b = s1[2] + s2[2]
+        c = s1[3] + s2[3]
+        d = s1[4] + s1[4]
+    end
     a, b, c, d
 end
 @inline function eval_end(::RogersTanimoto, a)
-    numerator = 2(a[2] + a[3])
-    denominator = a[1] + a[4] + 2(a[2] + a[3])
+    @inbounds numerator = 2(a[2] + a[3])
+    @inbounds denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
 rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
