@@ -176,18 +176,22 @@ end
 
 # Jaccard
 
-@inline eval_start(::Jaccard, a::AbstractArray, b::AbstractArray) = 0, 0
+@inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
+@inline eval_start{T}(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) = zero(T), zero(T)
 @inline function eval_op(::Jaccard, s1, s2)
-    denominator = max(s1, s2)
-    numerator = min(s1, s2)
-    numerator, denominator
+    abs_m = abs(s1 - s2)
+    abs_p = abs(s1 + s2)
+    abs_p - abs_m, abs_p + abs_m
 end
 @inline function eval_reduce(::Jaccard, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
+    @inbounds a = s1[1] + s2[1]
+    @inbounds b = s1[2] + s2[2]
     a, b
 end
-@inline eval_end(::Jaccard, a) = 1 - (a[1]/a[2])
+@inline function eval_end(::Jaccard, a)
+    @inbounds v = 1 - (a[1]/a[2])
+    return v
+end
 jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 # Tanimoto
@@ -201,15 +205,17 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
   tt, tf, ft, ff
 end
 @inline function eval_reduce(::RogersTanimoto, s1, s2)
-    a = s1[1] + s2[1]
-    b = s1[2] + s2[2]
-    c = s1[3] + s2[3]
-    d = s1[4] + s1[4]
+    @inbounds begin
+        a = s1[1] + s2[1]
+        b = s1[2] + s2[2]
+        c = s1[3] + s2[3]
+        d = s1[4] + s1[4]
+    end
     a, b, c, d
 end
 @inline function eval_end(::RogersTanimoto, a)
-    numerator = 2(a[2] + a[3])
-    denominator = a[1] + a[4] + 2(a[2] + a[3])
+    @inbounds numerator = 2(a[2] + a[3])
+    @inbounds denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
 rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
@@ -240,13 +246,13 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
-    for j = 1 : n
+    @inbounds for j = 1 : n
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
-        @inbounds r[j,j] = 0
+        r[j,j] = 0
         for i = j+1 : n
-            @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+            r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
         end
     end
     r
@@ -258,10 +264,10 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     At_mul_B!(r, a, b)
     sa2 = sumsq_percol(a)
     sb2 = sumsq_percol(b)
-    for j = 1 : nb
+    @inbounds for j = 1 : nb
         for i = 1 : na
-            @inbounds v = sa2[i] + sb2[j] - 2 * r[i,j]
-            @inbounds r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            v = sa2[i] + sb2[j] - 2 * r[i,j]
+            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
         end
     end
     r
@@ -271,14 +277,14 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
-    for j = 1 : n
+    @inbounds for j = 1 : n
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
         @inbounds r[j,j] = 0
         for i = j+1 : n
-            @inbounds v = sa2[i] + sa2[j] - 2 * r[i,j]
-            @inbounds r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            v = sa2[i] + sa2[j] - 2 * r[i,j]
+            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
         end
     end
     r
@@ -302,13 +308,13 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     ra = sqrt!(sumsq_percol(a))
-    for j = 1 : n
+    @inbounds for j = 1 : n
         @simd for i = j+1 : n
-            @inbounds r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
+            r[i,j] = max(1 - r[i,j] / (ra[i] * ra[j]), 0)
         end
-        @inbounds r[j,j] = 0
+        r[j,j] = 0
         for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+            r[i,j] = r[j,i]
         end
     end
     r
