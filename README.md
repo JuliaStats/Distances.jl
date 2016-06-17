@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/JuliaStats/Distances.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaStats/Distances.jl?branch=master)
 
 [![Distances](http://pkg.julialang.org/badges/Distances_0.4.svg)](http://pkg.julialang.org/?pkg=Distances&ver=0.4)
+[![Distances](http://pkg.julialang.org/badges/Distances_0.5.svg)](http://pkg.julialang.org/?pkg=Distances)
 
 A Julia package for evaluating distances(metrics) between vectors.
 
