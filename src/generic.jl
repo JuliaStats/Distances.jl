@@ -33,7 +33,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::Abs
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1 : n
-        @inbounds r[j] = evaluate(metric, a, slice(b, :, j))
+        @inbounds r[j] = evaluate(metric, a, view(b, :, j))
     end
     r
 end
@@ -42,7 +42,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1 : n
-        @inbounds r[j] = evaluate(metric, slice(a, :, j), b)
+        @inbounds r[j] = evaluate(metric, view(a, :, j), b)
     end
     r
 end
@@ -51,7 +51,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1 : n
-        @inbounds r[j] = evaluate(metric, slice(a, :, j), slice(b, :, j))
+        @inbounds r[j] = evaluate(metric, view(a, :, j), view(b, :, j))
     end
     r
 end
@@ -86,9 +86,9 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix, b::A
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1 : size(b, 2)
-        bj = slice(b,:,j)
+        bj = view(b,:,j)
         for i = 1 : size(a, 2)
-            @inbounds r[i,j] = evaluate(metric, slice(a,:,i), bj)
+            @inbounds r[i,j] = evaluate(metric, view(a,:,i), bj)
         end
     end
     r
@@ -102,9 +102,9 @@ function pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1 : n
-        aj = slice(a,:,j)
+        aj = view(a,:,j)
         for i = j+1 : n
-            @inbounds r[i,j] = evaluate(metric, slice(a,:,i), aj)
+            @inbounds r[i,j] = evaluate(metric, view(a,:,i), aj)
         end
         @inbounds r[j,j] = 0
         for i = 1 : j-1
@@ -132,5 +132,3 @@ function pairwise(metric::SemiMetric, a::AbstractMatrix)
     r = Array(result_type(metric, a, a), (n, n))
     pairwise!(r, metric, a)
 end
-
-
