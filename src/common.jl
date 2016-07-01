@@ -103,7 +103,7 @@ function sumsq_percol{T}(a::AbstractMatrix{T})
     n = size(a, 2)
     r = Array(T, n)
     for j = 1:n
-        aj = slice(a, :, j)
+        aj = view(a, :, j)
         r[j] = dot(aj, aj)
     end
     return r
@@ -115,7 +115,7 @@ function wsumsq_percol{T1, T2}(w::AbstractArray{T1}, a::AbstractMatrix{T2})
     T = typeof(one(T1)*one(T2))
     r = Array(T, n)
     for j = 1:n
-        aj = slice(a, :, j)
+        aj = view(a, :, j)
         s = zero(T)
         @simd for i = 1:m
             @inbounds s += w[i] * abs2(aj[i])
@@ -131,13 +131,11 @@ function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     size(b) == (m,n) && length(r) == n ||
         throw(DimensionMismatch("Inconsistent array dimensions."))
     for j = 1:n
-        aj = slice(a,:,j)
-        bj = slice(b,:,j)
+        aj = view(a,:,j)
+        bj = view(b,:,j)
         r[j] = dot(aj, bj)
     end
     return r
 end
 
 dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Array(Float64, size(a,2)), a, b)
-
-
