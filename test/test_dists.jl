@@ -30,8 +30,10 @@ bf = [false, true, true]
 @test rogerstanimoto(bt, bf) == 4./5
 
 
-p = rand(12)
-p[p .< 0.3] = 0.
+p = r = rand(12)
+p[p .< 0.3] = 0.0
+scale = sum(p) / sum(r)
+r /= sum(r)    
 p /= sum(p)
 q = rand(12)
 q /= sum(q)
@@ -101,6 +103,17 @@ for i = 1 : length(p)
 end
 @test kl_divergence(p, q) ≈ klv
 
+@test renyi_divergence(p, p, 0) ≈ 0
+@test renyi_divergence(p, p, 1) ≈ 0
+@test renyi_divergence(p, p, rand()) ≈ 0
+@test renyi_divergence(p, p, 1.0 + rand()) ≈ 0
+@test renyi_divergence(p, p, Inf) ≈ 0
+@test renyi_divergence(p, r, 0) ≈ -log(scale)    
+@test renyi_divergence(p, r, 1) ≈ -log(scale)    
+@test renyi_divergence(p, r, rand()) ≈ -log(scale)    
+@test renyi_divergence(p, r, Inf) ≈ -log(scale)    
+@test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
+    
 pm = (p + q) / 2
 jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
 @test js_divergence(p, p) ≈ 0.0
