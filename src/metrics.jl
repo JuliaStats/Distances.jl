@@ -164,17 +164,24 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # RenyiDivergence
-@inline eval_op(dist::RenyiDivergence, ai, bi) = ai == 0 ? zero(ai) :
-    (dist.is_normal ? ai * ((ai / bi) .^ dist.p) :
-     (dist.is_zero ? bi :
-      (dist.is_one ? ai * log(ai / bi) :
-       # otherwise α = ∞
-       ai / bi)))
+function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
+    zero(T), zero(T)
+end
+
+@inline eval_op(dist::RenyiDivergence, ai, bi) = ai, (ai == 0 ? zero(ai) :
+                                                      (dist.is_normal ?
+                                                       ai .* ((ai ./ bi) .^ dist.p) :
+                                                       (dist.is_zero ?
+                                                        bi :
+                                                        (dist.is_one ?
+                                                         ai * log(ai / bi) :
+                                                         # otherwise α = ∞
+                                                         ai / bi))))
 
 @inline eval_reduce(dist::RenyiDivergence, s1, s2) =
-    dist.is_inf ? max(s1, s2) : s1 + s2
+    s1[1] + s2[1], (dist.is_inf ? max(s1[2], s2[2]) : s1[2] + s2[2])
 eval_end(dist::RenyiDivergence, s) =
-    dist.is_one ? s : (dist.is_inf ? log(s) : log(s) / dist.p)
+    dist.is_one ? s[2] / s[1] : (dist.is_inf ? log(s[2]) : log(s[2] / s[1]) / dist.p)
 renyi_divergence(a::AbstractArray, b::AbstractArray, α::Real) = evaluate(RenyiDivergence(α), a, b)
 renyi_divergence{T <: Number}(a::T, b::T, α::Real) = evaluate(RenyiDivergence(α), a, b)
 
