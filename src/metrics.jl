@@ -24,12 +24,34 @@ type CorrDist <: SemiMetric end
 
 type ChiSqDist <: SemiMetric end
 type KLDivergence <: PreMetric end
+
+immutable RenyiDivergence{T <: Real} <: PreMetric
+    p::T
+    is_normal::Bool
+    is_zero::Bool
+    is_one::Bool
+    is_inf::Bool
+    function RenyiDivergence(α)
+        # There are four different cases:
+        #   simpler to separate them out now, not over and over in eval_op()
+        is_zero = α ≈ 0
+        is_one = α ≈ 1
+        is_inf = isinf(α)
+        
+        # Only positive Rényi divergences are defined
+        !is_zero && α < 0 && throw(ArgumentError("Order of Rényi divergence not legal, $(α) < 0."))
+        
+        new(α - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
+    end
+end
+RenyiDivergence{T}(α::T) = RenyiDivergence{T}(α)
+
 type JSDivergence <: SemiMetric end
 
 type SpanNormDist <: SemiMetric end
 
 
-typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist}
+typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
 
 ###########################################################
 #
@@ -140,6 +162,21 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 @inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
+
+# RenyiDivergence
+@inline eval_op(dist::RenyiDivergence, ai, bi) = ai == 0 ? zero(ai) :
+    (dist.is_normal ? ai * ((ai / bi) .^ dist.p) :
+     (dist.is_zero ? bi :
+      (dist.is_one ? ai * log(ai / bi) :
+       # otherwise α = ∞
+       ai / bi)))
+
+@inline eval_reduce(dist::RenyiDivergence, s1, s2) =
+    dist.is_inf ? max(s1, s2) : s1 + s2
+eval_end(dist::RenyiDivergence, s) =
+    dist.is_one ? s : (dist.is_inf ? log(s) : log(s) / dist.p)
+renyi_divergence(a::AbstractArray, b::AbstractArray, α::Real) = evaluate(RenyiDivergence(α), a, b)
+renyi_divergence{T <: Number}(a::T, b::T, α::Real) = evaluate(RenyiDivergence(α), a, b)
 
 # JSDivergence
 @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
