@@ -69,19 +69,6 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test chisq_dist(x, x) == 0.
     @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
 
-    klv = 0.
-    for i = 1 : length(p)
-        if p[i] > 0
-            klv += p[i] * log(p[i] / q[i])
-        end
-    end
-    @test kl_divergence(p, q) ≈ klv
-
-    pm = (p + q) / 2
-    jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
-    @test js_divergence(p, p) ≈ 0.0
-    @test js_divergence(p, q) ≈ jsv
-
     @test spannorm_dist(x, x) == 0.
     @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
@@ -104,13 +91,26 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
 
     @test wminkowski(x, x, w, 2) == 0.
     @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
-
-    w = rand(size(a))
-
-    @test whamming(a, a, w) == 0.
-    @test whamming(a, b, w) == sum((a .!= b) .* w)
 end
 
+klv = 0.
+for i = 1 : length(p)
+    if p[i] > 0
+        klv += p[i] * log(p[i] / q[i])
+    end
+end
+@test kl_divergence(p, q) ≈ klv
+
+pm = (p + q) / 2
+jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
+@test js_divergence(p, p) ≈ 0.0
+@test js_divergence(p, q) ≈ jsv
+
+w = rand(size(a))
+
+@test whamming(a, a, w) == 0.
+@test whamming(a, b, w) == sum((a .!= b) .* w)
+    
 @inferred evaluate(Jaccard(), rand(3), rand(3))
 @inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
 @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
