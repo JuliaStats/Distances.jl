@@ -169,18 +169,17 @@ function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b:
 end
 
 @inline function eval_op(dist::RenyiDivergence, ai, bi)
-    if ai ≈ 0
-        ri = zero(ai)
+    if ai == zero(ai)
+        return zero(ai), zero(ai)
     elseif dist.is_normal
-        ri = ai .* ((ai ./ bi) .^ dist.p)
+        return ai, ai .* ((ai ./ bi) .^ dist.p)
     elseif dist.is_zero
-        ri = bi
+        return ai, bi
     elseif dist.is_one
-        ri = ai * log(ai / bi)
+        return ai, ai * log(ai / bi)
     else # otherwise α = ∞
-        ri = ai / bi
+        return ai, ai / bi
     end
-    return ai, ri
 end
 
 @inline eval_reduce(dist::RenyiDivergence, s1, s2) =
