@@ -137,7 +137,8 @@ a = [NaN, 0]; b = [0, NaN]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
 a = [NaN, 0]; b = [0, 1]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
-
+@test !isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, NaN, 0.5], 2))
+@test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
 end #testset
 
 
@@ -157,6 +158,8 @@ b = Float64[]
 @test isa(minkowski(a, b, 2), Float64)
 @test hamming(a, b) == 0.0
 @test isa(hamming(a, b), Int)
+@test renyi_divergence(a, b, 1.0) == 0.0
+@test isa(renyi_divergence(a, b, 2.0), Float64)
 
 w = Float64[]
 @test isa(whamming(a, b, w), Float64)
