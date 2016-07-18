@@ -168,9 +168,9 @@ function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b:
     zero(T), zero(T)
 end
 
-@inline function eval_op(dist::RenyiDivergence, ai, bi)
-    if ai == zero(ai)
-        return zero(ai), zero(ai)
+@inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
+    if ai == zero(T)
+        return zero(T), zero(T)
     elseif dist.is_normal
         return ai, ai .* ((ai ./ bi) .^ dist.p)
     elseif dist.is_zero
@@ -182,10 +182,32 @@ end
     end
 end
 
-@inline eval_reduce(dist::RenyiDivergence, s1, s2) =
-    s1[1] + s2[1], (dist.is_inf ? max(s1[2], s2[2]) : s1[2] + s2[2])
-eval_end(dist::RenyiDivergence, s) =
-    dist.is_one ? s[2] / s[1] : (dist.is_inf ? log(s[2]) : log(s[2] / s[1]) / dist.p)
+@inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
+                                               s1::Tuple{T, T},
+                                               s2::Tuple{T, T})
+    if dist.is_inf
+        if s1[1] == zero(T)
+            return s2
+        elseif s2[1] == zero(T)
+            return s1
+        else
+            return s1[2] > s2[2] ? s1 : s2
+        end
+    else
+        return s1[1] + s2[1], s1[2] + s2[2]
+    end
+end
+
+function eval_end(dist::RenyiDivergence, s)
+    if dist.is_zero || dist.is_normal
+        log(s[2] / s[1]) / dist.p
+    elseif dist.is_one
+        return s[2] / s[1]
+    else # q = ∞
+        log(s[2])
+    end
+end
+
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence

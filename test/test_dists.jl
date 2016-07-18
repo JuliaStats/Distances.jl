@@ -122,7 +122,9 @@ end
 @test renyi_divergence(p, r, 0) ≈ -log(scale)    
 @test renyi_divergence(p, r, 1) ≈ -log(scale)    
 @test renyi_divergence(p, r, rand()) ≈ -log(scale)    
-@test renyi_divergence(p, r, Inf) ≈ -log(scale)    
+@test renyi_divergence(p, r, Inf) ≈ -log(scale)
+@test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
+@test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
 @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
     
 pm = (p + q) / 2
