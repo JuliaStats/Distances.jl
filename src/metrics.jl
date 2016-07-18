@@ -31,20 +31,20 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
     is_zero::Bool
     is_one::Bool
     is_inf::Bool
-    function RenyiDivergence(α)
+    function RenyiDivergence(q)
         # There are four different cases:
         #   simpler to separate them out now, not over and over in eval_op()
-        is_zero = α ≈ 0
-        is_one = α ≈ 1
-        is_inf = isinf(α)
+        is_zero = q ≈ 0
+        is_one = q ≈ 1
+        is_inf = isinf(q)
         
         # Only positive Rényi divergences are defined
-        !is_zero && α < 0 && throw(ArgumentError("Order of Rényi divergence not legal, $(α) < 0."))
+        !is_zero && q < 0 && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
         
-        new(α - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
+        new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
 end
-RenyiDivergence{T}(α::T) = RenyiDivergence{T}(α)
+RenyiDivergence{T}(q::T) = RenyiDivergence{T}(q)
 
 type JSDivergence <: SemiMetric end
 
@@ -177,7 +177,7 @@ end
         return ai, bi
     elseif dist.is_one
         return ai, ai * log(ai / bi)
-    else # otherwise α = ∞
+    else # otherwise q = ∞
         return ai, ai / bi
     end
 end
@@ -186,8 +186,8 @@ end
     s1[1] + s2[1], (dist.is_inf ? max(s1[2], s2[2]) : s1[2] + s2[2])
 eval_end(dist::RenyiDivergence, s) =
     dist.is_one ? s[2] / s[1] : (dist.is_inf ? log(s[2]) : log(s[2] / s[1]) / dist.p)
-renyi_divergence(a::AbstractArray, b::AbstractArray, α::Real) = evaluate(RenyiDivergence(α), a, b)
-renyi_divergence{T <: Number}(a::T, b::T, α::Real) = evaluate(RenyiDivergence(α), a, b)
+renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
+renyi_divergence{T <: Number}(a::T, b::T, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence
 @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
