@@ -29,17 +29,6 @@ bf = [false, true, true]
 @test rogerstanimoto(bt, bt) == 0
 @test rogerstanimoto(bt, bf) == 4./5
 
-
-p = r = rand(12)
-p[p .< 0.3] = 0.0
-scale = sum(p) / sum(r)
-r /= sum(r)    
-p /= sum(p)
-q = rand(12)
-q /= sum(q)
-
-a = [1., 2., 1., 3., 2., 1.]
-b = [1., 3., 0., 2., 2., 0.]
 for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
                 ([4., 5., 6., 7.], [3. 8.; 9. 1.]))
     @test sqeuclidean(x, x) == 0.
@@ -95,6 +84,28 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
 end
 
+# Test weighted Hamming distances with even weights
+a = [1., 2., 1., 3., 2., 1.]
+b = [1., 3., 0., 2., 2., 0.]
+w = rand(size(a))
+
+@test whamming(a, a, w) == 0.
+@test whamming(a, b, w) == sum((a .!= b) .* w)
+
+# Minimal test of Jaccard - test return type stability.
+@inferred evaluate(Jaccard(), rand(3), rand(3))
+@inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
+@inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
+
+# Test KL, Renyi and JS divergences
+p = r = rand(12)
+p[p .< 0.3] = 0.0
+scale = sum(p) / sum(r)
+r /= sum(r)    
+p /= sum(p)
+q = rand(12)
+q /= sum(q)
+
 klv = 0.
 for i = 1 : length(p)
     if p[i] > 0
@@ -119,14 +130,6 @@ jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
 @test js_divergence(p, p) ≈ 0.0
 @test js_divergence(p, q) ≈ jsv
 
-w = rand(size(a))
-
-@test whamming(a, a, w) == 0.
-@test whamming(a, b, w) == sum((a .!= b) .* w)
-    
-@inferred evaluate(Jaccard(), rand(3), rand(3))
-@inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
-@inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
 
 end # testset
 
