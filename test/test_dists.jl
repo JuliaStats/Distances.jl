@@ -277,6 +277,11 @@ P[P .< 0.3] = 0.
 
 @test_colwise ChiSqDist() X Y
 @test_colwise KLDivergence() P Q
+@test_colwise RenyiDivergence(0.0) P Q
+@test_colwise RenyiDivergence(1.0) P Q
+@test_colwise RenyiDivergence(Inf) P Q
+@test_colwise RenyiDivergence(0.5) P Q
+@test_colwise RenyiDivergence(2) P Q
 @test_colwise JSDivergence() P Q
 @test_colwise SpanNormDist() X Y
 
@@ -345,6 +350,11 @@ Q = rand(m, ny)
 
 @test_pairwise ChiSqDist() X Y
 @test_pairwise KLDivergence() P Q
+@test_pairwise RenyiDivergence(0.0) P Q
+@test_pairwise RenyiDivergence(1.0) P Q
+@test_pairwise RenyiDivergence(Inf) P Q
+@test_pairwise RenyiDivergence(0.5) P Q
+@test_pairwise RenyiDivergence(2) P Q
 @test_pairwise JSDivergence() P Q
 
 @test_pairwise BhattacharyyaDist() X Y
