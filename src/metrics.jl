@@ -34,12 +34,12 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
     function RenyiDivergence(q)
         # There are four different cases:
         #   simpler to separate them out now, not over and over in eval_op()
-        is_zero = q ≈ 0
-        is_one = q ≈ 1
+        is_zero = q ≈ zero(T)
+        is_one = q ≈ one(T)
         is_inf = isinf(q)
         
         # Only positive Rényi divergences are defined
-        !is_zero && q < 0 && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
+        !is_zero && q < zero(T) && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
         
         new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
