@@ -187,7 +187,6 @@ end
 eval_end(dist::RenyiDivergence, s) =
     dist.is_one ? s[2] / s[1] : (dist.is_inf ? log(s[2]) : log(s[2] / s[1]) / dist.p)
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
-renyi_divergence{T <: Number}(a::T, b::T, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence
 @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
