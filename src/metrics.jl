@@ -26,7 +26,7 @@ type ChiSqDist <: SemiMetric end
 type KLDivergence <: PreMetric end
 
 immutable RenyiDivergence{T <: Real} <: PreMetric
-    p::T
+    p::T # order of power mean (order of divergence - 1)
     is_normal::Bool
     is_zero::Bool
     is_one::Bool
