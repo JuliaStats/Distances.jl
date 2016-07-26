@@ -29,12 +29,6 @@ bf = [false, true, true]
 @test rogerstanimoto(bt, bt) == 0
 @test rogerstanimoto(bt, bf) == 4./5
 
-
-p = rand(12)
-p[p .< 0.3] = 0.
-q = rand(12)
-a = [1., 2., 1., 3., 2., 1.]
-b = [1., 3., 0., 2., 2., 0.]
 for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
                 ([4., 5., 6., 7.], [3. 8.; 9. 1.]))
     @test sqeuclidean(x, x) == 0.
@@ -66,19 +60,6 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test chisq_dist(x, x) == 0.
     @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
 
-    klv = 0.
-    for i = 1 : length(p)
-        if p[i] > 0
-            klv += p[i] * log(p[i] / q[i])
-        end
-    end
-    @test kl_divergence(p, q) ≈ klv
-
-    pm = (p + q) / 2
-    jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
-    @test js_divergence(p, p) ≈ 0.0
-    @test js_divergence(p, q) ≈ jsv
-
     @test spannorm_dist(x, x) == 0.
     @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
@@ -101,16 +82,56 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
 
     @test wminkowski(x, x, w, 2) == 0.
     @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
-
-    w = rand(size(a))
-
-    @test whamming(a, a, w) == 0.
-    @test whamming(a, b, w) == sum((a .!= b) .* w)
 end
 
+# Test weighted Hamming distances with even weights
+a = [1., 2., 1., 3., 2., 1.]
+b = [1., 3., 0., 2., 2., 0.]
+w = rand(size(a))
+
+@test whamming(a, a, w) == 0.
+@test whamming(a, b, w) == sum((a .!= b) .* w)
+
+# Minimal test of Jaccard - test return type stability.
 @inferred evaluate(Jaccard(), rand(3), rand(3))
 @inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
 @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
+
+# Test KL, Renyi and JS divergences
+p = r = rand(12)
+p[p .< 0.3] = 0.0
+scale = sum(p) / sum(r)
+r /= sum(r)    
+p /= sum(p)
+q = rand(12)
+q /= sum(q)
+
+klv = 0.
+for i = 1 : length(p)
+    if p[i] > 0
+        klv += p[i] * log(p[i] / q[i])
+    end
+end
+@test kl_divergence(p, q) ≈ klv
+
+@test renyi_divergence(p, p, 0) ≈ 0
+@test renyi_divergence(p, p, 1) ≈ 0
+@test renyi_divergence(p, p, rand()) ≈ 0
+@test renyi_divergence(p, p, 1.0 + rand()) ≈ 0
+@test renyi_divergence(p, p, Inf) ≈ 0
+@test renyi_divergence(p, r, 0) ≈ -log(scale)    
+@test renyi_divergence(p, r, 1) ≈ -log(scale)    
+@test renyi_divergence(p, r, rand()) ≈ -log(scale)    
+@test renyi_divergence(p, r, Inf) ≈ -log(scale)
+@test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
+@test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
+@test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
+    
+pm = (p + q) / 2
+jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
+@test js_divergence(p, p) ≈ 0.0
+@test js_divergence(p, q) ≈ jsv
+
 
 end # testset
 
@@ -121,7 +142,8 @@ a = [NaN, 0]; b = [0, NaN]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
 a = [NaN, 0]; b = [0, 1]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
-
+@test !isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, NaN, 0.5], 2))
+@test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
 end #testset
 
 
@@ -141,6 +163,8 @@ b = Float64[]
 @test isa(minkowski(a, b, 2), Float64)
 @test hamming(a, b) == 0.0
 @test isa(hamming(a, b), Int)
+@test renyi_divergence(a, b, 1.0) == 0.0
+@test isa(renyi_divergence(a, b, 2.0), Float64)
 
 w = Float64[]
 @test isa(whamming(a, b, w), Float64)
@@ -261,6 +285,11 @@ P[P .< 0.3] = 0.
 
 @test_colwise ChiSqDist() X Y
 @test_colwise KLDivergence() P Q
+@test_colwise RenyiDivergence(0.0) P Q
+@test_colwise RenyiDivergence(1.0) P Q
+@test_colwise RenyiDivergence(Inf) P Q
+@test_colwise RenyiDivergence(0.5) P Q
+@test_colwise RenyiDivergence(2) P Q
 @test_colwise JSDivergence() P Q
 @test_colwise SpanNormDist() X Y
 
@@ -329,6 +358,11 @@ Q = rand(m, ny)
 
 @test_pairwise ChiSqDist() X Y
 @test_pairwise KLDivergence() P Q
+@test_pairwise RenyiDivergence(0.0) P Q
+@test_pairwise RenyiDivergence(1.0) P Q
+@test_pairwise RenyiDivergence(Inf) P Q
+@test_pairwise RenyiDivergence(0.5) P Q
+@test_pairwise RenyiDivergence(2) P Q
 @test_pairwise JSDivergence() P Q
 
 @test_pairwise BhattacharyyaDist() X Y

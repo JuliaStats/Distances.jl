@@ -24,12 +24,34 @@ type CorrDist <: SemiMetric end
 
 type ChiSqDist <: SemiMetric end
 type KLDivergence <: PreMetric end
+
+immutable RenyiDivergence{T <: Real} <: PreMetric
+    p::T # order of power mean (order of divergence - 1)
+    is_normal::Bool
+    is_zero::Bool
+    is_one::Bool
+    is_inf::Bool
+    function RenyiDivergence(q)
+        # There are four different cases:
+        #   simpler to separate them out now, not over and over in eval_op()
+        is_zero = q ≈ zero(T)
+        is_one = q ≈ one(T)
+        is_inf = isinf(q)
+        
+        # Only positive Rényi divergences are defined
+        !is_zero && q < zero(T) && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
+        
+        new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
+    end
+end
+RenyiDivergence{T}(q::T) = RenyiDivergence{T}(q)
+
 type JSDivergence <: SemiMetric end
 
 type SpanNormDist <: SemiMetric end
 
 
-typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, JSDivergence, SpanNormDist}
+typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
 
 ###########################################################
 #
@@ -140,6 +162,53 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 @inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
+
+# RenyiDivergence
+function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
+    zero(T), zero(T)
+end
+
+@inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
+    if ai == zero(T)
+        return zero(T), zero(T)
+    elseif dist.is_normal
+        return ai, ai .* ((ai ./ bi) .^ dist.p)
+    elseif dist.is_zero
+        return ai, bi
+    elseif dist.is_one
+        return ai, ai * log(ai / bi)
+    else # otherwise q = ∞
+        return ai, ai / bi
+    end
+end
+
+@inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
+                                               s1::Tuple{T, T},
+                                               s2::Tuple{T, T})
+    if dist.is_inf
+        if s1[1] == zero(T)
+            return s2
+        elseif s2[1] == zero(T)
+            return s1
+        else
+            return s1[2] > s2[2] ? s1 : s2
+        end
+    else
+        return s1[1] + s2[1], s1[2] + s2[2]
+    end
+end
+
+function eval_end(dist::RenyiDivergence, s)
+    if dist.is_zero || dist.is_normal
+        log(s[2] / s[1]) / dist.p
+    elseif dist.is_one
+        return s[2] / s[1]
+    else # q = ∞
+        log(s[2])
+    end
+end
+
+renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence
 @inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
