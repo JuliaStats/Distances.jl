@@ -132,7 +132,7 @@ hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 
 # Cosine dist
-function eval_start{T<:AbstractFloat}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
+function eval_start{T<:Number}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
