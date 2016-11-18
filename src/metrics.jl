@@ -37,10 +37,10 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
         is_zero = q ≈ zero(T)
         is_one = q ≈ one(T)
         is_inf = isinf(q)
-        
+
         # Only positive Rényi divergences are defined
         !is_zero && q < zero(T) && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
-        
+
         new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
 end
