@@ -53,6 +53,8 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
 
     @test_throws DimensionMismatch cosine_dist(1.:2, 1.:3)
     @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.))
+    x_int, y_int = map(Int64, x), map(Int64, y)
+    @test cosine_dist(x_int, y_int) == (1.0 - 112. / sqrt(19530.))
 
     @test corr_dist(x, x) < 1.0e-14
     @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))

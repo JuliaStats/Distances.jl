@@ -37,10 +37,10 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
         is_zero = q ≈ zero(T)
         is_one = q ≈ one(T)
         is_inf = isinf(q)
-        
+
         # Only positive Rényi divergences are defined
         !is_zero && q < zero(T) && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
-        
+
         new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
 end
@@ -132,7 +132,7 @@ hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
 
 # Cosine dist
-function eval_start{T<:AbstractFloat}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
+function eval_start{T<:Real}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
