@@ -121,7 +121,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     pairwise!(r, metric, a, b)
 end
 
-function pairwise(metric::Union{PreMetric, SemiMetric}, a::AbstractMatrix)
+function pairwise(metric::PreMetric, a::AbstractMatrix)
     n = size(a, 2)
     r = Matrix{result_type(metric, a, a)}(n, n)
     pairwise!(r, metric, a)
