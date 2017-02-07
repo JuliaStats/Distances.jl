@@ -6,8 +6,12 @@
 #
 ###########################################################
 
-type Euclidean <: Metric end
-type SqEuclidean <: SemiMetric end
+immutable Euclidean <: Metric
+    thresh::Float64
+end
+immutable SqEuclidean <: SemiMetric
+    thresh::Float64
+end
 type Chebyshev <: Metric end
 type Cityblock <: Metric end
 type Jaccard <: Metric end
@@ -52,6 +56,44 @@ type SpanNormDist <: SemiMetric end
 
 
 typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
+
+"""
+    Euclidean([thresh])
+
+Create a euclidean metric.
+
+When computing distances among large numbers of points, it can be much
+more efficient to exploit the formula
+
+    (x-y)^2 = x^2 - 2xy + y^2
+
+However, this can introduce roundoff error. `thresh` (which defaults
+to 0) specifies the relative square-distance tolerance on `2xy`
+compared to `x^2 + y^2` to force recalculation of the distance using
+the more precise direct (elementwise-subtraction) formula.
+
+# Example:
+```julia
+julia> x = reshape([0.1, 0.3, -0.1], 3, 1);
+
+julia> pairwise(Euclidean(), x, x)
+1×1 Array{Float64,2}:
+ 7.45058e-9
+
+julia> pairwise(Euclidean(1e-12), x, x)
+1×1 Array{Float64,2}:
+ 0.0
+```
+"""
+Euclidean() = Euclidean(0)
+
+"""
+    SqEuclidean([thresh])
+
+Create a squared-euclidean semi-metric. For the meaning of `thresh`,
+see [`Euclidean`](@ref).
+"""
+SqEuclidean() = SqEuclidean(0)
 
 ###########################################################
 #
@@ -289,6 +331,7 @@ end
 end
 rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
 
+
 ###########################################################
 #
 #  Special method
@@ -300,28 +343,65 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::A
     At_mul_B!(r, a, b)
     sa2 = sumabs2(a, 1)
     sb2 = sumabs2(b, 1)
-    pdist!(r, sa2, sb2)
-end
-function pdist!(r, sa2, sb2)
-    for j = 1 : size(r,2)
-        sb = sb2[j]
-        @simd for i = 1 : size(r,1)
-            @inbounds r[i,j] = sa2[i] + sb - 2 * r[i,j]
+    threshT = convert(eltype(r), dist.thresh)
+    if threshT <= 0
+        # If there's no chance of triggering the threshold, we can use @simd
+        for j = 1 : size(r,2)
+            sb = sb2[j]
+            @simd for i = 1 : size(r,1)
+                @inbounds r[i,j] = sa2[i] + sb - 2 * r[i,j]
+            end
+        end
+    else
+        for j = 1 : size(r,2)
+            sb = sb2[j]
+            for i = 1 : size(r,1)
+                @inbounds selfterms = sa2[i] + sb
+                @inbounds v = selfterms - 2*r[i,j]
+                if v < threshT*selfterms
+                    # The distance is likely to be inaccurate, recalculate at higher prec.
+                    # This reflects the following:
+                    #   ((x+ϵ) - y)^2 ≈ x^2 - 2xy + y^2 + O(ϵ)    when |x-y| >> ϵ
+                    #   ((x+ϵ) - y)^2 ≈ O(ϵ^2)                    otherwise
+                    v = zero(v)
+                    for k = 1:size(a,1)
+                        @inbounds v += (a[k,i]-b[k,j])^2
+                    end
+                end
+                @inbounds r[i,j] = v
+            end
         end
     end
     r
 end
+
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
+    threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1 : n
         for i = 1 : j-1
             r[i,j] = r[j,i]
         end
         r[j,j] = 0
-        for i = j+1 : n
-            r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+        sa2j = sa2[j]
+        if threshT <= 0
+            @simd for i = j+1 : n
+                r[i,j] = sa2[i] + sa2j - 2 * r[i,j]
+            end
+        else
+            for i = j+1 : n
+                selfterms = sa2[i] + sa2j
+                v = selfterms - 2*r[i,j]
+                if v < threshT*selfterms
+                    v = zero(v)
+                    for k = 1:size(a,1)
+                        v += (a[k,i]-a[k,j])^2
+                    end
+                end
+                r[i,j] = v
+            end
         end
     end
     r
@@ -333,10 +413,23 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     At_mul_B!(r, a, b)
     sa2 = sumsq_percol(a)
     sb2 = sumsq_percol(b)
+    threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1 : nb
+        sb = sb2[j]
         for i = 1 : na
-            v = sa2[i] + sb2[j] - 2 * r[i,j]
-            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            selfterms = sa2[i] + sb
+            v = selfterms - 2*r[i,j]
+            if v < threshT*selfterms
+                # The distance is likely to be inaccurate, recalculate directly
+                # This reflects the following:
+                #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
+                #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
+                v = zero(v)
+                for k = 1:m
+                    v += (a[k,i]-b[k,j])^2
+                end
+            end
+            r[i,j] = sqrt(v)
         end
     end
     r
@@ -346,14 +439,23 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     At_mul_B!(r, a, a)
     sa2 = sumsq_percol(a)
+    threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1 : n
         for i = 1 : j-1
             r[i,j] = r[j,i]
         end
-        @inbounds r[j,j] = 0
+        r[j,j] = 0
+        sa2j = sa2[j]
         for i = j+1 : n
-            v = sa2[i] + sa2[j] - 2 * r[i,j]
-            r[i,j] = isnan(v) ? NaN : sqrt(max(v, 0.))
+            selfterms = sa2[i] + sa2j
+            v = selfterms - 2*r[i,j]
+            if v < threshT*selfterms
+                v = zero(v)
+                for k = 1:m
+                    v += (a[k,i]-a[k,j])^2
+                end
+            end
+            r[i,j] = sqrt(v)
         end
     end
     r

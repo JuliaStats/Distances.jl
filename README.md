@@ -154,6 +154,32 @@ Each distance corresponds to a distance type. The type name and the correspondin
 
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way.
 
+### Precision for Euclidean and SqEuclidean
+
+For efficiency (see the benchmarks below), `Euclidean` and
+`SqEuclidean` make use of BLAS3 matrix-matrix multiplication to
+calculate distances.  This corresponds to the following expansion:
+
+```julia
+(x-y)^2 == x^2 - 2xy + y^2
+```
+
+However, equality is not precise in the presence of roundoff error,
+and particularly when `x` and `y` are nearby points this may not be
+accurate.  Consequently, `Euclidean` and `SqEuclidean` allow you to
+supply a relative tolerance to force recalculation:
+
+```julia
+julia> x = reshape([0.1, 0.3, -0.1], 3, 1);
+
+julia> pairwise(Euclidean(), x, x)
+1×1 Array{Float64,2}:
+ 7.45058e-9
+
+julia> pairwise(Euclidean(1e-12), x, x)
+1×1 Array{Float64,2}:
+ 0.0
+```
 
 ## Benchmarks
 
@@ -215,5 +241,3 @@ The table below compares the performance (measured in terms of average elapsed t
 | Mahalanobis | 0.373796 | 0.002359 | **158.4337** |
 
 For distances of which a major part of the computation is a quadratic form (e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be drastically improved by restructuring the computation and delegating the core part to ``GEMM`` in *BLAS*. The use of this strategy can easily lead to 100x performance gain over simple loops (see the highlighted part of the table above).
-
-
