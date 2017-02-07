@@ -185,7 +185,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 
 The implementation has been carefully optimized based on benchmarks. The Julia scripts ``test/bench_colwise.jl`` and ``test/bench_pairwise.jl`` run the benchmarks on a variety of distances, respectively under column-wise and pairwise settings.
 
-Here are the benchmarks that I obtained on Mac OS X 10.8 with Intel Core i7 2.6 GHz.
+Here are benchmarks obtained on Linux with Intel Core i7-4770K 3.5 GHz.
 
 #### Column-wise benchmark
 
