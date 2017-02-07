@@ -103,7 +103,7 @@ w = rand(size(a))
 p = r = rand(12)
 p[p .< 0.3] = 0.0
 scale = sum(p) / sum(r)
-r /= sum(r)    
+r /= sum(r)
 p /= sum(p)
 q = rand(12)
 q /= sum(q)
@@ -121,14 +121,14 @@ end
 @test renyi_divergence(p, p, rand()) ≈ 0
 @test renyi_divergence(p, p, 1.0 + rand()) ≈ 0
 @test renyi_divergence(p, p, Inf) ≈ 0
-@test renyi_divergence(p, r, 0) ≈ -log(scale)    
-@test renyi_divergence(p, r, 1) ≈ -log(scale)    
-@test renyi_divergence(p, r, rand()) ≈ -log(scale)    
+@test renyi_divergence(p, r, 0) ≈ -log(scale)
+@test renyi_divergence(p, r, 1) ≈ -log(scale)
+@test renyi_divergence(p, r, rand()) ≈ -log(scale)
 @test renyi_divergence(p, r, Inf) ≈ -log(scale)
 @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
 @test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
 @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
-    
+
 pm = (p + q) / 2
 jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
 @test js_divergence(p, p) ≈ 0.0
@@ -385,3 +385,19 @@ Q = Q * Q'  # make sure Q is positive-definite
 @test_pairwise Mahalanobis(Q) X Y
 
 end #testset
+
+@testset "Euclidean precision" begin
+    X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
+    pd = pairwise(Euclidean(1e-12), X, X)
+    @test pd[1,1] == 0
+    @test pd[2,2] == 0
+    pd = pairwise(Euclidean(1e-12), X)
+    @test pd[1,1] == 0
+    @test pd[2,2] == 0
+    pd = pairwise(SqEuclidean(1e-12), X, X)
+    @test pd[1,1] == 0
+    @test pd[2,2] == 0
+    pd = pairwise(SqEuclidean(1e-12), X)
+    @test pd[1,1] == 0
+    @test pd[2,2] == 0
+end
