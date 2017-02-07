@@ -80,7 +80,7 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
 
     @test wcityblock(x, x, w) == 0.
-    @test wcityblock(x, y, w) ≈ dot(abs(x - vec(y)), w)
+    @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
 
     @test wminkowski(x, x, w, 2) == 0.
     @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
@@ -217,7 +217,7 @@ q = rand(12)
 # we need to normalize vectors.
 px = x ./ sum(x)
 py = y ./ sum(y)
-expected_bc_x_y = sum(sqrt(px .* py))
+expected_bc_x_y = sum(sqrt.(px .* py))
 @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
 @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
 @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
@@ -226,14 +226,14 @@ expected_bc_x_y = sum(sqrt(px .* py))
 
 pa = a ./ sum(a)
 pb = b ./ sum(b)
-expected_bc_a_b = sum(sqrt(pa .* pb))
+expected_bc_a_b = sum(sqrt.(pa .* pb))
 @test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
 @test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
 @test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
 
 pp = p ./ sum(p)
 pq = q ./ sum(q)
-expected_bc_p_q = sum(sqrt(pp .* pq))
+expected_bc_p_q = sum(sqrt.(pp .* pq))
 @test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
 @test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
 @test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
@@ -244,20 +244,23 @@ expected_bc_p_q = sum(sqrt(pp .* pq))
 end #testset
 
 
-macro test_colwise(dist, x, y)
+macro test_colwise(_dist, _x, _y)
     quote
-        local n = size($x, 2)
+        dist = $(esc(_dist))
+        x = $(esc(_x))
+        y = $(esc(_y))
+        local n = size(x, 2)
         r1 = zeros(n)
         r2 = zeros(n)
         r3 = zeros(n)
         for j = 1 : n
-            r1[j] = evaluate($dist, ($x)[:,j], ($y)[:,j])
-            r2[j] = evaluate($dist, ($x)[:,1], ($y)[:,j])
-            r3[j] = evaluate($dist, ($x)[:,j], ($y)[:,1])
+            r1[j] = evaluate(dist, x[:,j], y[:,j])
+            r2[j] = evaluate(dist, x[:,1], y[:,j])
+            r3[j] = evaluate(dist, x[:,j], y[:,1])
         end
-        @test colwise($dist, $x, $y) ≈ r1
-        @test colwise($dist, ($x)[:,1], $y) ≈ r2
-        @test colwise($dist, $x, ($y)[:,1]) ≈ r3
+        @test colwise(dist, x, y) ≈ r1
+        @test colwise(dist, x[:,1], y) ≈ r2
+        @test colwise(dist, x, y[:,1]) ≈ r3
     end
 end
 
@@ -315,20 +318,23 @@ Q = Q * Q'  # make sure Q is positive-definite
 end # testset
 
 
-macro test_pairwise(dist, x, y)
+macro test_pairwise(_dist, _x, _y)
     quote
-        local nx = size($x, 2)
-        local ny = size($y, 2)
+        dist = $(esc(_dist))
+        x = $(esc(_x))
+        y = $(esc(_y))
+        local nx = size(x, 2)
+        local ny = size(y, 2)
         rxy = zeros(nx, ny)
         rxx = zeros(nx, nx)
         for j = 1 : ny, i = 1 : nx
-            rxy[i, j] = evaluate($dist, ($x)[:,i], ($y)[:,j])
+            rxy[i, j] = evaluate(dist, x[:,i], y[:,j])
         end
         for j = 1 : nx, i = 1 : nx
-            rxx[i, j] = evaluate($dist, ($x)[:,i], ($x)[:,j])
+            rxx[i, j] = evaluate(dist, x[:,i], x[:,j])
         end
-        @test pairwise($dist, $x, $y) ≈ rxy
-        @test pairwise($dist, $x) ≈ rxx
+        @test pairwise(dist, x, y) ≈ rxy
+        @test pairwise(dist, x) ≈ rxx
     end
 end
 

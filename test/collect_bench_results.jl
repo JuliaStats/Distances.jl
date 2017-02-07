@@ -4,13 +4,11 @@
 #   pairwise_bench_results.txt  => pairwise_bench_results.csv
 #
 
-using Compat: String
-
 function parse_results(lines, title1, title2)
     # just a handy function, without a lot of error handling stuff
     # assuming everything is correct
 
-    records = Array((String, Float64, Float64, Float64), 0)
+    records = Vector{Tuple{String, Float64, Float64, Float64}}(0)
 
     state = 0
 
