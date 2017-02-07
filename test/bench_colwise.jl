@@ -2,38 +2,26 @@
 # Benchmark on column-wise distance evaluation
 
 using Distances
+using BenchmarkTools
 
-macro bench_colwise_dist(_repeat, _dist, _x, _y)
-    quote
-        repeat = $(esc(_repeat))
-        dist = $(esc(_dist))
-        x = $(esc(_x))
-        y = $(esc(_y))
-        println("bench ", typeof(dist))
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1.0
 
-        # warming up
-        r1 = evaluate(dist, x[:,1], y[:,1])
-        colwise(dist, x, y)
+function bench_colwise_distance(dist, x, y)
+    r1 = evaluate(dist, x[:,1], y[:,1])
 
-        # timing
-
-        t0 = @elapsed for k = 1 : $repeat
-            n = size(x, 2)
-            r = Vector{typeof(r1)}(n)
-            for j = 1 : n
-                r[j] = evaluate(dist, x[:,j], y[:,j])
-            end
+    # timing
+    t0 = @belapsed begin
+        n = size(x, 2)
+        r = Vector{typeof($r1)}(n)
+        for j = 1:n
+            r[j] = evaluate($dist, $(x)[:, j], $(y)[:, j])
         end
-        @printf "    loop:     t = %9.6fs\n" (t0 / $repeat)
-
-        t1 = @elapsed for k = 1 : $repeat
-            r = colwise(dist, x, y)
-        end
-        @printf "    colwise:  t = %9.6fs  |  gain = %7.4fx\n" (t1 / repeat) (t0 / t1)
-        println()
     end
-end
 
+    t1 = @belapsed colwise($dist, $x, $y)
+    print("| ", typeof(dist).name.name, " |")
+    @printf("%9.6fs | %9.6fs | %7.4f |\n", t0, t1, (t0 / t1))
+end
 
 m = 200
 n = 10000
@@ -45,27 +33,30 @@ w = rand(m)
 Q = rand(m, m)
 Q = Q' * Q
 
-@bench_colwise_dist 20 SqEuclidean() x y
-@bench_colwise_dist 20 Euclidean() x y
-@bench_colwise_dist 20 Cityblock() x y
-@bench_colwise_dist 20 Chebyshev() x y
-@bench_colwise_dist  5 Minkowski(3.0) x y
-@bench_colwise_dist 20 Hamming() x y
+println("|  distance  |  loop  |  colwise  |  gain  |")
+println("|----------- | -------| ----------| -------|")
 
-@bench_colwise_dist 20 CosineDist() x y
-@bench_colwise_dist 10 CorrDist() x y
-@bench_colwise_dist 20 ChiSqDist() x y
-@bench_colwise_dist 10 KLDivergence() x y
-@bench_colwise_dist  5 JSDivergence() x y
+bench_colwise_distance(SqEuclidean(), x, y)
+bench_colwise_distance(Euclidean(), x, y)
+bench_colwise_distance(Cityblock(), x, y)
+bench_colwise_distance(Chebyshev(), x, y)
+bench_colwise_distance(Minkowski(3.0), x, y)
+bench_colwise_distance(Hamming(), x, y)
 
-@bench_colwise_dist 10 BhattacharyyaDist() x y
-@bench_colwise_dist 10 HellingerDist() x y
+bench_colwise_distance(CosineDist(), x, y)
+bench_colwise_distance(CorrDist(), x, y)
+bench_colwise_distance(ChiSqDist(), x, y)
+bench_colwise_distance(KLDivergence(), x, y)
+bench_colwise_distance(JSDivergence(), x, y)
 
-@bench_colwise_dist 20 WeightedSqEuclidean(w) x y
-@bench_colwise_dist 20 WeightedEuclidean(w) x y
-@bench_colwise_dist 20 WeightedCityblock(w) x y
-@bench_colwise_dist  5 WeightedMinkowski(w, 3.0) x y
-@bench_colwise_dist 20 WeightedHamming(w) x y
+bench_colwise_distance(BhattacharyyaDist(), x, y)
+bench_colwise_distance(HellingerDist(), x, y)
 
-@bench_colwise_dist 10 SqMahalanobis(Q) x y
-@bench_colwise_dist 10 Mahalanobis(Q) x y
+bench_colwise_distance(WeightedSqEuclidean(w), x, y)
+bench_colwise_distance(WeightedEuclidean(w), x, y)
+bench_colwise_distance(WeightedCityblock(w), x, y)
+bench_colwise_distance(WeightedMinkowski(w, 3.0), x, y)
+bench_colwise_distance(WeightedHamming(w), x, y)
+
+bench_colwise_distance(SqMahalanobis(Q), x, y)
+bench_colwise_distance(Mahalanobis(Q), x, y)
