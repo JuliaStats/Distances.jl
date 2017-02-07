@@ -341,8 +341,8 @@ rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(R
 # SqEuclidean
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     At_mul_B!(r, a, b)
-    sa2 = sumabs2(a, 1)
-    sb2 = sumabs2(b, 1)
+    sa2 = sum(abs2, a, 1)
+    sb2 = sum(abs2, b, 1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd

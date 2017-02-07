@@ -3,29 +3,33 @@
 
 using Distances
 
-macro bench_colwise_dist(repeat, dist, x, y)
+macro bench_colwise_dist(_repeat, _dist, _x, _y)
     quote
-        println("bench ", typeof($dist))
+        repeat = $(esc(_repeat))
+        dist = $(esc(_dist))
+        x = $(esc(_x))
+        y = $(esc(_y))
+        println("bench ", typeof(dist))
 
         # warming up
-        r1 = evaluate($dist, ($x)[:,1], ($y)[:,1])
-        colwise($dist, $x, $y)
+        r1 = evaluate(dist, x[:,1], y[:,1])
+        colwise(dist, x, y)
 
         # timing
 
         t0 = @elapsed for k = 1 : $repeat
-            n = size($x, 2)
-            r = Array(typeof(r1), n)
+            n = size(x, 2)
+            r = Vector{typeof(r1)}(n)
             for j = 1 : n
-                r[j] = evaluate($dist, ($x)[:,j], ($y)[:,j])
+                r[j] = evaluate(dist, x[:,j], y[:,j])
             end
         end
         @printf "    loop:     t = %9.6fs\n" (t0 / $repeat)
 
         t1 = @elapsed for k = 1 : $repeat
-            r = colwise($dist, $x, $y)
+            r = colwise(dist, x, y)
         end
-        @printf "    colwise:  t = %9.6fs  |  gain = %7.4fx\n" (t1 / $repeat) (t0 / t1)
+        @printf "    colwise:  t = %9.6fs  |  gain = %7.4fx\n" (t1 / repeat) (t0 / t1)
         println()
     end
 end
