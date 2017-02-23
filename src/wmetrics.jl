@@ -6,7 +6,7 @@
 #   Metric types
 #
 ###########################################################
-typealias RealAbstractArray{T <: AbstractFloat} AbstractArray{T}
+@compat const RealAbstractArray{T <: AbstractFloat} =  AbstractArray{T}
 
 
 immutable WeightedEuclidean{W <: RealAbstractArray} <: Metric
@@ -31,7 +31,7 @@ immutable WeightedHamming{W <: RealAbstractArray} <: Metric
 end
 
 
-typealias UnionWeightedMetrics{W} Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}}
+@compat const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
