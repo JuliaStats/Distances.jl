@@ -35,7 +35,8 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
     is_zero::Bool
     is_one::Bool
     is_inf::Bool
-    function RenyiDivergence(q)
+
+    function (::Type{RenyiDivergence{T}}){T}(q)
         # There are four different cases:
         #   simpler to separate them out now, not over and over in eval_op()
         is_zero = q ≈ zero(T)
@@ -45,7 +46,7 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
         # Only positive Rényi divergences are defined
         !is_zero && q < zero(T) && throw(ArgumentError("Order of Rényi divergence not legal, $(q) < 0."))
 
-        new(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
+        new{T}(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
 end
 RenyiDivergence{T}(q::T) = RenyiDivergence{T}(q)
@@ -55,7 +56,7 @@ type JSDivergence <: SemiMetric end
 type SpanNormDist <: SemiMetric end
 
 
-typealias UnionMetrics Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
+const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
 
 """
     Euclidean([thresh])

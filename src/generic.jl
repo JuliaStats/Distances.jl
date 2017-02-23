@@ -5,7 +5,7 @@
 #   d(x, y) >= 0
 #   d(x, x) = 0
 #
-abstract PreMetric
+@compat abstract type PreMetric end
 
 # a semimetric is a function d that satisfies:
 #
@@ -13,13 +13,13 @@ abstract PreMetric
 #   d(x, x) = 0
 #   d(x, y) = d(y, x)
 #
-abstract SemiMetric <: PreMetric
+@compat abstract type SemiMetric <: PreMetric end
 
 # a metric is a semimetric that satisfies triangle inequality:
 #
 #   d(x, y) + d(y, z) >= d(x, z)
 #
-abstract Metric <: SemiMetric
+@compat abstract type Metric <: SemiMetric end
 
 
 # Generic functions
