@@ -61,7 +61,8 @@ type SpanNormDist <: SemiMetric end
 type MeanAbsDeviation <: Metric end
 type MeanSqDeviation <: SemiMetric end
 type RMSDeviation <: Metric end
-type NormRMSDeviation <: Metric end
+type NormRMSDeviation <: PreMetric end
+type CVRMSDeviation <: PreMetric end
 
 
 const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist, GenKLDivergence}
