@@ -33,7 +33,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Mean absolute deviation
 * Mean squared deviation
 * Root mean squared deviation
-* Normalized root mean squared deviation
+* Normalized root mean squared deviation (both range- and mean-based)
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
@@ -155,6 +155,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  MeanSqDeviation     |  `msd(x, y)`                 | `mean(abs2.(x - y))` |
 |  RMSDeviation        |  `rmsd(x, y)`                | `sqrt(msd(x, y))` |
 |  NormRMSDeviation    |  `nrmsd(x, y)`               | `rmsd(x, y) / (maximum(x) - minimum(x))` |
+|  CVRMSDeviation      |  `cvrmsd(x, y)`              | `rmsd(x, y) / mean(x)` |
 |  WeightedEuclidean   |  `weuclidean(x, y, w)`       | `sqrt(sum((x - y).^2 .* w))` |
 |  WeightedSqEuclidean |  `wsqeuclidean(x, y, w)`     | `sum((x - y).^2 .* w)` |
 |  WeightedCityblock   |  `wcityblock(x, y, w)`       | `sum(abs(x - y) .* w)` |

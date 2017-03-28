@@ -362,6 +362,11 @@ function evaluate(::NormRMSDeviation, a, b)
 end
 nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 
+function evaluate(::CVRMSDeviation, a, b)
+    return evaluate(RMSDeviation(), a, b) / mean(a)
+end
+cvrmsd(a, b) = evaluate(CVRMSDeviation(), a, b)
+
 
 ###########################################################
 #

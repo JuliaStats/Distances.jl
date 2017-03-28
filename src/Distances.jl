@@ -51,6 +51,7 @@ export
     MeanSqDeviation,
     RMSDeviation,
     NormRMSDeviation,
+    CVRMSDeviation,
 
     # convenient functions
     euclidean,
@@ -85,7 +86,8 @@ export
     meanad,
     msd,
     rmsd,
-    nrmsd
+    nrmsd,
+    cvrmsd
 
 include("common.jl")
 include("generic.jl")

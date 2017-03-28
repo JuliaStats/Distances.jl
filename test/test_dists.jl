@@ -71,6 +71,7 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
     @test rmsd(x, y) ≈ sqrt(msd(x, y))
     @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
+    @test cvrmsd(x, y) ≈ sqrt(msd(x, y)) / mean(x)
 
     w = ones(4)
     @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
