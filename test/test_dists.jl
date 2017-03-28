@@ -101,7 +101,7 @@ w = rand(size(a))
 
 # Test KL, Renyi and JS divergences
 p = r = rand(12)
-p[p .< 0.3] = 0.0
+p[p .< maximum(p) / 2] = 0.0
 scale = sum(p) / sum(r)
 r /= sum(r)
 p /= sum(p)
