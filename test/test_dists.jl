@@ -103,22 +103,22 @@ end
 
 a = 1
 b = 2
-@test sqeuclidean(a, a) == 0.
-@test sqeuclidean(a, b) == 1.
+@test sqeuclidean(a, a) == 0.0
+@test sqeuclidean(a, b) == 1.0
 
-@test euclidean(a, a) == 0.
-@test euclidean(a, b) == 1.
+@test euclidean(a, a) == 0.0
+@test euclidean(a, b) == 1.0
 
-@test cityblock(a, a) == 0.
-@test cityblock(a, b) == 1.
+@test cityblock(a, a) == 0.0
+@test cityblock(a, b) == 1.0
 
-@test chebyshev(a, a) == 0.
-@test chebyshev(a, b) == 1.
+@test chebyshev(a, a) == 0.0
+@test chebyshev(a, b) == 1.0
 
-@test chebyshev(a, a) == 0.
+@test chebyshev(a, a) == 0.0
 
-@test minkowski(a, a, 2) == 0.
-@test minkowski(a, b, 2) == 1.
+@test minkowski(a, a, 2) == 0.0
+@test minkowski(a, b, 2) == 1.0
 
 @test hamming(a, a) == 0
 @test hamming(a, b) == 1
@@ -126,31 +126,31 @@ b = 2
 bt = [true, false, true]
 bf = [false, true, true]
 @test rogerstanimoto(bt, bt) == 0
-@test rogerstanimoto(bt, bf) == 4./5
+@test rogerstanimoto(bt, bf) == 4.0/5.0
 
-for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
-                ([4., 5., 6., 7.], [3. 8.; 9. 1.]))
-    @test sqeuclidean(x, x) == 0.
+for (x, y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
+                ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
+    @test sqeuclidean(x, x) == 0.0
     @test sqeuclidean(x, y) == 57.
 
-    @test euclidean(x, x) == 0.
-    @test euclidean(x, y) == sqrt(57.)
+    @test euclidean(x, x) == 0.0
+    @test euclidean(x, y) == sqrt(57.0)
 
     @test jaccard(x, x) == 0
     @test jaccard(x, y) == 13./28
 
-    @test cityblock(x, x) == 0.
-    @test cityblock(x, y) == 13.
+    @test cityblock(x, x) == 0.0
+    @test cityblock(x, y) == 13.0
 
-    @test chebyshev(x, x) == 0.
-    @test chebyshev(x, y) == 6.
+    @test chebyshev(x, x) == 0.0
+    @test chebyshev(x, y) == 6.0
 
-    @test minkowski(x, x, 2) == 0.
-    @test minkowski(x, y, 2) == sqrt(57.)
+    @test minkowski(x, x, 2) == 0.0
+    @test minkowski(x, y, 2) == sqrt(57.0)
 
     @test cosine_dist(x, x) ≈ 0.0
 
-    @test_throws DimensionMismatch cosine_dist(1.:2, 1.:3)
+    @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
     @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.))
     x_int, y_int = map(Int64, x), map(Int64, y)
     @test cosine_dist(x_int, y_int) == (1.0 - 112. / sqrt(19530.))
@@ -158,10 +158,10 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
     @test corr_dist(x, x) < 1.0e-14
     @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
 
-    @test chisq_dist(x, x) == 0.
+    @test chisq_dist(x, x) == 0.0
     @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
 
-    @test spannorm_dist(x, x) == 0.
+    @test spannorm_dist(x, x) == 0.0
     @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
 
@@ -172,25 +172,25 @@ for (x, y) in (([4., 5., 6., 7.], [3., 9., 8., 1.]),
 
     w = rand(size(x))
 
-    @test wsqeuclidean(x, x, w) == 0.
+    @test wsqeuclidean(x, x, w) == 0.0
     @test wsqeuclidean(x, y, w) ≈ dot((x - vec(y)).^2, w)
 
-    @test weuclidean(x, x, w) == 0.
+    @test weuclidean(x, x, w) == 0.0
     @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
 
-    @test wcityblock(x, x, w) == 0.
+    @test wcityblock(x, x, w) == 0.0
     @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
 
-    @test wminkowski(x, x, w, 2) == 0.
+    @test wminkowski(x, x, w, 2) == 0.0
     @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
 end
 
 # Test weighted Hamming distances with even weights
-a = [1., 2., 1., 3., 2., 1.]
-b = [1., 3., 0., 2., 2., 0.]
+a = [1.0, 2.0, 1.0, 3.0, 2.0, 1.0]
+b = [1.0, 3.0, 0.0, 2.0, 2.0, 0.0]
 w = rand(size(a))
 
-@test whamming(a, a, w) == 0.
+@test whamming(a, a, w) == 0.0
 @test whamming(a, b, w) == sum((a .!= b) .* w)
 
 # Minimal test of Jaccard - test return type stability.
@@ -207,7 +207,7 @@ p /= sum(p)
 q = rand(12)
 q /= sum(q)
 
-klv = 0.
+klv = 0.0
 for i = 1 : length(p)
     if p[i] > 0
         klv += p[i] * log(p[i] / q[i])
@@ -252,15 +252,15 @@ end #testset
 
 a = Float64[]
 b = Float64[]
-@test sqeuclidean(a, b) == 0.
+@test sqeuclidean(a, b) == 0.0
 @test isa(sqeuclidean(a, b), Float64)
-@test euclidean(a, b) == 0.
+@test euclidean(a, b) == 0.0
 @test isa(euclidean(a, b), Float64)
-@test cityblock(a, b) == 0.
+@test cityblock(a, b) == 0.0
 @test isa(cityblock(a, b), Float64)
-@test chebyshev(a, b) == 0
+@test chebyshev(a, b) == 0.0
 @test isa(chebyshev(a, b), Float64)
-@test minkowski(a, b, 2) == 0.
+@test minkowski(a, b, 2) == 0.0
 @test isa(minkowski(a, b, 2), Float64)
 @test hamming(a, b) == 0.0
 @test isa(hamming(a, b), Int)
@@ -287,16 +287,16 @@ end # testset
 
 @testset "mahalanobis" begin
 
-x, y = [4., 5., 6., 7.], [3., 9., 8., 1.]
-a = [1., 2., 1., 3., 2., 1.]
-b = [1., 3., 0., 2., 2., 0.]
+x, y = [4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]
+a = [1.0, 2.0, 1.0, 3.0, 2.0, 1.0]
+b = [1.0, 3.0, 0.0, 2.0, 2.0, 0.0]
 
 Q = rand(length(x), length(x))
 Q = Q * Q'  # make sure Q is positive-definite
-@test sqmahalanobis(x, x, Q) == 0.
+@test sqmahalanobis(x, x, Q) == 0.0
 @test sqmahalanobis(x, y, Q) ≈ dot(x - y, Q * (x - y))
 
-@test mahalanobis(x, x, Q) == 0.
+@test mahalanobis(x, x, Q) == 0.0
 @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
 
 end #testset
@@ -304,9 +304,9 @@ end #testset
 
 @testset "bhattacharyya / hellinger" begin
 
-x, y = [4., 5., 6., 7.], [3., 9., 8., 1.]
-a = [1., 2., 1., 3., 2., 1.]
-b = [1., 3., 0., 2., 2., 0.]
+x, y = [4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]
+a = [1.0, 2.0, 1.0, 3.0, 2.0, 1.0]
+b = [1.0, 3.0, 0.0, 2.0, 2.0, 0.0]
 p = rand(12)
 p[p .< median(p)] = 0.0
 q = rand(12)
