@@ -200,7 +200,7 @@ w = rand(size(a))
 
 # Test KL, Renyi and JS divergences
 p = r = rand(12)
-p[p .< maximum(p) / 2] = 0.0
+p[p .< median(p)] = 0.0
 scale = sum(p) / sum(r)
 r /= sum(r)
 p /= sum(p)
@@ -308,7 +308,7 @@ x, y = [4., 5., 6., 7.], [3., 9., 8., 1.]
 a = [1., 2., 1., 3., 2., 1.]
 b = [1., 3., 0., 2., 2., 0.]
 p = rand(12)
-p[p .< 0.3] = 0.
+p[p .< median(p)] = 0.0
 q = rand(12)
 
 # Bhattacharyya and Hellinger distances are defined for discrete
@@ -374,7 +374,7 @@ B = rand(1:3, m, n)
 
 P = rand(m, n)
 Q = rand(m, n)
-P[P .< 0.3] = 0.
+P[P .< median(P)] = 0.0
 
 
 @test_colwise SqEuclidean() X Y
