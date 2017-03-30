@@ -1,10 +1,5 @@
 # Unit tests for Distances
 
-# Unfortunately small non-zero numbers (~10^-16) are appearing
-# in our tests due to accumulating floating point rounding errors - we either
-# need to allow small errors in our tests or change the way we do accumulations
-approxcomp(x::Real, comp, y::Real) = comp(x, y) || (x + one(x) ≈ y + one(y))
-
 macro test_metricity(_dist, _x, _y, _z)
     quote
         dist = $(esc(_dist))
@@ -15,26 +10,30 @@ macro test_metricity(_dist, _x, _y, _z)
         dxz = evaluate(dist, x, z)
         dyz = evaluate(dist, y, z)
         if (isa(dist, PreMetric))
-          @test approxcomp(evaluate(dist, x, x), ==, zero(eltype(x)))
-          @test approxcomp(evaluate(dist, y, y), ==, zero(eltype(x)))
-          @test approxcomp(evaluate(dist, z, z), ==, zero(eltype(x)))
-          @test approxcomp(dxy, ≥, zero(eltype(x)))
-          @test approxcomp(dxz, ≥, zero(eltype(x)))
-          @test approxcomp(dyz, ≥, zero(eltype(x)))
+          # Unfortunately small non-zero numbers (~10^-16) are appearing
+          # in our tests due to accumulating floating point rounding errors.
+          # We either need to allow small errors in our tests or change the
+          # way we do accumulations...
+          @test evaluate(dist, x, x) ≈ zero(eltype(x))
+          @test evaluate(dist, y, y) ≈ zero(eltype(y))
+          @test evaluate(dist, z, z) ≈ zero(eltype(z))
+          @test dxy ≥ zero(eltype(x))
+          @test dxz ≥ zero(eltype(x))
+          @test dyz ≥ zero(eltype(x))
         end
         if (isa(dist, SemiMetric))
           @test dxy ≈ evaluate(dist, y, x)
           @test dxz ≈ evaluate(dist, z, x)
           @test dyz ≈ evaluate(dist, y, z)
         else # Not symmetric, so more PreMetric tests
-          @test approxcomp(evaluate(dist, y, x), ≥, zero(eltype(x)))
-          @test approxcomp(evaluate(dist, z, x), ≥, zero(eltype(x)))
-          @test approxcomp(evaluate(dist, z, y), ≥, zero(eltype(x)))
+          @test evaluate(dist, y, x) ≥ zero(eltype(x))
+          @test evaluate(dist, z, x) ≥ zero(eltype(x))
+          @test evaluate(dist, z, y) ≥ zero(eltype(x))
         end
         if (isa(dist, Metric))
-          @test approxcomp(dxz, ≤, dxy + dyz)
-          @test approxcomp(dyz, ≤, evaluate(dist, y, x) + dxz)
-          @test approxcomp(dxy, ≤, dxz + evaluate(dist, z, y))
+          @test dxz ≤ dxy + dyz
+          @test dyz ≤ evaluate(dist, y, x) + dxz
+          @test dxy ≤ dxz + evaluate(dist, z, y)
         end
     end
 end
@@ -82,9 +81,6 @@ p = rand(m)
 q = rand(m)
 r = rand(m)
 p[p .< median(p)] = 0
-p /= sum(p)
-q /= sum(q)
-r /= sum(r)
 p /= sum(p)
 q /= sum(q)
 r /= sum(r)
