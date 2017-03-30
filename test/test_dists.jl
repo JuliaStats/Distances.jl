@@ -370,8 +370,10 @@ B = rand(1:3, m, n)
 
 P = rand(m, n)
 Q = rand(m, n)
-P[P .< median(P)] = 0.0
-
+# Make sure not to remove all of the non-zeros from any column
+for i in 1:n
+  P[P[:, i] .< median(P[:, i])/2, i] = 0.0
+end
 
 @test_colwise SqEuclidean() X Y
 @test_colwise Euclidean() X Y
