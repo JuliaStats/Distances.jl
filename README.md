@@ -131,15 +131,15 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Cityblock           |  `cityblock(x, y)`         | `sum(abs(x - y))` |
 |  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
 |  Minkowski           |  `minkowski(x, y, p)`      | `sum(abs(x - y).^p) ^ (1/p)` |
-|  Hamming             |  `hamming(x, y)`           | `sum(x .!= y)` |
-|  Rogers-Tanimoto     |  `rogerstanimoto(x, y)`    | `2(sum(x&!y) + sum(!x&y)) / (2(sum(x&!y) + sum(!x&y)) + sum(x&y) + sum(!x&!y))` |
+|  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
+|  Rogers-Tanimoto     |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
 |  Jaccard             |  `jaccard(x, y)`           | `1 - sum(min(x, y)) / sum(max(x, y))` |
 |  CosineDist          |  `cosine_dist(x, y)`       | `1 - dot(x, y) / (norm(x) * norm(y))` |
 |  CorrDist            |  `corr_dist(x, y)`         | `cosine_dist(x - mean(x), y - mean(y))` |
 |  ChiSqDist           |  `chisq_dist(x, y)`        | `sum((x - y).^2 / (x + y))` |
-|  KLDivergence        |  `kl_divergence(x, y)`     | `sum(p .* log(p ./ q))` |
-|  RenyiDivergence     | `renyi_divergence(x, y, k)`| `log(sum( x .* (x ./ y) .^ (k - 1))) / (k - 1)` |
-|  JSDivergence        |  `js_divergence(x, y)`     | `KL(x, m) / 2 + KL(y, m) / 2 with m = (x + y) / 2` |
+|  KLDivergence        |  `kl_divergence(p, q)`     | `sum(p .* log(p ./ q))` |
+|  RenyiDivergence     | `renyi_divergence(p, q, k)`| `log(sum( p .* (p ./ q) .^ (k - 1))) / (k - 1)` |
+|  JSDivergence        |  `js_divergence(p, q)`     | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
 |  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y )` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
 |  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
@@ -151,7 +151,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedMinkowski   |  `wminkowski(x, y, w, p)`  | `sum(abs(x - y).^p .* w) ^ (1/p)` |
 |  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
 
-**Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way.
+**Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way. x and y arguments are arrays of real numbers; k and l arguments are arrays of distinct elements of any kind; a and b arguments are arrays of `Bool`s; and p and q arguments are arrays forming a discrete probability distribution and are therefore expected to sum to one.
 
 ### Precision for Euclidean and SqEuclidean
 
