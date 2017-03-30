@@ -208,46 +208,46 @@ kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, 
 
 # RenyiDivergence
 function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
-    zero(T), zero(T)
+    zero(T), zero(T), sum(a), sum(b)
 end
 
 @inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
     if ai == zero(T)
-        return zero(T), zero(T)
+        return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
-        return ai, ai .* ((ai ./ bi) .^ dist.p)
+        return ai, ai * ((ai / bi) ^ dist.p), zero(T), zero(T)
     elseif dist.is_zero
-        return ai, bi
+        return ai, bi, zero(T), zero(T)
     elseif dist.is_one
-        return ai, ai * log(ai / bi)
+        return ai, ai * log(ai / bi), zero(T), zero(T)
     else # otherwise q = ∞
-        return ai, ai / bi
+        return ai, ai / bi, zero(T), zero(T)
     end
 end
 
 @inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
-                                               s1::Tuple{T, T},
-                                               s2::Tuple{T, T})
+                                               s1::Tuple{T, T, T, T},
+                                               s2::Tuple{T, T, T, T})
     if dist.is_inf
         if s1[1] == zero(T)
-            return s2
+            return (s2[1], s2[2], s1[3], s1[4])
         elseif s2[1] == zero(T)
             return s1
         else
-            return s1[2] > s2[2] ? s1 : s2
+            return s1[2] > s2[2] ? s1 : (s2[1], s2[2], s1[3], s1[4])
         end
     else
-        return s1[1] + s2[1], s1[2] + s2[2]
+        return s1[1] + s2[1], s1[2] + s2[2], s1[3], s1[4]
     end
 end
 
-function eval_end(dist::RenyiDivergence, s)
+function eval_end{T<:AbstractFloat}(dist::RenyiDivergence, s::Tuple{T, T, T, T})
     if dist.is_zero || dist.is_normal
-        log(s[2] / s[1]) / dist.p
+        log(s[2] / s[1]) / dist.p + log(s[4] / s[3])
     elseif dist.is_one
-        return s[2] / s[1]
+        return s[2] / s[1] + log(s[4] / s[3])
     else # q = ∞
-        log(s[2])
+        log(s[2]) + log(s[4] / s[3])
     end
 end
 
