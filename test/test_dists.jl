@@ -40,30 +40,42 @@ end
 
 @testset "PreMetric, SemiMetric, Metric" begin
 
-m = 10
-x = rand(m)
-y = rand(m)
-z = rand(m)
-a = rand(1:3, m)
-b = rand(1:3, m)
-c = rand(1:3, m)
+n = 10
+x = rand(n)
+y = rand(n)
+z = rand(n)
 
 @test_metricity SqEuclidean() x y z
 @test_metricity Euclidean() x y z
 @test_metricity Cityblock() x y z
 @test_metricity Chebyshev() x y z
 @test_metricity Minkowski(2.5) x y z
-@test_metricity Hamming() a b c
 
 @test_metricity CosineDist() x y z
 @test_metricity CorrDist() x y z
 
 @test_metricity ChiSqDist() x y z
 
+@test_metricity Jaccard() x y z
+@test_metricity SpanNormDist() x y z
+
 @test_metricity BhattacharyyaDist() x y z
 @test_metricity HellingerDist() x y z
 
-w = rand(m)
+k = rand(1:3, n)
+l = rand(1:3, n)
+m = rand(1:3, n)
+
+@test_metricity Hamming() k l m
+
+a = rand(Bool, n)
+b = rand(Bool, n)
+c = rand(Bool, n)
+
+@test_metricity RogersTanimoto() a b c
+@test_metricity Jaccard() a b c
+
+w = rand(n)
 
 @test_metricity WeightedSqEuclidean(w) x y z
 @test_metricity WeightedEuclidean(w) x y z
@@ -71,15 +83,15 @@ w = rand(m)
 @test_metricity WeightedMinkowski(w, 2.5) x y z
 @test_metricity WeightedHamming(w) a b c
 
-Q = rand(m, m)
+Q = rand(n, n)
 Q = Q * Q'  # make sure Q is positive-definite
 
 @test_metricity SqMahalanobis(Q) x y z
 @test_metricity Mahalanobis(Q) x y z
 
-p = rand(m)
-q = rand(m)
-r = rand(m)
+p = rand(n)
+q = rand(n)
+r = rand(n)
 p[p .< median(p)] = 0
 p /= sum(p)
 q /= sum(q)
