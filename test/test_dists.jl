@@ -91,6 +91,7 @@ r /= sum(r)
 @test_metricity RenyiDivergence(Inf) p q r
 @test_metricity RenyiDivergence(0.5) p q r
 @test_metricity RenyiDivergence(2) p q r
+@test_metricity RenyiDivergence(10) p q r
 @test_metricity JSDivergence() p q r
 
 end
@@ -186,6 +187,7 @@ end
 
 @test renyi_divergence(p, r, 0) ≈ -log(scale)
 @test renyi_divergence(p, r, 1) ≈ -log(scale)
+@test renyi_divergence(p, r, 10) ≈ -log(scale)
 @test renyi_divergence(p, r, rand()) ≈ -log(scale)
 @test renyi_divergence(p, r, Inf) ≈ -log(scale)
 @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
@@ -206,7 +208,6 @@ a = [NaN, 0]; b = [0, NaN]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
 a = [NaN, 0]; b = [0, 1]
 @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
-@test !isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, NaN, 0.5], 2))
 @test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
 end #testset
 
@@ -357,6 +358,7 @@ end
 @test_colwise RenyiDivergence(Inf) P Q
 @test_colwise RenyiDivergence(0.5) P Q
 @test_colwise RenyiDivergence(2) P Q
+@test_colwise RenyiDivergence(10) P Q
 @test_colwise JSDivergence() P Q
 @test_colwise SpanNormDist() X Y
 
