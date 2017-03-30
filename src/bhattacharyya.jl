@@ -10,6 +10,10 @@ type HellingerDist <: Metric end
 # Bhattacharyya coefficient
 
 function bhattacharyya_coeff{T<:Number}(a::AbstractVector{T}, b::AbstractVector{T})
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+
     n = length(a)
     sqab = zero(T)
     # We must normalize since we cannot assume that the vectors are normalized to probability vectors.
