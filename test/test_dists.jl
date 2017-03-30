@@ -14,9 +14,9 @@ macro test_metricity(_dist, _x, _y, _z)
           # in our tests due to accumulating floating point rounding errors.
           # We either need to allow small errors in our tests or change the
           # way we do accumulations...
-          @test evaluate(dist, x, x) ≈ zero(eltype(x))
-          @test evaluate(dist, y, y) ≈ zero(eltype(y))
-          @test evaluate(dist, z, z) ≈ zero(eltype(z))
+          @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
+          @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
+          @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
           @test dxy ≥ zero(eltype(x))
           @test dxz ≥ zero(eltype(x))
           @test dyz ≥ zero(eltype(x))
