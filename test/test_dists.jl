@@ -257,6 +257,18 @@ a = [1, 0]; b = [2.0] ; w = [3.0]
 @test_throws DimensionMismatch wsqeuclidean(a, b, w)
 a = [1, 0]; b = [2.0, 4.0] ; w = [3.0]
 @test_throws DimensionMismatch wsqeuclidean(a, b, w)
+p = [0.5, 0.5]; q = [0.3, 0.3, 0.4]
+@test_throws DimensionMismatch bhattacharyya(p, q)
+@test_throws DimensionMismatch hellinger(q, p)
+Q = rand(length(p), length(p))
+Q = Q * Q'  # make sure Q is positive-definite
+@test_throws DimensionMismatch mahalanobis(p, q, Q)
+@test_throws DimensionMismatch mahalanobis(q, q, Q)
+mat23 = [0.3 0.2 0.0; 0.1 0.0 0.4]
+mat22 = [0.3 0.2; 0.1 0.4]
+@test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
+@test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
+@test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
 
 end # testset
 
