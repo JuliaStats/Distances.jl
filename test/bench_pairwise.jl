@@ -33,6 +33,16 @@ ny = 250
 x = rand(m, nx)
 y = rand(m, ny)
 
+p = x
+for i = 1:nx
+  p[:,i] /= sum(x[:,i])
+end
+
+q = y
+for i = 1:ny
+  q[:,i] /= sum(y[:,i])
+end
+
 w = rand(m)
 Q = rand(m, m)
 Q = Q' * Q
@@ -50,8 +60,12 @@ bench_pairwise_distance(Hamming(), x, y)
 bench_pairwise_distance(CosineDist(), x, y)
 bench_pairwise_distance(CorrDist(), x, y)
 bench_pairwise_distance(ChiSqDist(), x, y)
-bench_pairwise_distance(KLDivergence(), x, y)
-bench_pairwise_distance(JSDivergence(), x, y)
+bench_pairwise_distance(KLDivergence(), p, q)
+bench_pairwise_distance(RenyiDivergence(0), p, q)
+bench_pairwise_distance(RenyiDivergence(1), p, q)
+bench_pairwise_distance(RenyiDivergence(2), p, q)
+bench_pairwise_distance(RenyiDivergence(Inf), p, q)
+bench_pairwise_distance(JSDivergence(), p, q)
 
 bench_pairwise_distance(BhattacharyyaDist(), x, y)
 bench_pairwise_distance(HellingerDist(), x, y)
