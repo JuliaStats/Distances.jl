@@ -218,7 +218,7 @@ The table below compares the performance (measured in terms of average elapsed t
 | SqMahalanobis | 0.103410s |  0.032976s |  3.1359 |
 | Mahalanobis | 0.104362s |  0.033305s |  3.1336 |
 
-We can see that using ``colwise`` instead of a simple loop yields considerable gain (2x - 4x), especially when the internal computation of each distance is simple. Nonetheless, when the computaton of a single distance is heavy enough (e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
+We can see that using ``colwise`` instead of a simple loop yields considerable gain (2x - 4x), especially when the internal computation of each distance is simple. Nonetheless, when the computation of a single distance is heavy enough (e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
 
 #### Pairwise benchmark
 
