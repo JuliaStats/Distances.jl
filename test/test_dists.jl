@@ -122,7 +122,6 @@ end
 
     bt = [true, false, true]
     bf = [false, true, true]
-    @test rogerstanimoto(bt, bt) == 0
     @test rogerstanimoto(bt, bf) == 4.0/5.0
 
     for (x, y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
