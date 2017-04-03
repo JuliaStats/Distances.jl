@@ -32,8 +32,8 @@ y = rand(m, n)
 p = x
 q = y
 for i = 1:n
-  p[:,i] /= sum(x[:,i])
-  q[:,i] /= sum(y[:,i])
+    p[:,i] /= sum(x[:,i])
+    q[:,i] /= sum(y[:,i])
 end
 
 w = rand(m)

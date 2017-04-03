@@ -35,12 +35,12 @@ y = rand(m, ny)
 
 p = x
 for i = 1:nx
-  p[:,i] /= sum(x[:,i])
+    p[:,i] /= sum(x[:,i])
 end
 
 q = y
 for i = 1:ny
-  q[:,i] /= sum(y[:,i])
+    q[:,i] /= sum(y[:,i])
 end
 
 w = rand(m)

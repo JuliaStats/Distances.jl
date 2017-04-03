@@ -59,14 +59,14 @@ type SpanNormDist <: SemiMetric end
 const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
 
 """
-    Euclidean([thresh])
+Euclidean([thresh])
 
 Create a euclidean metric.
 
 When computing distances among large numbers of points, it can be much
 more efficient to exploit the formula
 
-    (x-y)^2 = x^2 - 2xy + y^2
+(x-y)^2 = x^2 - 2xy + y^2
 
 However, this can introduce roundoff error. `thresh` (which defaults
 to 0) specifies the relative square-distance tolerance on `2xy`
@@ -89,7 +89,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 Euclidean() = Euclidean(0)
 
 """
-    SqEuclidean([thresh])
+SqEuclidean([thresh])
 
 Create a squared-euclidean semi-metric. For the meaning of `thresh`,
 see [`Euclidean`](@ref).
@@ -310,11 +310,11 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
-  tt = s1 && s2
-  tf = s1 && !s2
-  ft = !s1 && s2
-  ff = !s1 && !s2
-  tt, tf, ft, ff
+    tt = s1 && s2
+    tf = s1 && !s2
+    ft = !s1 && s2
+    ff = !s1 && !s2
+    tt, tf, ft, ff
 end
 @inline function eval_reduce(::RogersTanimoto, s1, s2)
     @inbounds begin
