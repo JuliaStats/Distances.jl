@@ -10,30 +10,30 @@ macro test_metricity(_dist, _x, _y, _z)
         dxz = evaluate(dist, x, z)
         dyz = evaluate(dist, y, z)
         if (isa(dist, PreMetric))
-          # Unfortunately small non-zero numbers (~10^-16) are appearing
-          # in our tests due to accumulating floating point rounding errors.
-          # We either need to allow small errors in our tests or change the
-          # way we do accumulations...
-          @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
-          @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
-          @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
-          @test dxy ≥ zero(eltype(x))
-          @test dxz ≥ zero(eltype(x))
-          @test dyz ≥ zero(eltype(x))
+            # Unfortunately small non-zero numbers (~10^-16) are appearing
+            # in our tests due to accumulating floating point rounding errors.
+            # We either need to allow small errors in our tests or change the
+            # way we do accumulations...
+            @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
+            @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
+            @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
+            @test dxy ≥ zero(eltype(x))
+            @test dxz ≥ zero(eltype(x))
+            @test dyz ≥ zero(eltype(x))
         end
         if (isa(dist, SemiMetric))
-          @test dxy ≈ evaluate(dist, y, x)
-          @test dxz ≈ evaluate(dist, z, x)
-          @test dyz ≈ evaluate(dist, y, z)
+            @test dxy ≈ evaluate(dist, y, x)
+            @test dxz ≈ evaluate(dist, z, x)
+            @test dyz ≈ evaluate(dist, y, z)
         else # Not symmetric, so more PreMetric tests
-          @test evaluate(dist, y, x) ≥ zero(eltype(x))
-          @test evaluate(dist, z, x) ≥ zero(eltype(x))
-          @test evaluate(dist, z, y) ≥ zero(eltype(x))
+            @test evaluate(dist, y, x) ≥ zero(eltype(x))
+            @test evaluate(dist, z, x) ≥ zero(eltype(x))
+            @test evaluate(dist, z, y) ≥ zero(eltype(x))
         end
         if (isa(dist, Metric))
-          @test dxz ≤ dxy + dyz
-          @test dyz ≤ evaluate(dist, y, x) + dxz
-          @test dxy ≤ dxz + evaluate(dist, z, y)
+            @test dxz ≤ dxy + dyz
+            @test dyz ≤ evaluate(dist, y, x) + dxz
+            @test dxy ≤ dxz + evaluate(dist, z, y)
         end
     end
 end
@@ -126,7 +126,7 @@ bf = [false, true, true]
 @test rogerstanimoto(bt, bf) == 4.0/5.0
 
 for (x, y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
-                ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
+               ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
     @test sqeuclidean(x, y) == 57.0
 
     @test euclidean(x, y) == sqrt(57.0)
@@ -362,7 +362,7 @@ P = rand(m, n)
 Q = rand(m, n)
 # Make sure not to remove all of the non-zeros from any column
 for i in 1:n
-  P[P[:, i] .< median(P[:, i])/2, i] = 0.0
+    P[P[:, i] .< median(P[:, i])/2, i] = 0.0
 end
 
 @test_colwise SqEuclidean() X Y
@@ -481,17 +481,17 @@ Q = Q * Q'  # make sure Q is positive-definite
 end #testset
 
 @testset "Euclidean precision" begin
-    X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
-    pd = pairwise(Euclidean(1e-12), X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
+X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
+pd = pairwise(Euclidean(1e-12), X, X)
+@test pd[1,1] == 0
+@test pd[2,2] == 0
+pd = pairwise(Euclidean(1e-12), X)
+@test pd[1,1] == 0
+@test pd[2,2] == 0
+pd = pairwise(SqEuclidean(1e-12), X, X)
+@test pd[1,1] == 0
+@test pd[2,2] == 0
+pd = pairwise(SqEuclidean(1e-12), X)
+@test pd[1,1] == 0
+@test pd[2,2] == 0
 end

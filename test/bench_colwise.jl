@@ -28,6 +28,14 @@ n = 10000
 
 x = rand(m, n)
 y = rand(m, n)
+
+p = x
+q = y
+for i = 1:n
+    p[:,i] /= sum(x[:,i])
+    q[:,i] /= sum(y[:,i])
+end
+
 w = rand(m)
 
 Q = rand(m, m)
@@ -46,8 +54,12 @@ bench_colwise_distance(Hamming(), x, y)
 bench_colwise_distance(CosineDist(), x, y)
 bench_colwise_distance(CorrDist(), x, y)
 bench_colwise_distance(ChiSqDist(), x, y)
-bench_colwise_distance(KLDivergence(), x, y)
-bench_colwise_distance(JSDivergence(), x, y)
+bench_colwise_distance(KLDivergence(), p, q)
+bench_colwise_distance(RenyiDivergence(0), p, q)
+bench_colwise_distance(RenyiDivergence(1), p, q)
+bench_colwise_distance(RenyiDivergence(2), p, q)
+bench_colwise_distance(RenyiDivergence(Inf), p, q)
+bench_colwise_distance(JSDivergence(), p, q)
 
 bench_colwise_distance(BhattacharyyaDist(), x, y)
 bench_colwise_distance(HellingerDist(), x, y)
