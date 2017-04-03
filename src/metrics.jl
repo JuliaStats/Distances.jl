@@ -59,14 +59,14 @@ type SpanNormDist <: SemiMetric end
 const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
 
 """
-Euclidean([thresh])
+    Euclidean([thresh])
 
 Create a euclidean metric.
 
 When computing distances among large numbers of points, it can be much
 more efficient to exploit the formula
 
-(x-y)^2 = x^2 - 2xy + y^2
+    (x-y)^2 = x^2 - 2xy + y^2
 
 However, this can introduce roundoff error. `thresh` (which defaults
 to 0) specifies the relative square-distance tolerance on `2xy`
@@ -86,7 +86,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
  0.0
 ```
 """
-Euclidean() = Euclidean(0)
+    Euclidean() = Euclidean(0)
 
 """
 SqEuclidean([thresh])
