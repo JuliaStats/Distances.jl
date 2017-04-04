@@ -31,9 +31,12 @@ macro test_metricity(_dist, _x, _y, _z)
             @test evaluate(dist, z, y) ≥ zero(eltype(x))
         end
         if isa(dist, Metric)
-            @test dxz ≤ dxy + dyz
-            @test dyz ≤ evaluate(dist, y, x) + dxz
-            @test dxy ≤ dxz + evaluate(dist, z, y)
+            # Again we have small rounding errors in accumulations
+            @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
+            dyx = evaluate(dist, y, x)
+            @test dyz ≤ dyx + dxz || dyz ≈ dyx + dxz
+            dzy = evaluate(dist, z, y)
+            @test dxy ≤ dxz + dzy || dxy ≈ dxz + dzy
         end
     end
 end
