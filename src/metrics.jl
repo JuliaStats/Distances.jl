@@ -86,7 +86,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
  0.0
 ```
 """
-    Euclidean() = Euclidean(0)
+Euclidean() = Euclidean(0)
 
 """
     SqEuclidean([thresh])
