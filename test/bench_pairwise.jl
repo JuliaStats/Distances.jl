@@ -6,22 +6,25 @@ using BenchmarkTools
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1.0
 
+function evaluate_pairwise{T}(::Type{T}, dist, x, y)
+    nx = size(x, 2)
+    ny = size(y, 2)
+    r = Matrix{T}(nx, ny)
+    for j = 1:ny
+        for i = 1:nx
+            r[i, j] = evaluate(dist, x[:, i], y[:, j])
+        end
+    end
+    return r
+end
+
 function bench_pairwise_distance(dist, x, y)
     r1 = evaluate(dist, x[:,1], y[:,1])
 
     # timing
-    t0 = @belapsed begin
-        nx = size(x, 2)
-        ny = size(y, 2)
-        r = Matrix{typeof($r1)}(nx, ny)
-        for j = 1:ny
-            for i = 1:nx
-                r[i, j] = evaluate($dist, $(x)[:, i], $(y)[:, j])
-            end
-        end
-    end
-
+    t0 = @belapsed evaluate_pairwise($(typeof(r1)), $dist, $x, $y)
     t1 = @belapsed pairwise($dist, $x, $y)
+
     print("| ", typeof(dist).name.name, " |")
     @printf("%9.6fs | %9.6fs | %7.4f |\n", t0, t1, (t0 / t1))
 end

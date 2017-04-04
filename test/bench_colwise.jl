@@ -6,18 +6,20 @@ using BenchmarkTools
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1.0
 
+function evaluate_colwise{T}(::Type{T}, dist, x, y)
+    n = size(x, 2)
+    r = Vector{T}(n)
+    for j = 1:n
+        r[j] = evaluate(dist, x[:, j], y[:, j])
+    end
+    return r
+end
+
 function bench_colwise_distance(dist, x, y)
     r1 = evaluate(dist, x[:,1], y[:,1])
 
     # timing
-    t0 = @belapsed begin
-        n = size(x, 2)
-        r = Vector{typeof($r1)}(n)
-        for j = 1:n
-            r[j] = evaluate($dist, $(x)[:, j], $(y)[:, j])
-        end
-    end
-
+    t0 = @belapsed evaluate_colwise($(typeof(r1)), $dist, $x, $y)
     t1 = @belapsed colwise($dist, $x, $y)
     print("| ", typeof(dist).name.name, " |")
     @printf("%9.6fs | %9.6fs | %7.4f |\n", t0, t1, (t0 / t1))
