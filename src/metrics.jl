@@ -89,7 +89,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
     Euclidean() = Euclidean(0)
 
 """
-SqEuclidean([thresh])
+    SqEuclidean([thresh])
 
 Create a squared-euclidean semi-metric. For the meaning of `thresh`,
 see [`Euclidean`](@ref).
