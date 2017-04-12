@@ -14,6 +14,10 @@ result_type{T}(::SqMahalanobis{T}, ::AbstractArray, ::AbstractArray) = T
 # SqMahalanobis
 
 function evaluate{T<:AbstractFloat}(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector)
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    
     Q = dist.qmat
     z = a - b
     return dot(z, Q * z)

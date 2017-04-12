@@ -29,6 +29,40 @@ type CorrDist <: SemiMetric end
 type ChiSqDist <: SemiMetric end
 type KLDivergence <: PreMetric end
 
+"""
+    RenyiDivergence(α::Real)
+    renyi_divergence(P, Q, α::Real)
+
+Create a Rényi premetric of order α.
+
+Rényi defined a spectrum of divergence measures generalising the
+Kullback–Leibler divergence (see `KLDivergence`). The divergence is
+not a semimetric as it is not symmetric. It is parameterised by a
+parameter α, and is equal to Kullback–Leibler divergence at α = 1:
+
+At α = 0, ``R_0(P | Q) = -log(sum_{i: p_i > 0}(q_i))``
+
+At α = 1, ``R_1(P | Q) = sum_{i: p_i > 0}(p_i log(p_i / q_i))``
+
+At α = ∞, ``R_∞(P | Q) = log(sup_{i: p_i > 0}(p_i / q_i))``
+
+Otherwise ``R_α(P | Q) = log(sum_{i: p_i > 0}((p_i ^ α) / (q_i ^ (α - 1))) / (α - 1)``
+
+# Example:
+```jldoctest
+julia> x = reshape([0.1, 0.3, 0.4, 0.2], 2, 2);
+
+julia> pairwise(RenyiDivergence(0), x, x)
+2×2 Array{Float64,2}:
+ 0.0  0.0
+ 0.0  0.0
+
+julia> pairwise(Euclidean(2), x, x)
+2×2 Array{Float64,2}:
+ 0.0       0.577315
+ 0.655407  0.0
+```
+"""
 immutable RenyiDivergence{T <: Real} <: PreMetric
     p::T # order of power mean (order of divergence - 1)
     is_normal::Bool
@@ -208,48 +242,51 @@ kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, 
 
 # RenyiDivergence
 function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
-    zero(T), zero(T)
+    zero(T), zero(T), sum(a), sum(b)
 end
 
 @inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
     if ai == zero(T)
-        return zero(T), zero(T)
+        return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
-        return ai, ai .* ((ai ./ bi) .^ dist.p)
+        return ai, ai * ((ai / bi) ^ dist.p), zero(T), zero(T)
     elseif dist.is_zero
-        return ai, bi
+        return ai, bi, zero(T), zero(T)
     elseif dist.is_one
-        return ai, ai * log(ai / bi)
+        return ai, ai * log(ai / bi), zero(T), zero(T)
     else # otherwise q = ∞
-        return ai, ai / bi
+        return ai, ai / bi, zero(T), zero(T)
     end
 end
 
 @inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
-                                               s1::Tuple{T, T},
-                                               s2::Tuple{T, T})
+                                               s1::Tuple{T, T, T, T},
+                                               s2::Tuple{T, T, T, T})
     if dist.is_inf
         if s1[1] == zero(T)
-            return s2
+            return (s2[1], s2[2], s1[3], s1[4])
         elseif s2[1] == zero(T)
             return s1
         else
-            return s1[2] > s2[2] ? s1 : s2
+            return s1[2] > s2[2] ? s1 : (s2[1], s2[2], s1[3], s1[4])
         end
     else
-        return s1[1] + s2[1], s1[2] + s2[2]
+        return s1[1] + s2[1], s1[2] + s2[2], s1[3], s1[4]
     end
 end
 
-function eval_end(dist::RenyiDivergence, s)
+function eval_end{T<:AbstractFloat}(dist::RenyiDivergence, s::Tuple{T, T, T, T})
     if dist.is_zero || dist.is_normal
-        log(s[2] / s[1]) / dist.p
+        log(s[2] / s[1]) / dist.p + log(s[4] / s[3])
     elseif dist.is_one
-        return s[2] / s[1]
+        return s[2] / s[1] + log(s[4] / s[3])
     else # q = ∞
-        log(s[2])
+        log(s[2]) + log(s[4] / s[3])
     end
 end
+
+# Combine docs with RenyiDivergence
+@doc (@doc RenyiDivergence) renyi_divergence
 
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
@@ -310,11 +347,11 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
-  tt = s1 && s2
-  tf = s1 && !s2
-  ft = !s1 && s2
-  ff = !s1 && !s2
-  tt, tf, ft, ff
+    tt = s1 && s2
+    tf = s1 && !s2
+    ft = !s1 && s2
+    ff = !s1 && !s2
+    tt, tf, ft, ff
 end
 @inline function eval_reduce(::RogersTanimoto, s1, s2)
     @inbounds begin
