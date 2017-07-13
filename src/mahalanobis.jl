@@ -13,7 +13,7 @@ result_type{T}(::SqMahalanobis{T}, ::AbstractArray, ::AbstractArray) = T
 
 # SqMahalanobis
 
-function evaluate{T<:AbstractFloat}(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:Real}(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector)
     if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -25,14 +25,14 @@ end
 
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(SqMahalanobis(Q), a, b)
 
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!{T<:Real}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m, n = get_colwise_dims(size(Q, 1), r, a, b)
     z = a - b
     dot_percol!(r, Q * z, z)
 end
 
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!{T<:Real}(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
     Q = dist.qmat
     m, n = get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
@@ -40,7 +40,7 @@ function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::SqMahalanobis{T}, a:
     dot_percol!(r, Q * z, z)
 end
 
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:Real}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m, na, nb = get_pairwise_dims(size(Q, 1), r, a, b)
 
@@ -58,7 +58,7 @@ function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, 
     r
 end
 
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
+function pairwise!{T<:Real}(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
     Q = dist.qmat
     m, n = get_pairwise_dims(size(Q, 1), r, a)
 
@@ -81,24 +81,24 @@ end
 
 # Mahalanobis
 
-function evaluate{T<:AbstractFloat}(dist::Mahalanobis{T}, a::AbstractVector, b::AbstractVector)
+function evaluate{T<:Real}(dist::Mahalanobis{T}, a::AbstractVector, b::AbstractVector)
     sqrt(evaluate(SqMahalanobis(dist.qmat), a, b))
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(Mahalanobis(Q), a, b)
 
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!{T<:Real}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function colwise!{T<:AbstractFloat}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
+function colwise!{T<:Real}(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
+function pairwise!{T<:Real}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(pairwise!(r, SqMahalanobis(dist.qmat), a, b))
 end
 
-function pairwise!{T<:AbstractFloat}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix)
+function pairwise!{T<:Real}(r::AbstractMatrix, dist::Mahalanobis{T}, a::AbstractMatrix)
     sqrt!(pairwise!(r, SqMahalanobis(dist.qmat), a))
 end

@@ -241,11 +241,11 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # RenyiDivergence
-function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
+function eval_start{T<:Real}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
     zero(T), zero(T), sum(a), sum(b)
 end
 
-@inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
+@inline function eval_op{T<:Real}(dist::RenyiDivergence, ai::T, bi::T)
     if ai == zero(T)
         return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
@@ -259,7 +259,7 @@ end
     end
 end
 
-@inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
+@inline function eval_reduce{T<:Real}(dist::RenyiDivergence,
                                                s1::Tuple{T, T, T, T},
                                                s2::Tuple{T, T, T, T})
     if dist.is_inf
@@ -275,7 +275,7 @@ end
     end
 end
 
-function eval_end{T<:AbstractFloat}(dist::RenyiDivergence, s::Tuple{T, T, T, T})
+function eval_end{T<:Real}(dist::RenyiDivergence, s::Tuple{T, T, T, T})
     if dist.is_zero || dist.is_normal
         log(s[2] / s[1]) / dist.p + log(s[4] / s[3])
     elseif dist.is_one

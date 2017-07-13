@@ -6,7 +6,7 @@
 #   Metric types
 #
 ###########################################################
-@compat const RealAbstractArray{T <: AbstractFloat} =  AbstractArray{T}
+@compat const RealAbstractArray{T <: Real} =  AbstractArray{T}
 
 
 immutable WeightedEuclidean{W <: RealAbstractArray} <: Metric
