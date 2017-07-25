@@ -6,28 +6,28 @@
 #
 ###########################################################
 
-immutable Euclidean <: Metric
+struct Euclidean <: Metric
     thresh::Float64
 end
-immutable SqEuclidean <: SemiMetric
+struct SqEuclidean <: SemiMetric
     thresh::Float64
 end
-type Chebyshev <: Metric end
-type Cityblock <: Metric end
-type Jaccard <: Metric end
-type RogersTanimoto <: Metric end
+struct Chebyshev <: Metric end
+struct Cityblock <: Metric end
+struct Jaccard <: Metric end
+struct RogersTanimoto <: Metric end
 
-immutable Minkowski{T <: Real} <: Metric
+struct Minkowski{T <: Real} <: Metric
     p::T
 end
 
-type Hamming <: Metric end
+struct Hamming <: Metric end
 
-type CosineDist <: SemiMetric end
-type CorrDist <: SemiMetric end
+struct CosineDist <: SemiMetric end
+struct CorrDist <: SemiMetric end
 
-type ChiSqDist <: SemiMetric end
-type KLDivergence <: PreMetric end
+struct ChiSqDist <: SemiMetric end
+struct KLDivergence <: PreMetric end
 
 """
     RenyiDivergence(α::Real)
@@ -63,14 +63,14 @@ julia> pairwise(Euclidean(2), x, x)
  0.655407  0.0
 ```
 """
-immutable RenyiDivergence{T <: Real} <: PreMetric
+struct RenyiDivergence{T <: Real} <: PreMetric
     p::T # order of power mean (order of divergence - 1)
     is_normal::Bool
     is_zero::Bool
     is_one::Bool
     is_inf::Bool
 
-    function (::Type{RenyiDivergence{T}}){T}(q)
+    function (::Type{RenyiDivergence{T}})(q) where {T}
         # There are four different cases:
         #   simpler to separate them out now, not over and over in eval_op()
         is_zero = q ≈ zero(T)
@@ -83,11 +83,11 @@ immutable RenyiDivergence{T <: Real} <: PreMetric
         new{T}(q - 1, !(is_zero || is_one || is_inf), is_zero, is_one, is_inf)
     end
 end
-RenyiDivergence{T}(q::T) = RenyiDivergence{T}(q)
+RenyiDivergence(q::T) where {T} = RenyiDivergence{T}(q)
 
-type JSDivergence <: SemiMetric end
+struct JSDivergence <: SemiMetric end
 
-type SpanNormDist <: SemiMetric end
+struct SpanNormDist <: SemiMetric end
 
 
 const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
@@ -159,20 +159,20 @@ function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     end
     return eval_end(d, s)
 end
-result_type{T1, T2}(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) =
+result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1,T2} =
     typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
 
-evaluate{T <: Number}(dist::UnionMetrics, a::T, b::T) = eval_end(dist, eval_op(dist, a, b))
+evaluate(dist::UnionMetrics, a::T, b::T) where {T <: Number} = eval_end(dist, eval_op(dist, a, b))
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
 @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
 sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
-sqeuclidean{T <: Number}(a::T, b::T) = evaluate(SqEuclidean(), a, b)
+sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
@@ -185,7 +185,7 @@ euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
-cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
+cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
@@ -193,23 +193,23 @@ cityblock{T <: Number}(a::T, b::T) = evaluate(Cityblock(), a, b)
 # if only NaN, will output NaN
 @inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
 chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
-chebyshev{T <: Number}(a::T, b::T) = evaluate(Chebyshev(), a, b)
+chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi) .^ dist.p
 @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s .^ (1/dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
-minkowski{T <: Number}(a::T, b::T, p::Real) = evaluate(Minkowski(p), a, b)
+minkowski(a::T, b::T, p::Real) where {T <: Number} = evaluate(Minkowski(p), a, b)
 
 # Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
 @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
-hamming{T <: Number}(a::T, b::T) = evaluate(Hamming(), a, b)
+hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
 
 # Cosine dist
-function eval_start{T<:Real}(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T})
+function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
@@ -241,11 +241,11 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # RenyiDivergence
-function eval_start{T<:AbstractFloat}(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T})
+function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: AbstractFloat}
     zero(T), zero(T), sum(a), sum(b)
 end
 
-@inline function eval_op{T<:AbstractFloat}(dist::RenyiDivergence, ai::T, bi::T)
+@inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where {T <: AbstractFloat}
     if ai == zero(T)
         return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
@@ -259,9 +259,9 @@ end
     end
 end
 
-@inline function eval_reduce{T<:AbstractFloat}(dist::RenyiDivergence,
+@inline function eval_reduce(dist::RenyiDivergence,
                                                s1::Tuple{T, T, T, T},
-                                               s2::Tuple{T, T, T, T})
+                                               s2::Tuple{T, T, T, T}) where {T <: AbstractFloat}
     if dist.is_inf
         if s1[1] == zero(T)
             return (s2[1], s2[2], s1[3], s1[4])
@@ -275,7 +275,7 @@ end
     end
 end
 
-function eval_end{T<:AbstractFloat}(dist::RenyiDivergence, s::Tuple{T, T, T, T})
+function eval_end(dist::RenyiDivergence, s::Tuple{T, T, T, T}) where {T <: AbstractFloat}
     if dist.is_zero || dist.is_normal
         log(s[2] / s[1]) / dist.p + log(s[4] / s[3])
     elseif dist.is_one
@@ -291,7 +291,7 @@ end
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence
-@inline function eval_op{T}(::JSDivergence, ai::T, bi::T)
+@inline function eval_op(::JSDivergence, ai::T, bi::T) where {T}
     u = (ai + bi) / 2
     ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
     tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
@@ -318,7 +318,7 @@ end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
-function result_type{T1, T2}(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2})
+function result_type(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1,T2}
     typeof(eval_op(dist, one(T1), one(T2)))
 end
 
@@ -326,7 +326,7 @@ end
 # Jaccard
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline eval_start{T}(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) = zero(T), zero(T)
+@inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
 @inline function eval_op(::Jaccard, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -367,7 +367,7 @@ end
     @inbounds denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
-rogerstanimoto{T <: Bool}(a::AbstractArray{T}, b::AbstractArray{T}) = evaluate(RogersTanimoto(), a, b)
+rogerstanimoto(a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Bool} = evaluate(RogersTanimoto(), a, b)
 
 
 ###########################################################

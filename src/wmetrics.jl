@@ -6,32 +6,32 @@
 #   Metric types
 #
 ###########################################################
-@compat const RealAbstractArray{T <: AbstractFloat} =  AbstractArray{T}
+const RealAbstractArray{T <: AbstractFloat} =  AbstractArray{T}
 
 
-immutable WeightedEuclidean{W <: RealAbstractArray} <: Metric
+struct WeightedEuclidean{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-immutable WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
     weights::W
 end
 
-immutable WeightedCityblock{W <: RealAbstractArray} <: Metric
+struct WeightedCityblock{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-immutable WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
+struct WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
     weights::W
     p::T
 end
 
-immutable WeightedHamming{W <: RealAbstractArray} <: Metric
+struct WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
 
-@compat const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}}
+const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
@@ -39,10 +39,10 @@ Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 #
 ###########################################################
 
-function evaluate{T <: Number}(dist::UnionWeightedMetrics, a::T, b::T)
+function evaluate(dist::UnionWeightedMetrics, a::T, b::T) where {T <: Number}
     eval_end(dist, eval_op(dist, a, b, one(eltype(dist))))
 end
-function result_type{T1, T2}(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2})
+function result_type(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1,T2}
     typeof(evaluate(dist, one(T1), one(T2)))
 end
 function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
