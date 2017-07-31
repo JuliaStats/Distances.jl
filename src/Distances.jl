@@ -2,8 +2,6 @@ __precompile__()
 
 module Distances
 
-using Compat
-
 export
     # generic types/functions
     PreMetric,

@@ -98,7 +98,7 @@ function sqrt!(a::AbstractArray)
     a
 end
 
-function sumsq_percol{T}(a::AbstractMatrix{T})
+function sumsq_percol(a::AbstractMatrix{T}) where {T}
     m = size(a, 1)
     n = size(a, 2)
     r = Vector{T}(n)
@@ -109,7 +109,7 @@ function sumsq_percol{T}(a::AbstractMatrix{T})
     return r
 end
 
-function wsumsq_percol{T1, T2}(w::AbstractArray{T1}, a::AbstractMatrix{T2})
+function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1,T2}
     m = size(a, 1)
     n = size(a, 2)
     T = typeof(one(T1)*one(T2))
