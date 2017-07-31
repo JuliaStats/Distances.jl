@@ -28,6 +28,8 @@ struct CorrDist <: SemiMetric end
 
 struct ChiSqDist <: SemiMetric end
 struct KLDivergence <: PreMetric end
+struct KLDivergence <: PreMetric end
+struct GenKLDivergence <: PreMetric end
 
 """
     RenyiDivergence(α::Real)
@@ -89,8 +91,15 @@ struct JSDivergence <: SemiMetric end
 
 struct SpanNormDist <: SemiMetric end
 
+# Deviations are handled separately from the other distances/divergences and
+# are excluded from `UnionMetrics`
+struct MeanAbsDeviation <: Metric end
+struct MeanSqDeviation <: SemiMetric end
+struct RMSDeviation <: Metric end
+struct NormRMSDeviation <: Metric end
 
-const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist}
+
+const UnionMetrics = Union{Euclidean, SqEuclidean, Chebyshev, Cityblock, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, CorrDist, ChiSqDist, KLDivergence, RenyiDivergence, JSDivergence, SpanNormDist, GenKLDivergence}
 
 """
     Euclidean([thresh])
@@ -240,6 +249,11 @@ chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
+# GenKLDivergence
+@inline eval_op(::GenKLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) - ai + bi : bi
+@inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
+gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
+
 # RenyiDivergence
 function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: AbstractFloat}
     zero(T), zero(T), sum(a), sum(b)
@@ -368,6 +382,23 @@ end
     numerator / denominator
 end
 rogerstanimoto(a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Bool} = evaluate(RogersTanimoto(), a, b)
+
+# Deviations
+
+evaluate(::MeanAbsDeviation, a, b) = cityblock(a, b) / length(a)
+meanad(a, b) = evaluate(MeanAbsDeviation(), a, b)
+
+evaluate(::MeanSqDeviation, a, b) = sqeuclidean(a, b) / length(a)
+msd(a, b) = evaluate(MeanSqDeviation(), a, b)
+
+evaluate(::RMSDeviation, a, b) = sqrt(evaluate(MeanSqDeviation(), a, b))
+rmsd(a, b) = evaluate(RMSDeviation(), a, b)
+
+function evaluate(::NormRMSDeviation, a, b)
+    amin, amax = extrema(a)
+    return evaluate(RMSDeviation(), a, b) / (amax - amin)
+end
+nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 
 
 ###########################################################

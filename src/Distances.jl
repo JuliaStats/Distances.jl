@@ -30,6 +30,7 @@ export
     CorrDist,
     ChiSqDist,
     KLDivergence,
+    GenKLDivergence,
     JSDivergence,
     RenyiDivergence,
     SpanNormDist,
@@ -43,6 +44,11 @@ export
     Mahalanobis,
     BhattacharyyaDist,
     HellingerDist,
+
+    MeanAbsDeviation,
+    MeanSqDeviation,
+    RMSDeviation,
+    NormRMSDeviation,
 
     # convenient functions
     euclidean,
@@ -59,6 +65,7 @@ export
     corr_dist,
     chisq_dist,
     kl_divergence,
+    gkl_divergence,
     js_divergence,
     renyi_divergence,
     spannorm_dist,
@@ -71,7 +78,12 @@ export
     sqmahalanobis,
     mahalanobis,
     bhattacharyya,
-    hellinger
+    hellinger,
+
+    meanad,
+    msd,
+    rmsd,
+    nrmsd
 
 include("common.jl")
 include("generic.jl")

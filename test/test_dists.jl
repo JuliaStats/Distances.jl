@@ -134,6 +134,13 @@ end
         @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
         @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
+        @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+
+        @test meanad(x, y) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
+        @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
+        @test rmsd(x, y) ≈ sqrt(msd(x, y))
+        @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
+
         w = ones(4)
         @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
