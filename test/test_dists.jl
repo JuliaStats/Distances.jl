@@ -114,13 +114,6 @@ end
     @test minkowski(a, b, 2) == 1.0
     @test hamming(a, b) == 1
 
-    @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
-
-    @test meanad(x, y) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
-    @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
-    @test rmsd(x, y) ≈ sqrt(msd(x, y))
-    @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
-
     bt = [true, false, true]
     bf = [false, true, true]
     @test rogerstanimoto(bt, bf) == 4.0/5.0
@@ -140,6 +133,13 @@ end
         @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
         @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
         @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
+
+        @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+
+        @test meanad(x, y) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
+        @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
+        @test rmsd(x, y) ≈ sqrt(msd(x, y))
+        @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
 
         w = ones(4)
         @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
