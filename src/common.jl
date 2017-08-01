@@ -65,7 +65,7 @@ end
 
 function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
     size(a, 1) == length(b) == d
-        throw(DimensionMismatch("Incorrect vector dimensions."))
+    throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
@@ -109,10 +109,10 @@ function sumsq_percol(a::AbstractMatrix{T}) where {T}
     return r
 end
 
-function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1,T2}
+function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1, T2}
     m = size(a, 1)
     n = size(a, 2)
-    T = typeof(one(T1)*one(T2))
+    T = typeof(one(T1) * one(T2))
     r = Vector{T}(n)
     for j = 1:n
         aj = view(a, :, j)
@@ -126,16 +126,16 @@ function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1,T2
 end
 
 function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
-    m = size(a,1)
-    n = size(a,2)
-    size(b) == (m,n) && length(r) == n ||
+    m = size(a, 1)
+    n = size(a, 2)
+    size(b) == (m, n) && length(r) == n ||
         throw(DimensionMismatch("Inconsistent array dimensions."))
     for j = 1:n
-        aj = view(a,:,j)
-        bj = view(b,:,j)
+        aj = view(a, :, j)
+        bj = view(b, :, j)
         r[j] = dot(aj, bj)
     end
     return r
 end
 
-dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Vector{Float64}(size(a,2)), a, b)
+dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Vector{Float64}(size(a, 2)), a, b)

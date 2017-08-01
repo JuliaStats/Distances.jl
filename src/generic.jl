@@ -32,7 +32,7 @@ result_type(::PreMetric, ::AbstractArray, ::AbstractArray) = Float64
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    for j = 1 : n
+    for j = 1:n
         @inbounds r[j] = evaluate(metric, a, view(b, :, j))
     end
     r
@@ -41,7 +41,7 @@ end
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    for j = 1 : n
+    for j = 1:n
         @inbounds r[j] = evaluate(metric, view(a, :, j), b)
     end
     r
@@ -50,7 +50,7 @@ end
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    for j = 1 : n
+    for j = 1:n
         @inbounds r[j] = evaluate(metric, view(a, :, j), view(b, :, j))
     end
     r
@@ -85,10 +85,10 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix, b::A
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
-    for j = 1 : size(b, 2)
-        bj = view(b,:,j)
-        for i = 1 : size(a, 2)
-            @inbounds r[i,j] = evaluate(metric, view(a,:,i), bj)
+    for j = 1:size(b, 2)
+        bj = view(b, :, j)
+        for i = 1:size(a, 2)
+            @inbounds r[i, j] = evaluate(metric, view(a, :, i), bj)
         end
     end
     r
@@ -101,14 +101,14 @@ end
 function pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
-    for j = 1 : n
-        aj = view(a,:,j)
-        for i = j+1 : n
-            @inbounds r[i,j] = evaluate(metric, view(a,:,i), aj)
+    for j = 1:n
+        aj = view(a, :, j)
+        for i = j + 1:n
+            @inbounds r[i, j] = evaluate(metric, view(a, :, i), aj)
         end
-        @inbounds r[j,j] = 0
-        for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]   # leveraging the symmetry of SemiMetric
+        @inbounds r[j, j] = 0
+        for i = 1:(j - 1)
+            @inbounds r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
         end
     end
     r

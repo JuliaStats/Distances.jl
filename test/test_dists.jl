@@ -116,13 +116,13 @@ end
 
     bt = [true, false, true]
     bf = [false, true, true]
-    @test rogerstanimoto(bt, bf) == 4.0/5.0
+    @test rogerstanimoto(bt, bf) == 4.0 / 5.0
 
     for (x, y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                    ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
         @test sqeuclidean(x, y) == 57.0
         @test euclidean(x, y) == sqrt(57.0)
-        @test jaccard(x, y) == 13.0/28
+        @test jaccard(x, y) == 13.0 / 28
         @test cityblock(x, y) == 13.0
         @test chebyshev(x, y) == 6.0
         @test minkowski(x, y, 2) == sqrt(57.0)
@@ -161,7 +161,7 @@ end
 
     # Minimal test of Jaccard - test return type stability.
     @inferred evaluate(Jaccard(), rand(3), rand(3))
-    @inferred evaluate(Jaccard(), [1,2,3], [1,2,3])
+    @inferred evaluate(Jaccard(), [1, 2, 3], [1, 2, 3])
     @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
 
     # Test KL, Renyi and JS divergences
@@ -174,7 +174,7 @@ end
     q /= sum(q)
 
     klv = 0.0
-    for i = 1 : length(p)
+    for i = 1:length(p)
         if p[i] > 0
             klv += p[i] * log(p[i] / q[i])
         end
@@ -197,9 +197,9 @@ end # testset
 
 @testset "NaN behavior" begin
     a = [NaN, 0]; b = [0, NaN]
-    @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
+    @test isnan(chebyshev(a, b)) == isnan(maximum(a - b))
     a = [NaN, 0]; b = [0, 1]
-    @test isnan(chebyshev(a, b)) == isnan(maximum(a-b))
+    @test isnan(chebyshev(a, b)) == isnan(maximum(a - b))
     @test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
 end #testset
 
@@ -301,14 +301,14 @@ function test_colwise(dist, x, y)
     r1 = zeros(n)
     r2 = zeros(n)
     r3 = zeros(n)
-    for j = 1 : n
-        r1[j] = evaluate(dist, x[:,j], y[:,j])
-        r2[j] = evaluate(dist, x[:,1], y[:,j])
-        r3[j] = evaluate(dist, x[:,j], y[:,1])
+    for j = 1:n
+        r1[j] = evaluate(dist, x[:, j], y[:, j])
+        r2[j] = evaluate(dist, x[:, 1], y[:, j])
+        r3[j] = evaluate(dist, x[:, j], y[:, 1])
     end
     @test colwise(dist, x, y) ≈ r1
-    @test colwise(dist, x[:,1], y) ≈ r2
-    @test colwise(dist, x, y[:,1]) ≈ r3
+    @test colwise(dist, x[:, 1], y) ≈ r2
+    @test colwise(dist, x, y[:, 1]) ≈ r3
 end
 
 @testset "column-wise metrics" begin
@@ -323,7 +323,7 @@ end
     Q = rand(m, n)
     # Make sure not to remove all of the non-zeros from any column
     for i in 1:n
-        P[P[:, i] .< median(P[:, i])/2, i] = 0.0
+        P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
     end
 
     test_colwise(SqEuclidean(), X, Y)
@@ -373,11 +373,11 @@ function test_pairwise(dist, x, y)
         ny = size(y, 2)
         rxy = zeros(nx, ny)
         rxx = zeros(nx, nx)
-        for j = 1 : ny, i = 1 : nx
-            rxy[i, j] = evaluate(dist, x[:,i], y[:,j])
+        for j = 1:ny, i = 1:nx
+            rxy[i, j] = evaluate(dist, x[:, i], y[:, j])
         end
-        for j = 1 : nx, i = 1 : nx
-            rxx[i, j] = evaluate(dist, x[:,i], x[:,j])
+        for j = 1:nx, i = 1:nx
+            rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
         @test pairwise(dist, x, y) ≈ rxy
         @test pairwise(dist, x) ≈ rxx
@@ -441,15 +441,15 @@ end #testset
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
     pd = pairwise(Euclidean(1e-12), X, X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
+    @test pd[1, 1] == 0
+    @test pd[2, 2] == 0
     pd = pairwise(Euclidean(1e-12), X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
+    @test pd[1, 1] == 0
+    @test pd[2, 2] == 0
     pd = pairwise(SqEuclidean(1e-12), X, X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
+    @test pd[1, 1] == 0
+    @test pd[2, 2] == 0
     pd = pairwise(SqEuclidean(1e-12), X)
-    @test pd[1,1] == 0
-    @test pd[2,2] == 0
+    @test pd[1, 1] == 0
+    @test pd[2, 2] == 0
 end
