@@ -58,7 +58,6 @@ export
     rogerstanimoto,
     chebyshev,
     minkowski,
-    mahalanobis,
 
     hamming,
     cosine_dist,
