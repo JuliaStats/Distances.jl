@@ -6,7 +6,7 @@
 #   Metric types
 #
 ###########################################################
-const RealAbstractArray{T <: AbstractFloat} =  AbstractArray{T}
+const RealAbstractArray{T <: Real} =  AbstractArray{T}
 
 
 struct WeightedEuclidean{W <: RealAbstractArray} <: Metric
@@ -21,7 +21,7 @@ struct WeightedCityblock{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-struct WeightedMinkowski{W <: RealAbstractArray, T <: Real} <: Metric
+struct WeightedMinkowski{W <: RealAbstractArray,T <: Real} <: Metric
     weights::W
     p::T
 end
@@ -31,7 +31,7 @@ struct WeightedHamming{W <: RealAbstractArray} <: Metric
 end
 
 
-const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W}, WeightedSqEuclidean{W}, WeightedCityblock{W}, WeightedMinkowski{W}, WeightedHamming{W}}
+const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W},WeightedSqEuclidean{W},WeightedCityblock{W},WeightedMinkowski{W},WeightedHamming{W}}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
@@ -42,7 +42,7 @@ Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 function evaluate(dist::UnionWeightedMetrics, a::T, b::T) where {T <: Number}
     eval_end(dist, eval_op(dist, a, b, one(eltype(dist))))
 end
-function result_type(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1,T2}
+function result_type(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
     typeof(evaluate(dist, one(T1), one(T2)))
 end
 function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
@@ -98,9 +98,9 @@ weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(Weig
 wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedCityblock(w), a, b)
 
 # Minkowski
-@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi) .^ dist.p * wi
+@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi).^dist.p * wi
 @inline eval_reduce(::WeightedMinkowski, s1, s2) = s1 + s2
-eval_end(dist::WeightedMinkowski, s) = s .^ (1/dist.p)
+eval_end(dist::WeightedMinkowski, s) = s.^(1 / dist.p)
 wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
 
 # WeightedHamming
@@ -122,9 +122,9 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
     sa2 = wsumsq_percol(w, a)
     sb2 = wsumsq_percol(w, b)
     At_mul_B!(r, a, b .* w)
-    for j = 1 : nb
-        @simd for i = 1 : na
-            @inbounds r[i,j] = sa2[i] + sb2[j] - 2 * r[i,j]
+    for j = 1:nb
+        @simd for i = 1:na
+            @inbounds r[i, j] = sa2[i] + sb2[j] - 2 * r[i, j]
         end
     end
     r
@@ -136,13 +136,13 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
     sa2 = wsumsq_percol(w, a)
     At_mul_B!(r, a, a .* w)
 
-    for j = 1 : n
-        for i = 1 : j-1
-            @inbounds r[i,j] = r[j,i]
+    for j = 1:n
+        for i = 1:(j - 1)
+            @inbounds r[i, j] = r[j, i]
         end
-        @inbounds r[j,j] = 0
-        @simd for i = j+1 : n
-            @inbounds r[i,j] = sa2[i] + sa2[j] - 2 * r[i,j]
+        @inbounds r[j, j] = 0
+        @simd for i = (j + 1):n
+            @inbounds r[i, j] = sa2[i] + sa2[j] - 2 * r[i, j]
         end
     end
     r
