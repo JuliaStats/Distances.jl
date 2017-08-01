@@ -64,8 +64,8 @@ function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractVector, b::Abstra
 end
 
 function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
-    size(a, 1) == length(b) == d
-    throw(DimensionMismatch("Incorrect vector dimensions."))
+    size(a, 1) == length(b) == d ||
+        throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
