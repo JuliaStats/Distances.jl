@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/JuliaStats/Distances.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/Distances.jl)
 [![Coverage Status](https://coveralls.io/repos/JuliaStats/Distances.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaStats/Distances.jl?branch=master)
 
-[![Distances](http://pkg.julialang.org/badges/Distances_0.5.svg)](http://pkg.julialang.org/?pkg=Distances)
+[![Distances](http://pkg.julialang.org/badges/Distances_0.6.svg)](http://pkg.julialang.org/?pkg=Distances)
 
 A Julia package for evaluating distances(metrics) between vectors.
 
