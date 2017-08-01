@@ -1,7 +1,7 @@
 using BenchmarkTools
 using Distances
 
-include("benchmark.jl")
+include("benchmarks.jl")
 
 # BenchmarkTools stores things in a Dict so it loses ordering but we want to print the table
 # in a special order. Therefore define an order here:

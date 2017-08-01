@@ -192,11 +192,11 @@ julia> pairwise(Euclidean(1e-12), x, x)
 
 ## Benchmarks
 
-The implementation has been carefully optimized based on benchmarks. The script in `benchmarks/benchmark.jl` defines a benchmark suite 
+The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite 
 for a variety of distances, under column-wise and pairwise settings. 
  
 Here are benchmarks obtained running Julia 0.6 on a computer with a quad-core Intel Core i5-2500K processor @ 3.3 GHz.
-The tables below can be replicated using the script in `benchmarks/print_table.jl`.
+The tables below can be replicated using the script in `benchmark/print_table.jl`.
 
 #### Column-wise benchmark
 
