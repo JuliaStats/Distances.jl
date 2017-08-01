@@ -103,7 +103,7 @@ function pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     for j = 1:n
         aj = view(a, :, j)
-        for i = j + 1:n
+        for i = (j + 1):n
             @inbounds r[i, j] = evaluate(metric, view(a, :, i), aj)
         end
         @inbounds r[j, j] = 0

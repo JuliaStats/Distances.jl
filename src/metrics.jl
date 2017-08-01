@@ -28,7 +28,6 @@ struct CorrDist <: SemiMetric end
 
 struct ChiSqDist <: SemiMetric end
 struct KLDivergence <: PreMetric end
-struct KLDivergence <: PreMetric end
 struct GenKLDivergence <: PreMetric end
 
 """
@@ -256,7 +255,7 @@ gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(),
 
 # RenyiDivergence
 function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
-    zero(T), zero(T), sum(a), sum(b)
+    zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
 @inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where {T <: Real}
