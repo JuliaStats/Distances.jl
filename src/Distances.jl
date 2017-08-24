@@ -23,6 +23,7 @@ export
     Chebyshev,
     Minkowski,
     Jaccard,
+    BrayCurtis,
     RogersTanimoto,
 
     Hamming,
@@ -57,6 +58,7 @@ export
     sqeuclidean,
     cityblock,
     jaccard,
+    braycurtis,
     rogerstanimoto,
     chebyshev,
     minkowski,
