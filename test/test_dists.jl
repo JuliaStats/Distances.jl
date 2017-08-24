@@ -384,6 +384,7 @@ end
 
         test_colwise(BhattacharyyaDist(), X, Y, T)
         test_colwise(HellingerDist(), X, Y, T)
+        test_colwise(BrayCurtis(), X, Y, T)
 
         w = rand(T, m)
 
@@ -456,6 +457,7 @@ end
 
         test_pairwise(BhattacharyyaDist(), X, Y, T)
         test_pairwise(HellingerDist(), X, Y, T)
+        test_pairwise(BrayCurtis(), X, Y, T)
 
         w = rand(m)
 

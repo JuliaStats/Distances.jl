@@ -36,6 +36,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Mean squared deviation
 * Root mean squared deviation
 * Normalized root mean squared deviation
+* Bray-Curtis dissimilarity
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
