@@ -177,6 +177,13 @@ end
         @inferred evaluate(Jaccard(), [1, 2, 3], [1, 2, 3])
         @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
 
+        # Test Bray-Curtis. Should be 1 if no elements are shared, 0 if all
+        # are the same
+        @test braycurtis([1,0,3],[0,1,0]) == 1.0
+        @test braycurtis(rand(10), zeros(10)) == 1.0
+        @test braycurtis([1,0],[1,0]) == 0.0
+
+
         # Test KL, Renyi and JS divergences
         r = rand(T, 12)
         p = copy(r)
@@ -232,12 +239,16 @@ end #testset
         @test isa(cityblock(a, b), T)
         @test chebyshev(a, b) == 0.0
         @test isa(chebyshev(a, b), T)
+        @test braycurtis(a, b) == 0.0
+        @test isa(braycurtis(a, b), T)
         @test minkowski(a, b, 2) == 0.0
         @test isa(minkowski(a, b, 2), T)
         @test hamming(a, b) == 0.0
         @test isa(hamming(a, b), Int)
         @test renyi_divergence(a, b, 1.0) == 0.0
         @test isa(renyi_divergence(a, b, 2.0), T)
+        @test braycurtis(a, b) == 0.0
+        @test isa(braycurtis(a, b), T)
 
         w = T[]
         @test isa(whamming(a, b, w), T)
