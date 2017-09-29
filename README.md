@@ -31,6 +31,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Squared Mahalanobis distance
 * Bhattacharyya distance
 * Hellinger distance
+* Haversine distance
 * Mean absolute deviation
 * Mean squared deviation
 * Root mean squared deviation
@@ -148,6 +149,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y )` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
 |  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
+|  Haversine           |  `haversine(x, y, r)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
 |  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
 |  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | ` (x - y)' * Q * (x - y)`  |
 |  MeanAbsDeviation    |  `meanad(x, y)`            | `mean(abs.(x - y))` |
