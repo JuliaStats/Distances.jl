@@ -45,6 +45,8 @@ export
     BhattacharyyaDist,
     HellingerDist,
 
+    Haversine,
+
     MeanAbsDeviation,
     MeanSqDeviation,
     RMSDeviation,
@@ -79,6 +81,8 @@ export
     bhattacharyya,
     hellinger,
 
+    haversine,
+
     meanad,
     msd,
     rmsd,
@@ -88,6 +92,7 @@ include("common.jl")
 include("generic.jl")
 include("metrics.jl")
 include("wmetrics.jl")
+include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
 
