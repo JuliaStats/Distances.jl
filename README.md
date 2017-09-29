@@ -228,6 +228,7 @@ The table below compares the performance (measured in terms of average elapsed t
 | WeightedHamming | 0.009042s |  0.003182s |  2.8417 |
 | SqMahalanobis | 0.070869s |  0.019199s |  3.6913 |
 | Mahalanobis | 0.070980s |  0.019305s |  3.6768 |
+| Haversine | 0.006549s |  0.000809s |  8.0967 |
 
 We can see that using ``colwise`` instead of a simple loop yields considerable gain (2x - 4x), especially when the internal computation of each distance is simple. Nonetheless, when the computation of a single distance is heavy enough (e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
 
@@ -259,5 +260,6 @@ The table below compares the performance (measured in terms of average elapsed t
 | WeightedHamming | 0.024456s |  0.007403s |  3.3033 |
 | SqMahalanobis | 0.113107s |  0.000366s | **309.3621** |
 | Mahalanobis | 0.114646s |  0.000686s | **167.0595** |
+| Haversine | 0.015267s |  0.003656s |  4.1763 |
 
 For distances of which a major part of the computation is a quadratic form (e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be drastically improved by restructuring the computation and delegating the core part to ``GEMM`` in *BLAS*. The use of this strategy can easily lead to 100x performance gain over simple loops (see the highlighted part of the table above).
