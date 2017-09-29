@@ -19,6 +19,8 @@ function create_distances(w, Q)
         BhattacharyyaDist(),
         HellingerDist(),
 
+        Haversine(),
+
         WeightedSqEuclidean(w),
         WeightedEuclidean(w),
         WeightedCityblock(w),
@@ -57,7 +59,7 @@ function evaluate_colwise(dist, x, y)
 end
 
 function add_colwise_benchmarks!(SUITE)
-    
+
     m = 200
     n = 10000
 

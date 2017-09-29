@@ -31,6 +31,7 @@ order = [
     :WeightedHamming,
     :SqMahalanobis,
     :Mahalanobis,
+    :Haversine,
 ]
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 2.0 # Long enough
