@@ -39,3 +39,4 @@ function evaluate(dist::Haversine{T}, x::AbstractVector, y::AbstractVector) wher
 end
 
 haversine(x::AbstractVector, y::AbstractVector, radius::T) where {T<:Real} = evaluate(Haversine(radius), x, y)
+haversine(x::AbstractVector, y::AbstractVector) = evaluate(Haversine(), x, y)
