@@ -63,7 +63,7 @@ end
         x₂ = rand(T, 2)
         x₃ = rand(T, 3)
 
-        test_metricity(Haversine(), x₁, x₂, x₃)
+        test_metricity(Haversine(6371.), x₁, x₂, x₃)
 
         k = rand(1:3, n)
         l = rand(1:3, n)
@@ -280,7 +280,7 @@ end #testset
 
 @testset "haversine" begin
     for T in (Float64, F64)
-        @test isapprox(haversine([-180.,0.], [180.,0.]), 0., atol=1e-10)
+        @test isapprox(haversine([-180.,0.], [180.,0.], 1.), 0., atol=1e-10)
         @test isapprox(haversine([0.,-90.], [0.,90.], 1.), π, atol=1e-10)
     end
 end
