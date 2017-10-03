@@ -15,27 +15,27 @@ the Earth as a sphere is typically negligible for most applications. It is
 no more than 0.3%.
 """
 struct Haversine{T<:Real} <: Metric
-  radius::T
+    radius::T
 end
 
 # use Earth radius ≈ 6371km by default
 Haversine() = Haversine(6371.)
 
 function evaluate(dist::Haversine{T}, x::AbstractVector, y::AbstractVector) where {T<:Real}
-  # longitudes
-  Δλ = deg2rad(y[1] - x[1])
+    # longitudes
+    Δλ = deg2rad(y[1] - x[1])
 
-  # latitudes
-  φ₁ = deg2rad(x[2])
-  φ₂ = deg2rad(y[2])
-  Δφ = φ₂ - φ₁
+    # latitudes
+    φ₁ = deg2rad(x[2])
+    φ₂ = deg2rad(y[2])
+    Δφ = φ₂ - φ₁
 
-  # haversine formula
-  a = sin(Δφ/2)^2 + cos(φ₁)*cos(φ₂)*sin(Δλ/2)^2
-  c = 2atan2(√a, √(1-a))
+    # haversine formula
+    a = sin(Δφ/2)^2 + cos(φ₁)*cos(φ₂)*sin(Δλ/2)^2
+    c = 2atan2(√a, √(1-a))
 
-  # distance on the sphere
-  c*dist.radius
+    # distance on the sphere
+    c*dist.radius
 end
 
 haversine(x::AbstractVector, y::AbstractVector, radius::T) where {T<:Real} = evaluate(Haversine(radius), x, y)
