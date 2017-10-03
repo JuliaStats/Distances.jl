@@ -279,10 +279,10 @@ end # testset
 end #testset
 
 @testset "haversine" begin
-  for T in (Float64, F64)
-    @test isapprox(haversine([-180.,0.], [180.,0.]), 0., atol=1e-10)
-    @test isapprox(haversine([0.,-90.], [0.,90.], 1.), π, atol=1e-10)
-  end
+    for T in (Float64, F64)
+        @test isapprox(haversine([-180.,0.], [180.,0.]), 0., atol=1e-10)
+        @test isapprox(haversine([0.,-90.], [0.,90.], 1.), π, atol=1e-10)
+    end
 end
 
 @testset "bhattacharyya / hellinger" begin
