@@ -61,7 +61,7 @@ end
 
         x₁ = rand(T, 2)
         x₂ = rand(T, 2)
-        x₃ = rand(T, 3)
+        x₃ = rand(T, 2)
 
         test_metricity(Haversine(6371.), x₁, x₂, x₃)
 
