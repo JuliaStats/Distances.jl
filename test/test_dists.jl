@@ -58,7 +58,13 @@ end
 
         test_metricity(BhattacharyyaDist(), x, y, z)
         test_metricity(HellingerDist(), x, y, z)
-    
+
+        x₁ = rand(T, 2)
+        x₂ = rand(T, 2)
+        x₃ = rand(T, 2)
+
+        test_metricity(Haversine(6371.), x₁, x₂, x₃)
+
         k = rand(1:3, n)
         l = rand(1:3, n)
         m = rand(1:3, n)
@@ -154,7 +160,7 @@ end
             @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
             @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
         end
- 
+
 
         # Test weighted Hamming distances with even weights
         a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
@@ -187,7 +193,7 @@ end
         end
         @test kl_divergence(p, q) ≈ klv
         @test typeof(kl_divergence(p, q)) == T
-   
+
 
         @test renyi_divergence(p, r, 0) ≈ -log(scale)
         @test renyi_divergence(p, r, 1) ≈ -log(scale)
@@ -271,6 +277,16 @@ end # testset
         @test eltype(mahalanobis(x, y, Q)) == T
     end
 end #testset
+
+@testset "haversine" begin
+    for T in (Float64, F64)
+        @test haversine([-180.,0.], [180.,0.], 1.) ≈ 0 atol=1e-10
+        @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
+        @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
+        @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
+        @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
+    end
+end
 
 @testset "bhattacharyya / hellinger" begin
     for T in (Float64, F64)
