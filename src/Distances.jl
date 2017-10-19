@@ -12,6 +12,7 @@ export
     result_type,
     colwise,
     pairwise,
+    cond_pairwise,
     colwise!,
     pairwise!,
     evaluate,

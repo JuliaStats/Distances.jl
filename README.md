@@ -93,7 +93,13 @@ R = pairwise(dist, X)
 ```
 
 This statement will result in an ``m-by-m`` matrix, where ``R[i,j]`` is the distance between ``X[:,i]`` and ``X[:,j]``.
-``pairwise(dist, X)`` is typically more efficient than ``pairwise(dist, X, X)``, as the former will take advantage of the symmetry when ``dist`` is a semi-metric (including metric).
+``pairwise(dist, X)`` is typically more efficient than ``pairwise(dist, X, X)``, as the former will take advantage of the symmetry when ``dist`` is a semi-metric (including metric). You can also compute symmetric distances in a condensed vector representation:
+
+```julia
+r = cond_pairwise(dist, X)
+```
+
+This will return a vector ``r`` of length ``n * (n - 1) / 2``, containing the corresponding matrix elements arranged in the order ``(2,1), (3,1), ..., (m,1), (3,2), ..., (m,2), ..., (m,m–1)``.
 
 #### Computing column-wise and pairwise distances inplace
 
@@ -103,9 +109,10 @@ If the vector/matrix to store the results are pre-allocated, you may use the sto
 colwise!(r, dist, X, Y)
 pairwise!(R, dist, X, Y)
 pairwise!(R, dist, X)
+pairwise!(r, dist, X)
 ```
 
-Please pay attention to the difference, the functions for inplace computation are ``colwise!`` and ``pairwise!`` (instead of ``colwise`` and ``pairwise``).
+Please pay attention to the difference, the functions for inplace computation are ``colwise!`` and ``pairwise!`` (instead of ``colwise`` and ``pairwise``/``cond_pairwise``).
 
 
 ## Distance type hierarchy
