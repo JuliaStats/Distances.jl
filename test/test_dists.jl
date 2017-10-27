@@ -284,6 +284,7 @@ end #testset
         @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
         @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
+        @test haversine((1.,-15.625), (-179.,15.625), 6371.) ≈ 20015. atol=1e0
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
     end
 end
