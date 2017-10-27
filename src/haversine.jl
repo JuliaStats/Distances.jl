@@ -12,7 +12,7 @@ end
 
 const VecOrLengthTwoTuple{T} = Union{AbstractVector{T}, NTuple{2, T}}
 
-function evaluate(dist::Haversine, x::VecOrLengthTwoTuple{T}, y::VecOrLengthTwoTuple{T}) where {T}
+function evaluate(dist::Haversine, x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple)
     length(x) == length(y) == 2 || haversine_error()
 
     @inbounds begin
@@ -30,7 +30,7 @@ function evaluate(dist::Haversine, x::VecOrLengthTwoTuple{T}, y::VecOrLengthTwoT
     a = sin(Δφ/2)^2 + cos(φ₁)*cos(φ₂)*sin(Δλ/2)^2
 
     # take care of floating point errors
-    a = min(a, one(T))
+    a = min(a, one(a))
 
     # distance on the sphere
     2*dist.radius*atan2(√a, √(1-a))
