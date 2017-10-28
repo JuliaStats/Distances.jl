@@ -42,6 +42,7 @@ export
     WeightedHamming,
     SqMahalanobis,
     Mahalanobis,
+    Ellipsoidal,
     BhattacharyyaDist,
     HellingerDist,
 
