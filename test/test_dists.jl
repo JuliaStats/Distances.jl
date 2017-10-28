@@ -287,6 +287,8 @@ end #testset
     dist = Ellipsoidal([1.,.5,.5], [π/4,0.,0.])
     @test evaluate(dist, [1.,1.,0.], [0.,0.,0.]) ≈ √2
     @test evaluate(dist, [-1.,1.,0.], [0.,0.,0.]) ≈ √8
+
+    @test ellipsoidal([1.,1.,1.], [0.,0.,0.], [1.,1.,1.], [0.,0.,0.]) ≈ √3
 end
 
 @testset "haversine" begin
