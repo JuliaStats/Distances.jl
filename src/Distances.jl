@@ -79,6 +79,7 @@ export
     whamming,
     sqmahalanobis,
     mahalanobis,
+    ellipsoidal,
     bhattacharyya,
     hellinger,
 

@@ -106,6 +106,28 @@ end
 
 # Ellipsoidal
 
+"""
+    Ellipsoidal(semiaxes, angles)
+
+A distance defined by an ellipsoid with given `semiaxes` and rotation `angles`.
+
+- For 2D ellipsoids, there are two semiaxes and one rotation angle.
+- For 3D ellipsoids, there are three semiaxes and three rotation angles.
+
+## Examples
+
+2D ellipsoid making 45ᵒ with the horizontal axis:
+
+```julia
+julia> Ellipsoidal([1.0,0.5], [π/2])
+```
+
+3D ellipsoid rotated by 45ᵒ in the xy plane:
+
+```julia
+julia> Ellipsoidal([1.0,0.5,0.5], [π/2,0.0,0.0])
+```
+"""
 struct Ellipsoidal{N,T} <: Metric
     dist::Mahalanobis{T}
 
@@ -162,7 +184,7 @@ struct Ellipsoidal{N,T} <: Metric
     end
 end
 
-Ellipsoidal(semiaxes::Vector{T}, angles::Vector{T}) where {T<:Real} =
+Ellipsoidal(semiaxes::AbstractVector{T}, angles::AbstractVector{T}) where {T<:Real} =
   Ellipsoidal{length(semiaxes),T}(semiaxes, angles)
 
 result_type(::Ellipsoidal{N,T}, ::AbstractArray, ::AbstractArray) where {N,T} = T
@@ -170,3 +192,6 @@ result_type(::Ellipsoidal{N,T}, ::AbstractArray, ::AbstractArray) where {N,T} = 
 function evaluate(dist::Ellipsoidal{N,T}, a::AbstractVector, b::AbstractVector) where {N,T<:Real}
     evaluate(dist.dist, a, b)
 end
+
+ellipsoidal(a::AbstractVector, b::AbstractVector,
+            semiaxes::AbstractVector, angles::AbstractVector) = evaluate(Ellipsoidal(semiaxes, angles), a, b)
