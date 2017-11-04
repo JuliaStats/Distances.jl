@@ -92,10 +92,10 @@ end
         test_metricity(SqMahalanobis(Q), x, y, z)
         test_metricity(Mahalanobis(Q), x, y, z)
 
-        #semiaxes = [T(1/2), T(1), T(2)]
-        #angles = [T(π/2), T(π/2), T(π/2)]
+        semiaxes = [T(1/2), T(1), T(2)]
+        angles = [T(π/2), T(π/2), T(π/2)]
 
-        #test_metricity(Ellipsoidal(semiaxes, angles), x, y, z)
+        test_metricity(Ellipsoidal(semiaxes, angles), x, y, z)
 
         p = rand(T, n)
         q = rand(T, n)

@@ -13,13 +13,15 @@ end
 for op in (:zero, :one)
     @eval Base.$op(::Type{F64}) = F64($op(Float64))
 end
+# simple mathematical functions
+for f in (:sqrt, :log, :cos, :sin)
+    @eval Base.$f(a::F64) = F64($f(a.x))
+end
 Base.rand(rng::AbstractRNG, ::Type{F64}) = F64(rand())
-Base.sqrt(a::F64) = F64(sqrt(a.x))
 Base.:^(a::F64, b::Number) = F64(a.x^b)
 Base.:^(a::F64, b::Int) = F64(a.x^b)
 Base.:^(a::F64, b::F64) = F64(a.x^b.x)
 Base.:^(a::Number, b::F64) = a^b.x
-Base.log(a::F64) = F64(log(a.x))
 Base.isfinite(a::F64) = isfinite(a.x)
 Base.float(a::F64) = a
 Base.rtoldefault(a::Type{F64}, b::Type{F64}) = Base.rtoldefault(Float64, Float64)
