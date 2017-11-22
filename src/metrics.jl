@@ -239,7 +239,7 @@ corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
-@inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
+@inline eval_op(::ChiSqDist, ai, bi) = ifelse(ai != bi, abs2(ai - bi) / (ai + bi), zero(ai))
 @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
