@@ -19,7 +19,7 @@ function create_distances(w, Q)
         BhattacharyyaDist(),
         HellingerDist(),
 
-        Haversine(),
+        Haversine(6371.),
 
         WeightedSqEuclidean(w),
         WeightedEuclidean(w),
