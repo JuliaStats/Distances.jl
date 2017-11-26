@@ -137,7 +137,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
 |  Minkowski           |  `minkowski(x, y, p)`      | `sum(abs(x - y).^p) ^ (1/p)` |
 |  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
-|  Rogers-Tanimoto     |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
+|  RogersTanimoto      |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
 |  Jaccard             |  `jaccard(x, y)`           | `1 - sum(min(x, y)) / sum(max(x, y))` |
 |  CosineDist          |  `cosine_dist(x, y)`       | `1 - dot(x, y) / (norm(x) * norm(y))` |
 |  CorrDist            |  `corr_dist(x, y)`         | `cosine_dist(x - mean(x), y - mean(y))` |
@@ -146,12 +146,12 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  GenKLDivergence     |  `gkl_divergence(x, y)`    | `sum(p .* log(p ./ q) - p + q)` |
 |  RenyiDivergence     | `renyi_divergence(p, q, k)`| `log(sum( p .* (p ./ q) .^ (k - 1))) / (k - 1)` |
 |  JSDivergence        |  `js_divergence(p, q)`     | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
-|  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y )` |
+|  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y)` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
 |  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
 |  Haversine           |  `haversine(x, y, r)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
 |  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
-|  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | ` (x - y)' * Q * (x - y)`  |
+|  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | `(x - y)' * Q * (x - y)` |
 |  MeanAbsDeviation    |  `meanad(x, y)`            | `mean(abs.(x - y))` |
 |  MeanSqDeviation     |  `msd(x, y)`               | `mean(abs2.(x - y))` |
 |  RMSDeviation        |  `rmsd(x, y)`              | `sqrt(msd(x, y))` |
@@ -194,9 +194,9 @@ julia> pairwise(Euclidean(1e-12), x, x)
 
 ## Benchmarks
 
-The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite 
-for a variety of distances, under column-wise and pairwise settings. 
- 
+The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite
+for a variety of distances, under column-wise and pairwise settings.
+
 Here are benchmarks obtained running Julia 0.6 on a computer with a quad-core Intel Core i5-2500K processor @ 3.3 GHz.
 The tables below can be replicated using the script in `benchmark/print_table.jl`.
 

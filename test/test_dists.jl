@@ -161,6 +161,8 @@ end
             @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
         end
 
+        # Test ChiSq doesn't give NaN at zero
+        @test chisq_dist([0.0], [0.0]) == 0.0
 
         # Test weighted Hamming distances with even weights
         a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
