@@ -135,6 +135,7 @@ end
             @test jaccard(x, y) == 13.0 / 28
             @test cityblock(x, y) == 13.0
             @test chebyshev(x, y) == 6.0
+            @test braycurtis(x, y) == 1. - (30./43.)
             @test minkowski(x, y, 2) == sqrt(57.0)
             @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
             @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
