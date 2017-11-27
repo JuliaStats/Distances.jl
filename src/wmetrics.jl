@@ -81,6 +81,35 @@ function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     return eval_end(d, s)
 end
 
+
+function evaluate(d::UnionWeightedMetrics, A::AbstractMatrix, jA::Int, B::AbstractMatrix, jB::Int)
+    ind_ = indices(A,1)
+    @boundscheck begin
+        if ind_ != indices(B,1)#length(a) != length(b)
+            throw(DimensionMismatch("first array has row-indices $(ind_) which does not match the second, $(indices(B,1))."))
+        end
+        if ind_ != indices(d.weights,1)
+            throw(DimensionMismatch("arrays have row-indices $(ind_) but weights have $(indices(d.weights,1))."))
+        end
+        if !(jA in ind_)
+            throw(BoundsError("$(jA) not in $(ind_) = indices($(A), 1)"))
+        end
+        if !(jB in ind_)
+            throw(BoundsError("$(jB) not in $(ind_) = indices($(B), 1)"))
+        end        
+    end
+    s = eval_start(d, A, jA, B, jB)
+        @simd for I in ind_#eachindex(a, b, d.weights)
+            @inbounds ai = A[I, jA]
+            @inbounds bi = b[I,jB]
+            @inbounds wi = d.weights[I]
+            s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+        end
+    return eval_end(d, s)
+end
+
+@inline eval_start(d::UnionWeightedMetrics, A::AbstractMatrix, jA::Int, B::AbstractMatrix, jB::Int) = zero(result_type(d, A, B))
+
 # Squared Euclidean
 @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
 @inline eval_reduce(::WeightedSqEuclidean, s1, s2) = s1 + s2

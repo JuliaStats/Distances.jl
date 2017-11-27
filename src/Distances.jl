@@ -16,6 +16,11 @@ export
     pairwise!,
     evaluate,
 
+    pairwise_advanced!,
+    colwise_noalloc!,
+    pairwise_noalloc!,
+
+
     # distance classes
     Euclidean,
     SqEuclidean,
@@ -87,6 +92,7 @@ export
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
+include("iteration.jl")
 include("wmetrics.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
