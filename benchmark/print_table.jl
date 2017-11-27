@@ -32,6 +32,7 @@ order = [
     :SqMahalanobis,
     :Mahalanobis,
     :Haversine,
+    :BrayCurtis,
 ]
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 2.0 # Long enough
