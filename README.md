@@ -140,10 +140,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
 |  RogersTanimoto      |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
 |  Jaccard             |  `jaccard(x, y)`           | `1 - sum(min(x, y)) / sum(max(x, y))` |
-<<<<<<< master
 |  BrayCurtis          |  `braycurtis(x, y)`        | `sum(abs(x - y)) / sum(abs(x+y))`  |
-=======
->>>>>>> @alyst review fixes
 |  CosineDist          |  `cosine_dist(x, y)`       | `1 - dot(x, y) / (norm(x) * norm(y))` |
 |  CorrDist            |  `corr_dist(x, y)`         | `cosine_dist(x - mean(x), y - mean(y))` |
 |  ChiSqDist           |  `chisq_dist(x, y)`        | `sum((x - y).^2 / (x + y))` |
@@ -154,20 +151,13 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y)` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
 |  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
-<<<<<<< master
 |  Haversine           |  `haversine(x, y, r)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
-=======
->>>>>>> @alyst review fixes
 |  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
 |  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | `(x - y)' * Q * (x - y)` |
 |  MeanAbsDeviation    |  `meanad(x, y)`            | `mean(abs.(x - y))` |
 |  MeanSqDeviation     |  `msd(x, y)`               | `mean(abs2.(x - y))` |
 |  RMSDeviation        |  `rmsd(x, y)`              | `sqrt(msd(x, y))` |
 |  NormRMSDeviation    |  `nrmsd(x, y)`             | `rmsd(x, y) / (maximum(x) - minimum(x))` |
-<<<<<<< master
-=======
-|  BrayCurtis          |  `braycurtis(x, y)`        | `sum(abs(x - y)) / sum(abs(x+y))`  |
->>>>>>> @alyst review fixes
 |  WeightedEuclidean   |  `weuclidean(x, y, w)`     | `sqrt(sum((x - y).^2 .* w))`  |
 |  WeightedSqEuclidean |  `wsqeuclidean(x, y, w)`   | `sum((x - y).^2 .* w)`  |
 |  WeightedCityblock   |  `wcityblock(x, y, w)`     | `sum(abs(x - y) .* w)`  |
