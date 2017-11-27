@@ -167,10 +167,44 @@ function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     end
     return eval_end(d, s)
 end
+
+@inline function evaluate(d::UnionMetrics, A::AbstractMatrix, jA::Int, B::AbstractMatrix, jB::Int)
+    ind_ = indices(A,1)
+    @boundscheck begin
+        if ind_ != indices(B,1)#length(a) != length(b)
+            throw(DimensionMismatch("first array has row-indices $(ind_) which does not match the second, $(indices(B,1))."))
+        end
+        if ind_ != indices(B,1)#length(a) != length(b)
+            throw(DimensionMismatch("first array has row-indices $(ind_) which does not match the second, $(indices(B,1))."))
+        end
+        if !(jA in indices(A,2))
+            throw(BoundsError("$(jA) not in $(ind_) = $(indices(A))[2]"))
+        end
+        if !(jB in indices(B,2))
+            throw(BoundsError("$(jB) not in $(ind_) = $(indices(B))[2]"))
+        end
+        
+    end
+    s = eval_start(d, A, jA, B, jB)
+        @simd for I in ind_#eachindex(a, b, d.weights)
+            @inbounds ai = A[I, jA]
+            @inbounds bi = B[I,jB]
+            s = eval_reduce(d, s, eval_op(d, ai, bi))
+        end
+    return eval_end(d, s)
+end
+
+
+
+
+
 result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
     typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
-eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
+@inline eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
+@inline eval_start(d::UnionMetrics, a::AbstractMatrix, jA::Int, b::AbstractMatrix, jB::Int) =
+    zero(result_type(d, a, b))
+
 eval_end(d::UnionMetrics, s) = s
 
 evaluate(dist::UnionMetrics, a::T, b::T) where {T <: Number} = eval_end(dist, eval_op(dist, a, b))
@@ -199,7 +233,7 @@ cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-@inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+#@inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1]) --why?
 chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
@@ -220,6 +254,9 @@ hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
 function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), zero(T)
 end
+@inline eval_start(::CosineDist, A::AbstractMatrix{T}, jA::Int, B::AbstractMatrix{T}, jB::Int)  where {T <: Real} =
+    zero(T), zero(T), zero(T)
+
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
 @inline function eval_reduce(::CosineDist, s1, s2)
     a1, b1, c1 = s1
@@ -257,6 +294,15 @@ gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(),
 function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
+@inline function eval_start(::RenyiDivergence, A::AbstractMatrix{T}, jA::Int, B::AbstractMatrix{T}, jB::Int)  where {T <: Real}
+    sa = zero(T)
+    sb = zero(T)
+    @simd for ii in indices(A,1)
+        @inbounds sa += A[ii,jA]
+        @inbounds sb += B[ii,jB]
+    end
+     zero(T), zero(T), sA, sB
+ end
 
 @inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where {T <: Real}
     if ai == zero(T)
@@ -318,6 +364,11 @@ js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, 
 function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
+@inline function eval_start(::SpanNormDist, A::AbstractMatrix{T}, jA::Int, B::AbstractMatrix{T}, jB::Int)  where {T <: Real}
+    ii = indices(A,1)[1]
+    A[ii,jA] - B[ii,jB], A[ii,jA] - B[ii,jB]
+ end
+
 @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
 @inline function eval_reduce(::SpanNormDist, s1, s2)
     min_d, max_d = s1
@@ -339,7 +390,11 @@ end
 # Jaccard
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
+@inline eval_start(::Jaccard, A::AbstractMatrix{Bool}, jA::Int, B::AbstractMatrix{Bool}, jB::Int) = 0, 0
+
 @inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline eval_start(::Jaccard, A::AbstractMatrix{T}, jA::Int, B::AbstractMatrix{T}, jB::Int) where T = zero(T), zero(T)
+
 @inline function eval_op(::Jaccard, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -359,6 +414,8 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 # Tanimoto
 
 @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@inline eval_start(::RogersTanimoto, A::AbstractMatrix, jA::Int, B::AbstractMatrix, jB::Int) = 0, 0, 0, 0
+
 @inline function eval_op(::RogersTanimoto, s1, s2)
     tt = s1 && s2
     tf = s1 && !s2
