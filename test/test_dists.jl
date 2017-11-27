@@ -125,6 +125,8 @@ end
     bt = [true, false, true]
     bf = [false, true, true]
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
+    @test braycurtis(bt, bf) == 0.5
+
     for T in (Float64, F64)
 
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
