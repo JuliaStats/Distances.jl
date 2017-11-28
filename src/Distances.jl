@@ -88,6 +88,7 @@ export
     rmsd,
     nrmsd
 
+include("unsafe_views.jl")
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
