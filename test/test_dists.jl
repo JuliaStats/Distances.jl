@@ -125,6 +125,8 @@ end
     bt = [true, false, true]
     bf = [false, true, true]
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
+    @test braycurtis(bt, bf) == 0.5
+
     for T in (Float64, F64)
 
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
@@ -135,6 +137,7 @@ end
             @test jaccard(x, y) == 13.0 / 28
             @test cityblock(x, y) == 13.0
             @test chebyshev(x, y) == 6.0
+            @test braycurtis(x, y) == 1. - (30./43.)
             @test minkowski(x, y, 2) == sqrt(57.0)
             @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
             @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
@@ -176,6 +179,11 @@ end
         @inferred evaluate(Jaccard(), rand(T, 3), rand(T, 3))
         @inferred evaluate(Jaccard(), [1, 2, 3], [1, 2, 3])
         @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
+
+        # Test Bray-Curtis. Should be 1 if no elements are shared, 0 if all are the same
+        @test braycurtis([1,0,3],[0,1,0]) == 1.0
+        @test braycurtis(rand(10), zeros(10)) == 1.0
+        @test braycurtis([1,0],[1,0]) == 0.0
 
         # Test KL, Renyi and JS divergences
         r = rand(T, 12)
@@ -232,12 +240,16 @@ end #testset
         @test isa(cityblock(a, b), T)
         @test chebyshev(a, b) == 0.0
         @test isa(chebyshev(a, b), T)
+        @test braycurtis(a, b) == 0.0
+        @test isa(braycurtis(a, b), T)
         @test minkowski(a, b, 2) == 0.0
         @test isa(minkowski(a, b, 2), T)
         @test hamming(a, b) == 0.0
         @test isa(hamming(a, b), Int)
         @test renyi_divergence(a, b, 1.0) == 0.0
         @test isa(renyi_divergence(a, b, 2.0), T)
+        @test braycurtis(a, b) == 0.0
+        @test isa(braycurtis(a, b), T)
 
         w = T[]
         @test isa(whamming(a, b, w), T)
@@ -384,6 +396,7 @@ end
 
         test_colwise(BhattacharyyaDist(), X, Y, T)
         test_colwise(HellingerDist(), X, Y, T)
+        test_colwise(BrayCurtis(), X, Y, T)
 
         w = rand(T, m)
 
@@ -456,6 +469,7 @@ end
 
         test_pairwise(BhattacharyyaDist(), X, Y, T)
         test_pairwise(HellingerDist(), X, Y, T)
+        test_pairwise(BrayCurtis(), X, Y, T)
 
         w = rand(m)
 

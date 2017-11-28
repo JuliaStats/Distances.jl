@@ -36,6 +36,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Mean squared deviation
 * Root mean squared deviation
 * Normalized root mean squared deviation
+* Bray-Curtis dissimilarity
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
@@ -139,6 +140,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
 |  RogersTanimoto      |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
 |  Jaccard             |  `jaccard(x, y)`           | `1 - sum(min(x, y)) / sum(max(x, y))` |
+|  BrayCurtis          |  `braycurtis(x, y)`        | `sum(abs(x - y)) / sum(abs(x + y))`  |
 |  CosineDist          |  `cosine_dist(x, y)`       | `1 - dot(x, y) / (norm(x) * norm(y))` |
 |  CorrDist            |  `corr_dist(x, y)`         | `cosine_dist(x - mean(x), y - mean(y))` |
 |  ChiSqDist           |  `chisq_dist(x, y)`        | `sum((x - y).^2 / (x + y))` |
