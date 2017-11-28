@@ -211,7 +211,7 @@ function pairwise_co_internal!(r::Matrix{T}, metric::UnionMetrics, A::Matrix{T},
 
 
     elseif (nA > cache_thresh)
-        if hstate == _TLBR
+        if hstate == _TLTR
             pairwise_co_internal!(r::Matrix{T}, metric::UnionMetrics, A::Matrix{T},
                 A_start, A_start + (nA>>1), B::Matrix{T},
                 B_start, B_end,cache_thresh,Val{hstate})
