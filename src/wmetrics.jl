@@ -52,11 +52,11 @@ eval_end(d::UnionWeightedMetrics, s) = s
 
 
 
-function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
-    if length(a) != length(b)
+@inline function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+    @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
-    if length(a) != length(d.weights)
+    @boundscheck if length(a) != length(d.weights)
         throw(DimensionMismatch("arrays have length $(length(a)) but weights have length $(length(d.weights))."))
     end
     if length(a) == 0

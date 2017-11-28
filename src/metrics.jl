@@ -162,7 +162,7 @@ SqEuclidean() = SqEuclidean(0)
 end
 
 @inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
-    if length(a) != length(b)
+    @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
     if length(a) == 0
