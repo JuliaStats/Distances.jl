@@ -180,8 +180,7 @@ end
         @inferred evaluate(Jaccard(), [1, 2, 3], [1, 2, 3])
         @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
 
-        # Test Bray-Curtis. Should be 1 if no elements are shared, 0 if all
-        # are the same
+        # Test Bray-Curtis. Should be 1 if no elements are shared, 0 if all are the same
         @test braycurtis([1,0,3],[0,1,0]) == 1.0
         @test braycurtis(rand(10), zeros(10)) == 1.0
         @test braycurtis([1,0],[1,0]) == 0.0
