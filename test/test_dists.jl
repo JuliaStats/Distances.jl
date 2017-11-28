@@ -185,7 +185,6 @@ end
         @test braycurtis(rand(10), zeros(10)) == 1.0
         @test braycurtis([1,0],[1,0]) == 0.0
 
-
         # Test KL, Renyi and JS divergences
         r = rand(T, 12)
         p = copy(r)
