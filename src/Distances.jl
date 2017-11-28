@@ -16,6 +16,8 @@ export
     pairwise!,
     evaluate,
 
+    fastview,
+
     # distance classes
     Euclidean,
     SqEuclidean,
