@@ -20,6 +20,7 @@ function create_distances(w, Q)
         HellingerDist(),
 
         Haversine(6371.),
+  
         BrayCurtis(),
 
         WeightedSqEuclidean(w),
