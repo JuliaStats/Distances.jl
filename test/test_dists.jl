@@ -1,44 +1,38 @@
 # Unit tests for Distances
 
-macro test_metricity(_dist, _x, _y, _z)
-    quote
-        dist = $(esc(_dist))
-        x = $(esc(_x))
-        y = $(esc(_y))
-        z = $(esc(_z))
-        @testset "$(typeof(dist))" begin
-            dxy = evaluate(dist, x, y)
-            dxz = evaluate(dist, x, z)
-            dyz = evaluate(dist, y, z)
-            if isa(dist, PreMetric)
-                # Unfortunately small non-zero numbers (~10^-16) are appearing
-                # in our tests due to accumulating floating point rounding errors.
-                # We either need to allow small errors in our tests or change the
-                # way we do accumulations...
-                @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
-                @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
-                @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
-                @test dxy ≥ zero(eltype(x))
-                @test dxz ≥ zero(eltype(x))
-                @test dyz ≥ zero(eltype(x))
-            end
-            if isa(dist, SemiMetric)
-                @test dxy ≈ evaluate(dist, y, x)
-                @test dxz ≈ evaluate(dist, z, x)
-                @test dyz ≈ evaluate(dist, y, z)
-            else # Not symmetric, so more PreMetric tests
-                @test evaluate(dist, y, x) ≥ zero(eltype(x))
-                @test evaluate(dist, z, x) ≥ zero(eltype(x))
-                @test evaluate(dist, z, y) ≥ zero(eltype(x))
-            end
-            if isa(dist, Metric)
-                # Again we have small rounding errors in accumulations
-                @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
-                dyx = evaluate(dist, y, x)
-                @test dyz ≤ dyx + dxz || dyz ≈ dyx + dxz
-                dzy = evaluate(dist, z, y)
-                @test dxy ≤ dxz + dzy || dxy ≈ dxz + dzy
-            end
+function test_metricity(dist, x, y, z)
+    @testset "Test metricity of $(typeof(dist))" begin
+        dxy = evaluate(dist, x, y)
+        dxz = evaluate(dist, x, z)
+        dyz = evaluate(dist, y, z)
+        if isa(dist, PreMetric)
+            # Unfortunately small non-zero numbers (~10^-16) are appearing
+            # in our tests due to accumulating floating point rounding errors.
+            # We either need to allow small errors in our tests or change the
+            # way we do accumulations...
+            @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
+            @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
+            @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
+            @test dxy ≥ zero(eltype(x))
+            @test dxz ≥ zero(eltype(x))
+            @test dyz ≥ zero(eltype(x))
+        end
+        if isa(dist, SemiMetric)
+            @test dxy ≈ evaluate(dist, y, x)
+            @test dxz ≈ evaluate(dist, z, x)
+            @test dyz ≈ evaluate(dist, y, z)
+        else # Not symmetric, so more PreMetric tests
+            @test evaluate(dist, y, x) ≥ zero(eltype(x))
+            @test evaluate(dist, z, x) ≥ zero(eltype(x))
+            @test evaluate(dist, z, y) ≥ zero(eltype(x))
+        end
+        if isa(dist, Metric)
+            # Again we have small rounding errors in accumulations
+            @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
+            dyx = evaluate(dist, y, x)
+            @test dyz ≤ dyx + dxz || dyz ≈ dyx + dxz
+            dzy = evaluate(dist, z, y)
+            @test dxy ≤ dxz + dzy || dxy ≈ dxz + dzy
         end
     end
 end
@@ -49,56 +43,56 @@ end
     y = rand(T, n)
     z = rand(T, n)
 
-    @test_metricity SqEuclidean() x y z
-    @test_metricity Euclidean() x y z
-    @test_metricity Cityblock() x y z
-    @test_metricity Chebyshev() x y z
-    @test_metricity Minkowski(2.5) x y z
+    test_metricity(SqEuclidean(), x, y, z)
+    test_metricity(Euclidean(), x, y, z)
+    test_metricity(Cityblock(), x, y, z)
+    test_metricity(Chebyshev(), x, y, z)
+    test_metricity(Minkowski(2.5), x, y, z)
 
-    @test_metricity CosineDist() x y z
-    @test_metricity CorrDist() x y z
+    test_metricity(CosineDist(), x, y, z)
+    test_metricity(CorrDist(), x, y, z)
 
-    @test_metricity ChiSqDist() x y z
+    test_metricity(ChiSqDist(), x, y, z)
 
-    @test_metricity Jaccard() x y z
-    @test_metricity SpanNormDist() x y z
+    test_metricity(Jaccard(), x, y, z)
+    test_metricity(SpanNormDist(), x, y, z)
 
-    @test_metricity BhattacharyyaDist() x y z
-    @test_metricity HellingerDist() x y z
+    test_metricity(BhattacharyyaDist(), x, y, z)
+    test_metricity(HellingerDist(), x, y, z)
 
     x₁ = rand(T, 2)
     x₂ = rand(T, 2)
     x₃ = rand(T, 2)
 
-    @test_metricity Haversine(6371.0) x₁ x₂ x₃
+    test_metricity(Haversine(6371.0), x₁, x₂, x₃)
 
     k = rand(1:3, n)
     l = rand(1:3, n)
     m = rand(1:3, n)
 
-    @test_metricity Hamming() k l m
+    test_metricity(Hamming(), k, l, m)
 
     a = rand(Bool, n)
     b = rand(Bool, n)
     c = rand(Bool, n)
 
-    @test_metricity RogersTanimoto() a b c
-    @test_metricity BrayCurtis() a b c
-    @test_metricity Jaccard() a b c
+    test_metricity(RogersTanimoto(), a, b, c)
+    test_metricity(BrayCurtis(), a, b, c)
+    test_metricity(Jaccard(), a, b, c)
 
     w = rand(T, n)
 
-    @test_metricity WeightedSqEuclidean(w) x y z
-    @test_metricity WeightedEuclidean(w) x y z
-    @test_metricity WeightedCityblock(w) x y z
-    @test_metricity WeightedMinkowski(w, 2.5) x y z
-    @test_metricity WeightedHamming(w) a b c
+    test_metricity(WeightedSqEuclidean(w), x, y, z)
+    test_metricity(WeightedEuclidean(w), x, y, z)
+    test_metricity(WeightedCityblock(w), x, y, z)
+    test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
+    test_metricity(WeightedHamming(w), a, b, c)
 
     Q = rand(T, n, n)
     Q = Q * Q'  # make sure Q is positive-definite
 
-    @test_metricity SqMahalanobis(Q) x y z
-    @test_metricity Mahalanobis(Q) x y z
+    test_metricity(SqMahalanobis(Q), x, y, z)
+    test_metricity(Mahalanobis(Q), x, y, z)
 
     p = rand(T, n)
     q = rand(T, n)
@@ -108,14 +102,14 @@ end
     q /= sum(q)
     r /= sum(r)
 
-    @test_metricity KLDivergence() p q r
-    @test_metricity RenyiDivergence(0.0) p q r
-    @test_metricity RenyiDivergence(1.0) p q r
-    @test_metricity RenyiDivergence(Inf) p q r
-    @test_metricity RenyiDivergence(0.5) p q r
-    @test_metricity RenyiDivergence(2) p q r
-    @test_metricity RenyiDivergence(10) p q r
-    @test_metricity JSDivergence() p q r
+    test_metricity(KLDivergence(), p, q, r)
+    test_metricity(RenyiDivergence(0.0), p, q, r)
+    test_metricity(RenyiDivergence(1.0), p, q, r)
+    test_metricity(RenyiDivergence(Inf), p, q, r)
+    test_metricity(RenyiDivergence(0.5), p, q, r)
+    test_metricity(RenyiDivergence(2), p, q, r)
+    test_metricity(RenyiDivergence(10), p, q, r)
+    test_metricity(JSDivergence(), p, q, r)
 end
 
 @testset "individual metrics" begin
