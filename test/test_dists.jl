@@ -350,76 +350,77 @@ end #testset
 
 
 function test_colwise(dist, x, y, T)
-    n = size(x, 2)
-    r1 = zeros(T, n)
-    r2 = zeros(T, n)
-    r3 = zeros(T, n)
-    for j = 1:n
-        r1[j] = evaluate(dist, x[:, j], y[:, j])
-        r2[j] = evaluate(dist, x[:, 1], y[:, j])
-        r3[j] = evaluate(dist, x[:, j], y[:, 1])
+    @testset "Colwise test for $(typeof(dist))" begin
+        n = size(x, 2)
+        r1 = zeros(T, n)
+        r2 = zeros(T, n)
+        r3 = zeros(T, n)
+        for j = 1:n
+            r1[j] = evaluate(dist, x[:, j], y[:, j])
+            r2[j] = evaluate(dist, x[:, 1], y[:, j])
+            r3[j] = evaluate(dist, x[:, j], y[:, 1])
+        end
+        # ≈ and all( .≈ ) seem to behave slightly differently for F64
+        @test all(colwise(dist, x, y) .≈ r1)
+        @test all(colwise(dist, x[:, 1], y) .≈ r2)
+        @test all(colwise(dist, x, y[:, 1]) .≈ r3)
     end
-    @test colwise(dist, x, y) ≈ r1
-    @test colwise(dist, x[:, 1], y) ≈ r2
-    @test colwise(dist, x, y[:, 1]) ≈ r3
 end
 
-@testset "column-wise metrics" begin
-    for T in (Float64, F64)
-        m = 5
-        n = 8
-        X = rand(T, m, n)
-        Y = rand(T, m, n)
-        A = rand(1:3, m, n)
-        B = rand(1:3, m, n)
+@testset "column-wise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    X = rand(T, m, n)
+    Y = rand(T, m, n)
+    A = rand(1:3, m, n)
+    B = rand(1:3, m, n)
 
-        P = rand(T, m, n)
-        Q = rand(T, m, n)
-        # Make sure not to remove all of the non-zeros from any column
-        for i in 1:n
-            P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
-        end
-
-        test_colwise(SqEuclidean(), X, Y, T)
-        test_colwise(Euclidean(), X, Y, T)
-        test_colwise(Cityblock(), X, Y, T)
-        test_colwise(Chebyshev(), X, Y, T)
-        test_colwise(Minkowski(2.5), X, Y, T)
-        test_colwise(Hamming(), A, B, T)
-
-        test_colwise(CosineDist(), X, Y, T)
-        test_colwise(CorrDist(), X, Y, T)
-
-        test_colwise(ChiSqDist(), X, Y, T)
-        test_colwise(KLDivergence(), P, Q, T)
-        test_colwise(RenyiDivergence(0.0), P, Q, T)
-        test_colwise(RenyiDivergence(1.0), P, Q, T)
-        test_colwise(RenyiDivergence(Inf), P, Q, T)
-        test_colwise(RenyiDivergence(0.5), P, Q, T)
-        test_colwise(RenyiDivergence(2), P, Q, T)
-        test_colwise(RenyiDivergence(10), P, Q, T)
-        test_colwise(JSDivergence(), P, Q, T)
-        test_colwise(SpanNormDist(), X, Y, T)
-
-        test_colwise(BhattacharyyaDist(), X, Y, T)
-        test_colwise(HellingerDist(), X, Y, T)
-        test_colwise(BrayCurtis(), X, Y, T)
-
-        w = rand(T, m)
-
-        test_colwise(WeightedSqEuclidean(w), X, Y, T)
-        test_colwise(WeightedEuclidean(w), X, Y, T)
-        test_colwise(WeightedCityblock(w), X, Y, T)
-        test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
-        test_colwise(WeightedHamming(w), A, B, T)
-
-        Q = rand(T, m, m)
-        Q = Q * Q'  # make sure Q is positive-definite
-
-        test_colwise(SqMahalanobis(Q), X, Y, T)
-        test_colwise(Mahalanobis(Q), X, Y, T)
+    P = rand(T, m, n)
+    Q = rand(T, m, n)
+    # Make sure not to remove all of the non-zeros from any column
+    for i in 1:n
+        P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
     end
-end # testset
+
+    test_colwise(SqEuclidean(), X, Y, T)
+    test_colwise(Euclidean(), X, Y, T)
+    test_colwise(Cityblock(), X, Y, T)
+    test_colwise(Chebyshev(), X, Y, T)
+    test_colwise(Minkowski(2.5), X, Y, T)
+    test_colwise(Hamming(), A, B, T)
+
+    test_colwise(CosineDist(), X, Y, T)
+    test_colwise(CorrDist(), X, Y, T)
+
+    test_colwise(ChiSqDist(), X, Y, T)
+    test_colwise(KLDivergence(), P, Q, T)
+    test_colwise(RenyiDivergence(0.0), P, Q, T)
+    test_colwise(RenyiDivergence(1.0), P, Q, T)
+    test_colwise(RenyiDivergence(Inf), P, Q, T)
+    test_colwise(RenyiDivergence(0.5), P, Q, T)
+    test_colwise(RenyiDivergence(2), P, Q, T)
+    test_colwise(RenyiDivergence(10), P, Q, T)
+    test_colwise(JSDivergence(), P, Q, T)
+    test_colwise(SpanNormDist(), X, Y, T)
+
+    test_colwise(BhattacharyyaDist(), X, Y, T)
+    test_colwise(HellingerDist(), X, Y, T)
+    test_colwise(BrayCurtis(), X, Y, T)
+
+    w = rand(T, m)
+
+    test_colwise(WeightedSqEuclidean(w), X, Y, T)
+    test_colwise(WeightedEuclidean(w), X, Y, T)
+    test_colwise(WeightedCityblock(w), X, Y, T)
+    test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
+    test_colwise(WeightedHamming(w), A, B, T)
+
+    Q = rand(T, m, m)
+    Q = Q * Q'  # make sure Q is positive-definite
+
+    test_colwise(SqMahalanobis(Q), X, Y, T)
+    test_colwise(Mahalanobis(Q), X, Y, T)
+end
 
 
 function test_pairwise(dist, x, y, T)
