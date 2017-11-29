@@ -83,6 +83,7 @@ end
     c = rand(Bool, n)
 
     @test_metricity RogersTanimoto() a b c
+    @test_metricity BrayCurtis() a b c
     @test_metricity Jaccard() a b c
 
     w = rand(T, n)
