@@ -423,7 +423,7 @@ end # testset
 
 
 function test_pairwise(dist, x, y, T)
-    quote
+    @testset "Pairwise test for $(typeof(dist))" begin
         nx = size(x, 2)
         ny = size(y, 2)
         rxy = zeros(T, nx, ny)
@@ -434,66 +434,63 @@ function test_pairwise(dist, x, y, T)
         for j = 1:nx, i = 1:nx
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
-        @test pairwise(dist, x, y) ≈ rxy
-        @test pairwise(dist, x) ≈ rxx
+        # ≈ and all( .≈ ) seem to behave slightly differently for F64
+        @test all(pairwise(dist, x, y) .≈ rxy)
+        @test all(pairwise(dist, x) .≈ rxx)
     end
 end
 
-@testset "pairwise metrics" begin
-    for T in (Float64, F64)
-        m = 5
-        n = 8
-        nx = 6
-        ny = 8
+@testset "pairwise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    nx = 6
+    ny = 8
 
-        X = rand(T, m, nx)
-        Y = rand(T, m, ny)
-        A = rand(1:3, m, nx)
-        B = rand(1:3, m, ny)
+    X = rand(T, m, nx)
+    Y = rand(T, m, ny)
+    A = rand(1:3, m, nx)
+    B = rand(1:3, m, ny)
 
-        P = rand(T, m, nx)
-        Q = rand(T, m, ny)
+    P = rand(T, m, nx)
+    Q = rand(T, m, ny)
 
+    test_pairwise(SqEuclidean(), X, Y, T)
+    test_pairwise(Euclidean(), X, Y, T)
+    test_pairwise(Cityblock(), X, Y, T)
+    test_pairwise(Chebyshev(), X, Y, T)
+    test_pairwise(Minkowski(2.5), X, Y, T)
+    test_pairwise(Hamming(), A, B, T)
 
-        test_pairwise(SqEuclidean(), X, Y, T)
-        test_pairwise(Euclidean(), X, Y, T)
-        test_pairwise(Cityblock(), X, Y, T)
-        test_pairwise(Chebyshev(), X, Y, T)
-        test_pairwise(Minkowski(2.5), X, Y, T)
-        test_pairwise(Hamming(), A, B, T)
+    test_pairwise(CosineDist(), X, Y, T)
+    test_pairwise(CorrDist(), X, Y, T)
 
-        test_pairwise(CosineDist(), X, Y, T)
-        test_pairwise(CorrDist(), X, Y, T)
+    test_pairwise(ChiSqDist(), X, Y, T)
+    test_pairwise(KLDivergence(), P, Q, T)
+    test_pairwise(RenyiDivergence(0.0), P, Q, T)
+    test_pairwise(RenyiDivergence(1.0), P, Q, T)
+    test_pairwise(RenyiDivergence(Inf), P, Q, T)
+    test_pairwise(RenyiDivergence(0.5), P, Q, T)
+    test_pairwise(RenyiDivergence(2), P, Q, T)
+    test_pairwise(JSDivergence(), P, Q, T)
 
-        test_pairwise(ChiSqDist(), X, Y, T)
-        test_pairwise(KLDivergence(), P, Q, T)
-        test_pairwise(RenyiDivergence(0.0), P, Q, T)
-        test_pairwise(RenyiDivergence(1.0), P, Q, T)
-        test_pairwise(RenyiDivergence(Inf), P, Q, T)
-        test_pairwise(RenyiDivergence(0.5), P, Q, T)
-        test_pairwise(RenyiDivergence(2), P, Q, T)
-        test_pairwise(JSDivergence(), P, Q, T)
+    test_pairwise(BhattacharyyaDist(), X, Y, T)
+    test_pairwise(HellingerDist(), X, Y, T)
+    test_pairwise(BrayCurtis(), X, Y, T)
 
-        test_pairwise(BhattacharyyaDist(), X, Y, T)
-        test_pairwise(HellingerDist(), X, Y, T)
-        test_pairwise(BrayCurtis(), X, Y, T)
+    w = rand(m)
 
-        w = rand(m)
+    test_pairwise(WeightedSqEuclidean(w), X, Y, T)
+    test_pairwise(WeightedEuclidean(w), X, Y, T)
+    test_pairwise(WeightedCityblock(w), X, Y, T)
+    test_pairwise(WeightedMinkowski(w, 2.5), X, Y, T)
+    test_pairwise(WeightedHamming(w), A, B, T)
 
-        test_pairwise(WeightedSqEuclidean(w), X, Y, T)
-        test_pairwise(WeightedEuclidean(w), X, Y, T)
-        test_pairwise(WeightedCityblock(w), X, Y, T)
-        test_pairwise(WeightedMinkowski(w, 2.5), X, Y, T)
-        test_pairwise(WeightedHamming(w), A, B, T)
+    Q = rand(m, m)
+    Q = Q * Q'  # make sure Q is positive-definite
 
-        Q = rand(m, m)
-        Q = Q * Q'  # make sure Q is positive-definite
-
-        test_pairwise(SqMahalanobis(Q), X, Y, T)
-        test_pairwise(Mahalanobis(Q), X, Y, T)
-    end
-
-end #testset
+    test_pairwise(SqMahalanobis(Q), X, Y, T)
+    test_pairwise(Mahalanobis(Q), X, Y, T)
+end
 
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
