@@ -21,7 +21,7 @@ Base.:^(a::F64, b::F64) = F64(a.x^b.x)
 Base.:^(a::Number, b::F64) = a^b.x
 Base.log(a::F64) = F64(log(a.x))
 Base.isfinite(a::F64) = isfinite(a.x)
-Base.float(a::F64) = a
+Base.float(a::F64) = a.x
 Base.rtoldefault(a::Type{F64}, b::Type{F64}) = Base.rtoldefault(Float64, Float64)
 # comparison
 Base.isapprox(a::F64, b::F64) = isapprox(a.x, b.x)

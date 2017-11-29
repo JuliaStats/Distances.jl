@@ -1,5 +1,7 @@
+# Unit tests for Distances
+
 function test_metricity(dist, x, y, z)
-    quote
+    @testset "Test metricity of $(typeof(dist))" begin
         dxy = evaluate(dist, x, y)
         dxz = evaluate(dist, x, z)
         dyz = evaluate(dist, y, z)
@@ -35,80 +37,79 @@ function test_metricity(dist, x, y, z)
     end
 end
 
-@testset "PreMetric, SemiMetric, Metric" begin
-    for T in (Float64, F64)
-        n = 10
-        x = rand(T, n)
-        y = rand(T, n)
-        z = rand(T, n)
+@testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
+    n = 10
+    x = rand(T, n)
+    y = rand(T, n)
+    z = rand(T, n)
 
-        test_metricity(SqEuclidean(), x, y, z)
-        test_metricity(Euclidean(), x, y, z)
-        test_metricity(Cityblock(), x, y, z)
-        test_metricity(Chebyshev(), x, y, z)
-        test_metricity(Minkowski(2.5), x, y, z)
+    test_metricity(SqEuclidean(), x, y, z)
+    test_metricity(Euclidean(), x, y, z)
+    test_metricity(Cityblock(), x, y, z)
+    test_metricity(Chebyshev(), x, y, z)
+    test_metricity(Minkowski(2.5), x, y, z)
 
-        test_metricity(CosineDist(), x, y, z)
-        test_metricity(CorrDist(), x, y, z)
+    test_metricity(CosineDist(), x, y, z)
+    test_metricity(CorrDist(), x, y, z)
 
-        test_metricity(ChiSqDist(), x, y, z)
+    test_metricity(ChiSqDist(), x, y, z)
 
-        test_metricity(Jaccard(), x, y, z)
-        test_metricity(SpanNormDist(), x, y, z)
+    test_metricity(Jaccard(), x, y, z)
+    test_metricity(SpanNormDist(), x, y, z)
 
-        test_metricity(BhattacharyyaDist(), x, y, z)
-        test_metricity(HellingerDist(), x, y, z)
+    test_metricity(BhattacharyyaDist(), x, y, z)
+    test_metricity(HellingerDist(), x, y, z)
 
-        x₁ = rand(T, 2)
-        x₂ = rand(T, 2)
-        x₃ = rand(T, 2)
+    x₁ = rand(T, 2)
+    x₂ = rand(T, 2)
+    x₃ = rand(T, 2)
 
-        test_metricity(Haversine(6371.), x₁, x₂, x₃)
+    test_metricity(Haversine(6371.0), x₁, x₂, x₃)
 
-        k = rand(1:3, n)
-        l = rand(1:3, n)
-        m = rand(1:3, n)
+    k = rand(1:3, n)
+    l = rand(1:3, n)
+    m = rand(1:3, n)
 
-        test_metricity(Hamming(), k, l, m)
+    test_metricity(Hamming(), k, l, m)
 
-        a = rand(Bool, n)
-        b = rand(Bool, n)
-        c = rand(Bool, n)
+    a = rand(Bool, n)
+    b = rand(Bool, n)
+    c = rand(Bool, n)
 
-        test_metricity(RogersTanimoto(), a, b, c)
-        test_metricity(Jaccard(), a, b, c)
+    test_metricity(RogersTanimoto(), a, b, c)
+    test_metricity(BrayCurtis(), a, b, c)
+    test_metricity(Jaccard(), a, b, c)
 
-        w = rand(T, n)
+    w = rand(T, n)
 
-        test_metricity(WeightedSqEuclidean(w), x, y, z)
-        test_metricity(WeightedEuclidean(w), x, y, z)
-        test_metricity(WeightedCityblock(w), x, y, z)
-        test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
-        test_metricity(WeightedHamming(w), a, b, c)
+    test_metricity(WeightedSqEuclidean(w), x, y, z)
+    test_metricity(WeightedEuclidean(w), x, y, z)
+    test_metricity(WeightedCityblock(w), x, y, z)
+    test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
+    test_metricity(WeightedHamming(w), a, b, c)
 
-        Q = rand(T, n, n)
-        Q = Q * Q'  # make sure Q is positive-definite
+    Q = rand(T, n, n)
+    Q = Q * Q'  # make sure Q is positive-definite
 
-        test_metricity(SqMahalanobis(Q), x, y, z)
-        test_metricity(Mahalanobis(Q), x, y, z)
+    test_metricity(SqMahalanobis(Q), x, y, z)
+    test_metricity(Mahalanobis(Q), x, y, z)
 
-        p = rand(T, n)
-        q = rand(T, n)
-        r = rand(T, n)
-        p[p .< median(p)] = 0
-        p /= sum(p)
-        q /= sum(q)
-        r /= sum(r)
+    p = rand(T, n)
+    q = rand(T, n)
+    r = rand(T, n)
+    p[p .< median(p)] = 0
+    p /= sum(p)
+    q /= sum(q)
+    r /= sum(r)
 
-        test_metricity(KLDivergence(), p, q, r)
-        test_metricity(RenyiDivergence(0.0), p, q, r)
-        test_metricity(RenyiDivergence(1.0), p, q, r)
-        test_metricity(RenyiDivergence(Inf), p, q, r)
-        test_metricity(RenyiDivergence(0.5), p, q, r)
-        test_metricity(RenyiDivergence(2), p, q, r)
-        test_metricity(RenyiDivergence(10), p, q, r)
-        test_metricity(JSDivergence(), p, q, r)
-    end
+    test_metricity(KLDivergence(), p, q, r)
+    test_metricity(RenyiDivergence(0.0), p, q, r)
+    test_metricity(RenyiDivergence(1.0), p, q, r)
+    test_metricity(RenyiDivergence(Inf), p, q, r)
+    test_metricity(RenyiDivergence(0.5), p, q, r)
+    test_metricity(RenyiDivergence(2), p, q, r)
+    test_metricity(RenyiDivergence(10), p, q, r)
+    test_metricity(JSDivergence(), p, q, r)
 end
 
 @testset "individual metrics" begin
@@ -137,7 +138,7 @@ end
             @test jaccard(x, y) == 13.0 / 28
             @test cityblock(x, y) == 13.0
             @test chebyshev(x, y) == 6.0
-            @test braycurtis(x, y) == 1. - (30./43.)
+            @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
             @test minkowski(x, y, 2) == sqrt(57.0)
             @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
             @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
@@ -343,80 +344,81 @@ end #testset
 
 
 function test_colwise(dist, x, y, T)
-    n = size(x, 2)
-    r1 = zeros(T, n)
-    r2 = zeros(T, n)
-    r3 = zeros(T, n)
-    for j = 1:n
-        r1[j] = evaluate(dist, x[:, j], y[:, j])
-        r2[j] = evaluate(dist, x[:, 1], y[:, j])
-        r3[j] = evaluate(dist, x[:, j], y[:, 1])
+    @testset "Colwise test for $(typeof(dist))" begin
+        n = size(x, 2)
+        r1 = zeros(T, n)
+        r2 = zeros(T, n)
+        r3 = zeros(T, n)
+        for j = 1:n
+            r1[j] = evaluate(dist, x[:, j], y[:, j])
+            r2[j] = evaluate(dist, x[:, 1], y[:, j])
+            r3[j] = evaluate(dist, x[:, j], y[:, 1])
+        end
+        # ≈ and all( .≈ ) seem to behave slightly differently for F64
+        @test all(colwise(dist, x, y) .≈ r1)
+        @test all(colwise(dist, x[:, 1], y) .≈ r2)
+        @test all(colwise(dist, x, y[:, 1]) .≈ r3)
     end
-    @test colwise(dist, x, y) ≈ r1
-    @test colwise(dist, x[:, 1], y) ≈ r2
-    @test colwise(dist, x, y[:, 1]) ≈ r3
 end
 
-@testset "column-wise metrics" begin
-    for T in (Float64, F64)
-        m = 5
-        n = 8
-        X = rand(T, m, n)
-        Y = rand(T, m, n)
-        A = rand(1:3, m, n)
-        B = rand(1:3, m, n)
+@testset "column-wise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    X = rand(T, m, n)
+    Y = rand(T, m, n)
+    A = rand(1:3, m, n)
+    B = rand(1:3, m, n)
 
-        P = rand(T, m, n)
-        Q = rand(T, m, n)
-        # Make sure not to remove all of the non-zeros from any column
-        for i in 1:n
-            P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
-        end
-
-        test_colwise(SqEuclidean(), X, Y, T)
-        test_colwise(Euclidean(), X, Y, T)
-        test_colwise(Cityblock(), X, Y, T)
-        test_colwise(Chebyshev(), X, Y, T)
-        test_colwise(Minkowski(2.5), X, Y, T)
-        test_colwise(Hamming(), A, B, T)
-
-        test_colwise(CosineDist(), X, Y, T)
-        test_colwise(CorrDist(), X, Y, T)
-
-        test_colwise(ChiSqDist(), X, Y, T)
-        test_colwise(KLDivergence(), P, Q, T)
-        test_colwise(RenyiDivergence(0.0), P, Q, T)
-        test_colwise(RenyiDivergence(1.0), P, Q, T)
-        test_colwise(RenyiDivergence(Inf), P, Q, T)
-        test_colwise(RenyiDivergence(0.5), P, Q, T)
-        test_colwise(RenyiDivergence(2), P, Q, T)
-        test_colwise(RenyiDivergence(10), P, Q, T)
-        test_colwise(JSDivergence(), P, Q, T)
-        test_colwise(SpanNormDist(), X, Y, T)
-
-        test_colwise(BhattacharyyaDist(), X, Y, T)
-        test_colwise(HellingerDist(), X, Y, T)
-        test_colwise(BrayCurtis(), X, Y, T)
-
-        w = rand(T, m)
-
-        test_colwise(WeightedSqEuclidean(w), X, Y, T)
-        test_colwise(WeightedEuclidean(w), X, Y, T)
-        test_colwise(WeightedCityblock(w), X, Y, T)
-        test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
-        test_colwise(WeightedHamming(w), A, B, T)
-
-        Q = rand(T, m, m)
-        Q = Q * Q'  # make sure Q is positive-definite
-
-        test_colwise(SqMahalanobis(Q), X, Y, T)
-        test_colwise(Mahalanobis(Q), X, Y, T)
+    P = rand(T, m, n)
+    Q = rand(T, m, n)
+    # Make sure not to remove all of the non-zeros from any column
+    for i in 1:n
+        P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
     end
-end # testset
+
+    test_colwise(SqEuclidean(), X, Y, T)
+    test_colwise(Euclidean(), X, Y, T)
+    test_colwise(Cityblock(), X, Y, T)
+    test_colwise(Chebyshev(), X, Y, T)
+    test_colwise(Minkowski(2.5), X, Y, T)
+    test_colwise(Hamming(), A, B, T)
+
+    test_colwise(CosineDist(), X, Y, T)
+    test_colwise(CorrDist(), X, Y, T)
+
+    test_colwise(ChiSqDist(), X, Y, T)
+    test_colwise(KLDivergence(), P, Q, T)
+    test_colwise(RenyiDivergence(0.0), P, Q, T)
+    test_colwise(RenyiDivergence(1.0), P, Q, T)
+    test_colwise(RenyiDivergence(Inf), P, Q, T)
+    test_colwise(RenyiDivergence(0.5), P, Q, T)
+    test_colwise(RenyiDivergence(2), P, Q, T)
+    test_colwise(RenyiDivergence(10), P, Q, T)
+    test_colwise(JSDivergence(), P, Q, T)
+    test_colwise(SpanNormDist(), X, Y, T)
+
+    test_colwise(BhattacharyyaDist(), X, Y, T)
+    test_colwise(HellingerDist(), X, Y, T)
+    test_colwise(BrayCurtis(), X, Y, T)
+
+    w = rand(T, m)
+
+    test_colwise(WeightedSqEuclidean(w), X, Y, T)
+    test_colwise(WeightedEuclidean(w), X, Y, T)
+    test_colwise(WeightedCityblock(w), X, Y, T)
+    test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
+    test_colwise(WeightedHamming(w), A, B, T)
+
+    Q = rand(T, m, m)
+    Q = Q * Q'  # make sure Q is positive-definite
+
+    test_colwise(SqMahalanobis(Q), X, Y, T)
+    test_colwise(Mahalanobis(Q), X, Y, T)
+end
 
 
 function test_pairwise(dist, x, y, T)
-    quote
+    @testset "Pairwise test for $(typeof(dist))" begin
         nx = size(x, 2)
         ny = size(y, 2)
         rxy = zeros(T, nx, ny)
@@ -427,66 +429,64 @@ function test_pairwise(dist, x, y, T)
         for j = 1:nx, i = 1:nx
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
-        @test pairwise(dist, x, y) ≈ rxy
-        @test pairwise(dist, x) ≈ rxx
+        # ≈ and all( .≈ ) seem to behave slightly differently for F64
+        # And, as earlier, we have small rounding errors in accumulations
+        @test all(pairwise(dist, x, y) .+ one(T) .≈ rxy .+ one(T))
+        @test all(pairwise(dist, x) .+ one(T) .≈ rxx .+ one(T))
     end
 end
 
-@testset "pairwise metrics" begin
-    for T in (Float64, F64)
-        m = 5
-        n = 8
-        nx = 6
-        ny = 8
+@testset "pairwise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    nx = 6
+    ny = 8
 
-        X = rand(T, m, nx)
-        Y = rand(T, m, ny)
-        A = rand(1:3, m, nx)
-        B = rand(1:3, m, ny)
+    X = rand(T, m, nx)
+    Y = rand(T, m, ny)
+    A = rand(1:3, m, nx)
+    B = rand(1:3, m, ny)
 
-        P = rand(T, m, nx)
-        Q = rand(T, m, ny)
+    P = rand(T, m, nx)
+    Q = rand(T, m, ny)
 
+    test_pairwise(SqEuclidean(), X, Y, T)
+    test_pairwise(Euclidean(), X, Y, T)
+    test_pairwise(Cityblock(), X, Y, T)
+    test_pairwise(Chebyshev(), X, Y, T)
+    test_pairwise(Minkowski(2.5), X, Y, T)
+    test_pairwise(Hamming(), A, B, T)
 
-        test_pairwise(SqEuclidean(), X, Y, T)
-        test_pairwise(Euclidean(), X, Y, T)
-        test_pairwise(Cityblock(), X, Y, T)
-        test_pairwise(Chebyshev(), X, Y, T)
-        test_pairwise(Minkowski(2.5), X, Y, T)
-        test_pairwise(Hamming(), A, B, T)
+    test_pairwise(CosineDist(), X, Y, T)
+    test_pairwise(CorrDist(), X, Y, T)
 
-        test_pairwise(CosineDist(), X, Y, T)
-        test_pairwise(CorrDist(), X, Y, T)
+    test_pairwise(ChiSqDist(), X, Y, T)
+    test_pairwise(KLDivergence(), P, Q, T)
+    test_pairwise(RenyiDivergence(0.0), P, Q, T)
+    test_pairwise(RenyiDivergence(1.0), P, Q, T)
+    test_pairwise(RenyiDivergence(Inf), P, Q, T)
+    test_pairwise(RenyiDivergence(0.5), P, Q, T)
+    test_pairwise(RenyiDivergence(2), P, Q, T)
+    test_pairwise(JSDivergence(), P, Q, T)
 
-        test_pairwise(ChiSqDist(), X, Y, T)
-        test_pairwise(KLDivergence(), P, Q, T)
-        test_pairwise(RenyiDivergence(0.0), P, Q, T)
-        test_pairwise(RenyiDivergence(1.0), P, Q, T)
-        test_pairwise(RenyiDivergence(Inf), P, Q, T)
-        test_pairwise(RenyiDivergence(0.5), P, Q, T)
-        test_pairwise(RenyiDivergence(2), P, Q, T)
-        test_pairwise(JSDivergence(), P, Q, T)
+    test_pairwise(BhattacharyyaDist(), X, Y, T)
+    test_pairwise(HellingerDist(), X, Y, T)
+    test_pairwise(BrayCurtis(), X, Y, T)
 
-        test_pairwise(BhattacharyyaDist(), X, Y, T)
-        test_pairwise(HellingerDist(), X, Y, T)
-        test_pairwise(BrayCurtis(), X, Y, T)
+    w = rand(m)
 
-        w = rand(m)
+    test_pairwise(WeightedSqEuclidean(w), X, Y, T)
+    test_pairwise(WeightedEuclidean(w), X, Y, T)
+    test_pairwise(WeightedCityblock(w), X, Y, T)
+    test_pairwise(WeightedMinkowski(w, 2.5), X, Y, T)
+    test_pairwise(WeightedHamming(w), A, B, T)
 
-        test_pairwise(WeightedSqEuclidean(w), X, Y, T)
-        test_pairwise(WeightedEuclidean(w), X, Y, T)
-        test_pairwise(WeightedCityblock(w), X, Y, T)
-        test_pairwise(WeightedMinkowski(w, 2.5), X, Y, T)
-        test_pairwise(WeightedHamming(w), A, B, T)
+    Q = rand(m, m)
+    Q = Q * Q'  # make sure Q is positive-definite
 
-        Q = rand(m, m)
-        Q = Q * Q'  # make sure Q is positive-definite
-
-        test_pairwise(SqMahalanobis(Q), X, Y, T)
-        test_pairwise(Mahalanobis(Q), X, Y, T)
-    end
-
-end #testset
+    test_pairwise(SqMahalanobis(Q), X, Y, T)
+    test_pairwise(Mahalanobis(Q), X, Y, T)
+end
 
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
