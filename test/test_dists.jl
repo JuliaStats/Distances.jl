@@ -1,5 +1,12 @@
-function test_metricity(dist, x, y, z)
+# Unit tests for Distances
+
+macro test_metricity(_dist, _x, _y, _z)
     quote
+        dist = $(esc(_dist))
+        x = $(esc(_x))
+        y = $(esc(_y))
+        z = $(esc(_z))
+        @testset "$(typeof(dist))" begin
         dxy = evaluate(dist, x, y)
         dxz = evaluate(dist, x, z)
         dyz = evaluate(dist, y, z)
@@ -33,82 +40,81 @@ function test_metricity(dist, x, y, z)
             @test dxy ≤ dxz + dzy || dxy ≈ dxz + dzy
         end
     end
+    end
 end
 
-@testset "PreMetric, SemiMetric, Metric" begin
-    for T in (Float64, F64)
-        n = 10
-        x = rand(T, n)
-        y = rand(T, n)
-        z = rand(T, n)
+@testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
+    n = 10
+    x = rand(T, n)
+    y = rand(T, n)
+    z = rand(T, n)
 
-        test_metricity(SqEuclidean(), x, y, z)
-        test_metricity(Euclidean(), x, y, z)
-        test_metricity(Cityblock(), x, y, z)
-        test_metricity(Chebyshev(), x, y, z)
-        test_metricity(Minkowski(2.5), x, y, z)
+    @test_metricity SqEuclidean() x y z
+    @test_metricity Euclidean() x y z
+    @test_metricity Cityblock() x y z
+    @test_metricity Chebyshev() x y z
+    @test_metricity Minkowski(2.5) x y z
 
-        test_metricity(CosineDist(), x, y, z)
-        test_metricity(CorrDist(), x, y, z)
+    @test_metricity CosineDist() x y z
+    @test_metricity CorrDist() x y z
 
-        test_metricity(ChiSqDist(), x, y, z)
+    @test_metricity ChiSqDist() x y z
 
-        test_metricity(Jaccard(), x, y, z)
-        test_metricity(SpanNormDist(), x, y, z)
+    @test_metricity Jaccard() x y z
+    @test_metricity SpanNormDist() x y z
 
-        test_metricity(BhattacharyyaDist(), x, y, z)
-        test_metricity(HellingerDist(), x, y, z)
+    @test_metricity BhattacharyyaDist() x y z
+    @test_metricity HellingerDist() x y z
 
-        x₁ = rand(T, 2)
-        x₂ = rand(T, 2)
-        x₃ = rand(T, 2)
+    x₁ = rand(T, 2)
+    x₂ = rand(T, 2)
+    x₃ = rand(T, 2)
 
-        test_metricity(Haversine(6371.), x₁, x₂, x₃)
+    @test_metricity Haversine(6371.0) x₁ x₂ x₃
 
-        k = rand(1:3, n)
-        l = rand(1:3, n)
-        m = rand(1:3, n)
+    k = rand(1:3, n)
+    l = rand(1:3, n)
+    m = rand(1:3, n)
 
-        test_metricity(Hamming(), k, l, m)
+    @test_metricity Hamming() k l m
 
-        a = rand(Bool, n)
-        b = rand(Bool, n)
-        c = rand(Bool, n)
+    a = rand(Bool, n)
+    b = rand(Bool, n)
+    c = rand(Bool, n)
 
-        test_metricity(RogersTanimoto(), a, b, c)
-        test_metricity(Jaccard(), a, b, c)
+    @test_metricity RogersTanimoto() a b c
+    @test_metricity Jaccard() a b c
 
-        w = rand(T, n)
+    w = rand(T, n)
 
-        test_metricity(WeightedSqEuclidean(w), x, y, z)
-        test_metricity(WeightedEuclidean(w), x, y, z)
-        test_metricity(WeightedCityblock(w), x, y, z)
-        test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
-        test_metricity(WeightedHamming(w), a, b, c)
+    @test_metricity WeightedSqEuclidean(w) x y z
+    @test_metricity WeightedEuclidean(w) x y z
+    @test_metricity WeightedCityblock(w) x y z
+    @test_metricity WeightedMinkowski(w, 2.5) x y z
+    @test_metricity WeightedHamming(w) a b c
 
-        Q = rand(T, n, n)
-        Q = Q * Q'  # make sure Q is positive-definite
+    Q = rand(T, n, n)
+    Q = Q * Q'  # make sure Q is positive-definite
 
-        test_metricity(SqMahalanobis(Q), x, y, z)
-        test_metricity(Mahalanobis(Q), x, y, z)
+    @test_metricity SqMahalanobis(Q) x y z
+    @test_metricity Mahalanobis(Q) x y z
 
-        p = rand(T, n)
-        q = rand(T, n)
-        r = rand(T, n)
-        p[p .< median(p)] = 0
-        p /= sum(p)
-        q /= sum(q)
-        r /= sum(r)
+    p = rand(T, n)
+    q = rand(T, n)
+    r = rand(T, n)
+    p[p .< median(p)] = 0
+    p /= sum(p)
+    q /= sum(q)
+    r /= sum(r)
 
-        test_metricity(KLDivergence(), p, q, r)
-        test_metricity(RenyiDivergence(0.0), p, q, r)
-        test_metricity(RenyiDivergence(1.0), p, q, r)
-        test_metricity(RenyiDivergence(Inf), p, q, r)
-        test_metricity(RenyiDivergence(0.5), p, q, r)
-        test_metricity(RenyiDivergence(2), p, q, r)
-        test_metricity(RenyiDivergence(10), p, q, r)
-        test_metricity(JSDivergence(), p, q, r)
-    end
+    @test_metricity KLDivergence() p q r
+    @test_metricity RenyiDivergence(0.0) p q r
+    @test_metricity RenyiDivergence(1.0) p q r
+    @test_metricity RenyiDivergence(Inf) p q r
+    @test_metricity RenyiDivergence(0.5) p q r
+    @test_metricity RenyiDivergence(2) p q r
+    @test_metricity RenyiDivergence(10) p q r
+    @test_metricity JSDivergence() p q r
 end
 
 @testset "individual metrics" begin
@@ -137,7 +143,7 @@ end
             @test jaccard(x, y) == 13.0 / 28
             @test cityblock(x, y) == 13.0
             @test chebyshev(x, y) == 6.0
-            @test braycurtis(x, y) == 1. - (30./43.)
+            @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
             @test minkowski(x, y, 2) == sqrt(57.0)
             @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
             @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
