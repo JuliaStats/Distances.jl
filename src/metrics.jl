@@ -145,7 +145,24 @@ SqEuclidean() = SqEuclidean(0)
 #
 ###########################################################
 
-function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+# Specialized for Arrays and avoids a branch on the size
+@inline function evaluate(d::UnionMetrics, a::T, b::T) where T <: Union{Array, UnsafeVectorView}
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    @simd for I in eachindex(a, b)
+        @inbounds ai = a[I]
+        @inbounds bi = b[I]
+        s = eval_reduce(d, s, eval_op(d, ai, bi))
+    end
+    return eval_end(d, s)
+end
+
+@inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -236,6 +253,8 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
 # Correlation Dist
 _centralize(x::AbstractArray) = x .- mean(x)
 evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
+# Ambiguity resolution
+evaluate(::CorrDist, a::T, b::T) where {T <: Union{Array, UnsafeVectorView}} = cosine_dist(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
