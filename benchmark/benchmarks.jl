@@ -19,8 +19,6 @@ function create_distances(w, Q)
         BhattacharyyaDist(),
         HellingerDist(),
 
-        Haversine(),
-
         WeightedSqEuclidean(w),
         WeightedEuclidean(w),
         WeightedCityblock(w),
@@ -40,6 +38,23 @@ function create_distances(w, Q)
         JSDivergence(),
     ]
     return dists, divs
+end
+
+function create_2D_distances()
+    dists = [
+        Haversine(6371.),
+        Ellipsoidal([1.0, 0.5], [π/2])
+    ]
+
+    dists
+end
+
+function create_3D_distances()
+    dists = [
+        Ellipsoidal([1.0,0.5,0.5], [π/2,0.0,0.0])
+    ]
+
+    dists
 end
 
 ###########
@@ -87,6 +102,38 @@ function add_colwise_benchmarks!(SUITE)
             SUITE["colwise"][Tdist]["loop"]        = @benchmarkable evaluate_colwise($dist, $a, $b)
             SUITE["colwise"][Tdist]["specialized"] = @benchmarkable colwise($dist, $a, $b)
         end
+    end
+
+    ####################################
+    # Distances defined for 2D vectors #
+    ####################################
+
+    x2 = rand(2, n)
+    y2 = rand(2, n)
+
+    _dists = create_2D_distances()
+
+    for dist in _dists
+        Tdist = typeof(dist)
+        SUITE["colwise"][Tdist] = BenchmarkGroup()
+        SUITE["colwise"][Tdist]["loop"]        = @benchmarkable evaluate_colwise($dist, $x2, $y2)
+        SUITE["colwise"][Tdist]["specialized"] = @benchmarkable colwise($dist, $x2, $y2)
+    end
+
+    ####################################
+    # Distances defined for 3D vectors #
+    ####################################
+
+    x3 = rand(3, n)
+    y3 = rand(3, n)
+
+    _dists = create_3D_distances()
+
+    for dist in _dists
+        Tdist = typeof(dist)
+        SUITE["colwise"][Tdist] = BenchmarkGroup()
+        SUITE["colwise"][Tdist]["loop"]        = @benchmarkable evaluate_colwise($dist, $x3, $y3)
+        SUITE["colwise"][Tdist]["specialized"] = @benchmarkable colwise($dist, $x3, $y3)
     end
 end
 
@@ -136,13 +183,45 @@ function add_pairwise_benchmarks!(SUITE)
 
     _dists, divs = create_distances(w, Q)
 
-     for (dists, (a, b)) in [(_dists, (x,y)), (divs, (p,q))]
+    for (dists, (a, b)) in [(_dists, (x,y)), (divs, (p,q))]
         for dist in (dists)
             Tdist = typeof(dist)
             SUITE["pairwise"][Tdist] = BenchmarkGroup()
             SUITE["pairwise"][Tdist]["loop"]        = @benchmarkable evaluate_pairwise($dist, $a, $b)
             SUITE["pairwise"][Tdist]["specialized"] = @benchmarkable pairwise($dist, $a, $b)
         end
+    end
+
+    ####################################
+    # Distances defined for 2D vectors #
+    ####################################
+
+    x2 = rand(2, nx)
+    y2 = rand(2, ny)
+
+    _dists = create_2D_distances()
+
+    for dist in _dists
+        Tdist = typeof(dist)
+        SUITE["colwise"][Tdist] = BenchmarkGroup()
+        SUITE["colwise"][Tdist]["loop"]        = @benchmarkable evaluate_pairwise($dist, $x2, $y2)
+        SUITE["colwise"][Tdist]["specialized"] = @benchmarkable pairwise($dist, $x2, $y2)
+    end
+
+    ####################################
+    # Distances defined for 3D vectors #
+    ####################################
+
+    x3 = rand(3, nx)
+    y3 = rand(3, ny)
+
+    _dists = create_3D_distances()
+
+    for dist in _dists
+        Tdist = typeof(dist)
+        SUITE["colwise"][Tdist] = BenchmarkGroup()
+        SUITE["colwise"][Tdist]["loop"]        = @benchmarkable evaluate_pairwise($dist, $x3, $y3)
+        SUITE["colwise"][Tdist]["specialized"] = @benchmarkable pairwise($dist, $x3, $y3)
     end
 end
 
