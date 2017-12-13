@@ -87,12 +87,17 @@ end
     test_metricity(WeightedCityblock(w), x, y, z)
     test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
     test_metricity(WeightedHamming(w), a, b, c)
-
+  
     Q = rand(T, n, n)
     Q = Q * Q'  # make sure Q is positive-definite
 
     test_metricity(SqMahalanobis(Q), x, y, z)
     test_metricity(Mahalanobis(Q), x, y, z)
+  
+    semiaxes = [T(1/2), T(1), T(2)]
+    angles = [T(π/2), T(π/2), T(π/2)]
+
+    test_metricity(Ellipsoidal(semiaxes, angles), x, y, z)
 
     p = rand(T, n)
     q = rand(T, n)
@@ -292,6 +297,14 @@ end # testset
         @test eltype(mahalanobis(x, y, Q)) == T
     end
 end #testset
+
+@testset "ellipsoidal" begin
+    dist = Ellipsoidal([1.,.5,.5], [π/4,0.,0.])
+    @test evaluate(dist, [1.,1.,0.], [0.,0.,0.]) ≈ √2
+    @test evaluate(dist, [-1.,1.,0.], [0.,0.,0.]) ≈ √8
+
+    @test ellipsoidal([1.,1.,1.], [0.,0.,0.], [1.,1.,1.], [0.,0.,0.]) ≈ √3
+end
 
 @testset "haversine" begin
     for T in (Float64, F64)
