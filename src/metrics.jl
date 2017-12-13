@@ -25,6 +25,7 @@ struct Hamming <: Metric end
 
 struct CosineDist <: SemiMetric end
 struct CorrDist <: SemiMetric end
+struct BrayCurtis <: SemiMetric end
 
 struct ChiSqDist <: SemiMetric end
 struct KLDivergence <: PreMetric end
@@ -98,7 +99,7 @@ struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: Metric end
 
 
-const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,JSDivergence,SpanNormDist,GenKLDivergence}
+const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
 
 """
     Euclidean([thresh])
@@ -239,7 +240,7 @@ corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
-@inline eval_op(::ChiSqDist, ai, bi) = abs2(ai - bi) / (ai + bi)
+@inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
 @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
@@ -355,6 +356,27 @@ end
     return v
 end
 jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
+
+# BrayCurtis
+
+@inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
+@inline eval_start(::BrayCurtis, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline function eval_op(::BrayCurtis, s1, s2)
+    abs_m = abs(s1 - s2)
+    abs_p = abs(s1 + s2)
+    abs_m, abs_p
+end
+@inline function eval_reduce(::BrayCurtis, s1, s2)
+    @inbounds a = s1[1] + s2[1]
+    @inbounds b = s1[2] + s2[2]
+    a, b
+end
+@inline function eval_end(::BrayCurtis, a)
+    @inbounds v = a[1] / a[2]
+    return v
+end
+braycurtis(a::AbstractArray, b::AbstractArray) = evaluate(BrayCurtis(), a, b)
+
 
 # Tanimoto
 

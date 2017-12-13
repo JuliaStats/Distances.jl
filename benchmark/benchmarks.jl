@@ -18,6 +18,8 @@ function create_distances(w, Q)
 
         BhattacharyyaDist(),
         HellingerDist(),
+  
+        BrayCurtis(),
 
         WeightedSqEuclidean(w),
         WeightedEuclidean(w),

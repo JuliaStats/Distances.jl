@@ -33,6 +33,7 @@ order = [
     :Mahalanobis,
     :Haversine,
     :Ellipsoidal,
+    :BrayCurtis,
 ]
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 2.0 # Long enough
