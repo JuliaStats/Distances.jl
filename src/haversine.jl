@@ -29,11 +29,8 @@ function evaluate(dist::Haversine, x::VecOrLengthTwoTuple, y::VecOrLengthTwoTupl
     # haversine formula
     a = sin(Δφ/2)^2 + cos(φ₁)*cos(φ₂)*sin(Δλ/2)^2
 
-    # take care of floating point errors
-    a = min(a, one(a))
-
     # distance on the sphere
-    2*dist.radius*asin(√a)
+    2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
 haversine(x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple, radius::Real) = evaluate(Haversine(radius), x, y)
