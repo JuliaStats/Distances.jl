@@ -33,7 +33,7 @@ function evaluate(dist::Haversine, x::VecOrLengthTwoTuple, y::VecOrLengthTwoTupl
     a = min(a, one(a))
 
     # distance on the sphere
-    2*dist.radius*atan2(√a, √(1-a))
+    2*dist.radius*asin(√a)
 end
 
 haversine(x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple, radius::Real) = evaluate(Haversine(radius), x, y)
