@@ -45,37 +45,39 @@ end
 function result_type(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
     typeof(evaluate(dist, one(T1), one(T2)))
 end
-function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+@inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))
 end
 eval_end(d::UnionWeightedMetrics, s) = s
 
 
 
-function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
-    if length(a) != length(b)
+@inline function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+    @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
-    if length(a) != length(d.weights)
+    @boundscheck if length(a) != length(d.weights)
         throw(DimensionMismatch("arrays have length $(length(a)) but weights have length $(length(d.weights))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
-    s = eval_start(d, a, b)
-    if size(a) == size(b)
-        @simd for I in eachindex(a, b, d.weights)
-            @inbounds ai = a[I]
-            @inbounds bi = b[I]
-            @inbounds wi = d.weights[I]
-            s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
-        end
-    else
-        for (Ia, Ib, Iw) in zip(eachindex(a), eachindex(b), eachindex(d.weights))
-            @inbounds ai = a[Ia]
-            @inbounds bi = b[Ib]
-            @inbounds wi = d.weights[Iw]
-            s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+    @inbounds begin
+        s = eval_start(d, a, b)
+        if size(a) == size(b)
+            @simd for I in eachindex(a, b, d.weights)
+                ai = a[I]
+                bi = b[I]
+                wi = d.weights[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+            end
+        else
+            for (Ia, Ib, Iw) in zip(eachindex(a), eachindex(b), eachindex(d.weights))
+                ai = a[Ia]
+                bi = b[Ib]
+                wi = d.weights[Iw]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+            end
         end
     end
     return eval_end(d, s)

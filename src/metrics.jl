@@ -145,25 +145,48 @@ SqEuclidean() = SqEuclidean(0)
 #
 ###########################################################
 
-function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
-    if length(a) != length(b)
+const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
+
+# Specialized for Arrays and avoids a branch on the size
+@inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
+    @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
-    s = eval_start(d, a, b)
-    if size(a) == size(b)
+    @inbounds begin
+        s = eval_start(d, a, b)
         @simd for I in eachindex(a, b)
-            @inbounds ai = a[I]
-            @inbounds bi = b[I]
+            ai = a[I]
+            bi = b[I]
             s = eval_reduce(d, s, eval_op(d, ai, bi))
         end
-    else
-        for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-            @inbounds ai = a[Ia]
-            @inbounds bi = b[Ib]
-            s = eval_reduce(d, s, eval_op(d, ai, bi))
+        return eval_end(d, s)
+    end
+end
+
+@inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    @inbounds begin
+        s = eval_start(d, a, b)
+        if size(a) == size(b)
+            @simd for I in eachindex(a, b)
+                ai = a[I]
+                bi = b[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            end
+        else
+            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+                ai = a[Ia]
+                bi = b[Ib]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            end
         end
     end
     return eval_end(d, s)
@@ -200,7 +223,7 @@ cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-@inline eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+@inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
 chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
@@ -218,7 +241,7 @@ hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
 
 # Cosine dist
-function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+@inline function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
@@ -236,6 +259,8 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
 # Correlation Dist
 _centralize(x::AbstractArray) = x .- mean(x)
 evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
+# Ambiguity resolution
+evaluate(::CorrDist, a::Array, b::Array) = cosine_dist(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
@@ -255,7 +280,7 @@ kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, 
 gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
 
 # RenyiDivergence
-function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+@inline Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
@@ -316,7 +341,7 @@ end
 js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, b)
 
 # SpanNormDist
-function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
+@inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
 @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
