@@ -158,7 +158,7 @@ end
             w = ones(4)
             @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
-            w = rand(size(x))
+            w = rand(Float64, size(x))
             @test wsqeuclidean(x, y, w) ≈ dot((x - vec(y)).^2, w)
             @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
             @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)

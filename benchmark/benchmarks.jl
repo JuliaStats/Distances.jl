@@ -53,7 +53,7 @@ SUITE["colwise"] = BenchmarkGroup()
 function evaluate_colwise(dist, x, y)
     n = size(x, 2)
     T = typeof(evaluate(dist, x[:, 1], y[:, 1]))
-    r = Vector{T}(n)
+    r = Vector{T}(uninitialized, n)
     for j = 1:n
         r[j] = evaluate(dist, x[:, j], y[:, j])
     end
