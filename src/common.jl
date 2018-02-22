@@ -101,7 +101,7 @@ end
 function sumsq_percol(a::AbstractMatrix{T}) where {T}
     m = size(a, 1)
     n = size(a, 2)
-    r = Vector{T}(n)
+    r = Vector{T}(uninitialized, n)
     for j = 1:n
         aj = view(a, :, j)
         r[j] = dot(aj, aj)
@@ -113,7 +113,7 @@ function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1, T
     m = size(a, 1)
     n = size(a, 2)
     T = typeof(one(T1) * one(T2))
-    r = Vector{T}(n)
+    r = Vector{T}(uninitialized, n)
     for j = 1:n
         aj = view(a, :, j)
         s = zero(T)

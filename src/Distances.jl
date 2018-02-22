@@ -2,6 +2,9 @@ __precompile__()
 
 module Distances
 
+using Compat
+using Compat.LinearAlgebra
+
 export
     # generic types/functions
     PreMetric,
