@@ -72,7 +72,7 @@ struct RenyiDivergence{T <: Real} <: PreMetric
     is_one::Bool
     is_inf::Bool
 
-    function (::Type{RenyiDivergence{T}})(q) where {T}
+    function RenyiDivergence{T}(q) where {T}
         # There are four different cases:
         #   simpler to separate them out now, not over and over in eval_op()
         is_zero = q ≈ zero(T)
