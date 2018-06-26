@@ -138,4 +138,4 @@ function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     return r
 end
 
-dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Vector{Float64}(size(a, 2)), a, b)
+dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Vector{Float64}(undef, size(a, 2)), a, b)

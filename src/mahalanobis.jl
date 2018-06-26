@@ -48,7 +48,7 @@ function pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix,
     Qb = Q * b
     sa2 = dot_percol(a, Qa)
     sb2 = dot_percol(b, Qb)
-    At_mul_B!(r, a, Qb)
+    mul!(r, transpose(a), Qb)
 
     for j = 1:nb
         @simd for i = 1:na
@@ -64,7 +64,7 @@ function pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
 
     Qa = Q * a
     sa2 = dot_percol(a, Qa)
-    At_mul_B!(r, a, Qa)
+    mul!(r, transpose(a), Qa)
 
     for j = 1:n
         for i = 1:(j - 1)

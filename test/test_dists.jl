@@ -97,7 +97,7 @@ end
     p = rand(T, n)
     q = rand(T, n)
     r = rand(T, n)
-    p[p .< median(p)] = 0
+    p[p .< median(p)] .= 0
     p /= sum(p)
     q /= sum(q)
     r /= sum(r)
@@ -189,7 +189,7 @@ end
         # Test KL, Renyi and JS divergences
         r = rand(T, 12)
         p = copy(r)
-        p[p .< median(p)] = 0.0
+        p[p .< median(p)] .= 0.0
         scale = sum(p) / sum(r)
         r /= sum(r)
         p /= sum(p)
@@ -310,7 +310,7 @@ end
         a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
         b = T.([1.0, 3.0, 0.0, 2.0, 2.0, 0.0])
         p = rand(T, 12)
-        p[p .< median(p)] = 0.0
+        p[p .< median(p)] .= 0.0
         q = rand(T, 12)
 
         # Bhattacharyya and Hellinger distances are defined for discrete
@@ -373,7 +373,7 @@ end
     Q = rand(T, m, n)
     # Make sure not to remove all of the non-zeros from any column
     for i in 1:n
-        P[P[:, i] .< median(P[:, i]) / 2, i] = 0.0
+        P[P[:, i] .< median(P[:, i]) / 2, i] .= 0.0
     end
 
     test_colwise(SqEuclidean(), X, Y, T)
