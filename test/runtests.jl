@@ -1,7 +1,8 @@
 using Distances
-using Compat.Test
-using Compat.LinearAlgebra
-using Compat.Random
+
+using Test
+using LinearAlgebra
+using Random
 
 include("F64.jl")
 include("test_dists.jl")

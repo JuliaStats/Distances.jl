@@ -123,7 +123,7 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
 
     sa2 = wsumsq_percol(w, a)
     sb2 = wsumsq_percol(w, b)
-    mul!(r, transpose(a), b .* w)
+    mul!(r, a', b .* w)
     for j = 1:nb
         @simd for i = 1:na
             @inbounds r[i, j] = sa2[i] + sb2[j] - 2 * r[i, j]
@@ -136,7 +136,7 @@ function pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean, a::AbstractMatr
     m, n = get_pairwise_dims(length(w), r, a)
 
     sa2 = wsumsq_percol(w, a)
-    mul!(r, transpose(a), a .* w)
+    mul!(r, a', a .* w)
 
     for j = 1:n
         for i = 1:(j - 1)
