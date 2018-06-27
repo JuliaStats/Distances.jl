@@ -456,8 +456,8 @@ nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 # SqEuclidean
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
     mul!(r, transpose(a), b)
-    sa2 = Compat.sum(abs2, a, dims=1) # For compatibility with 0.6
-    sb2 = Compat.sum(abs2, b, dims=1) # For compatibility with 0.6
+    sa2 = sum(abs2, a, dims=1)
+    sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd
@@ -608,7 +608,7 @@ end
 
 # CorrDist
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
-_centralize_colwise(x::AbstractMatrix) = x .- Compat.mean(x, dims=1) # For compatibility with 0.6
+_centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
 function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
