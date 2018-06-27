@@ -19,8 +19,8 @@ function create_distances(w, Q)
         BhattacharyyaDist(),
         HellingerDist(),
 
-        Haversine(6371.),
-  
+        # Haversine(6371.),
+
         BrayCurtis(),
 
         WeightedSqEuclidean(w),
@@ -53,7 +53,7 @@ SUITE["colwise"] = BenchmarkGroup()
 function evaluate_colwise(dist, x, y)
     n = size(x, 2)
     T = typeof(evaluate(dist, x[:, 1], y[:, 1]))
-    r = Vector{T}(uninitialized, n)
+    r = Vector{T}(undef, n)
     for j = 1:n
         r[j] = evaluate(dist, x[:, j], y[:, j])
     end
@@ -105,7 +105,7 @@ function evaluate_pairwise(dist, x, y)
     nx = size(x, 2)
     ny = size(y, 2)
     T = typeof(evaluate(dist, x[:, 1], y[:, 1]))
-    r = Matrix{T}(nx, ny)
+    r = Matrix{T}(undef, nx, ny)
     for j = 1:ny
         for i = 1:nx
             r[i, j] = evaluate(dist, x[:, i], y[:, j])
