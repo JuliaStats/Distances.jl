@@ -2,5 +2,5 @@
 *.jl.*.cov
 *.jl.mem
 *.ji
-benchmark/params.jld
+benchmark/params.json
 Manifest.toml
