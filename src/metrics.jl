@@ -455,9 +455,9 @@ nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 
 # SqEuclidean
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    At_mul_B!(r, a, b)
-    sa2 = sum(abs2, a, 1)
-    sb2 = sum(abs2, b, 1)
+    mul!(r, a', b)
+    sa2 = sum(abs2, a, dims=1)
+    sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd
@@ -492,7 +492,7 @@ end
 
 function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
-    At_mul_B!(r, a, a)
+    mul!(r, a', a)
     sa2 = sumsq_percol(a)
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:n
@@ -525,7 +525,7 @@ end
 # Euclidean
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
-    At_mul_B!(r, a, b)
+    mul!(r, a', b)
     sa2 = sumsq_percol(a)
     sb2 = sumsq_percol(b)
     threshT = convert(eltype(r), dist.thresh)
@@ -552,7 +552,7 @@ end
 
 function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
-    At_mul_B!(r, a, a)
+    mul!(r, a', a)
     sa2 = sumsq_percol(a)
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:n
@@ -580,7 +580,7 @@ end
 
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
-    At_mul_B!(r, a, b)
+    mul!(r, a', b)
     ra = sqrt!(sumsq_percol(a))
     rb = sqrt!(sumsq_percol(b))
     for j = 1:nb
@@ -592,7 +592,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
 end
 function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
-    At_mul_B!(r, a, a)
+    mul!(r, a', a)
     ra = sqrt!(sumsq_percol(a))
     @inbounds for j = 1:n
         @simd for i = j + 1:n
@@ -608,7 +608,7 @@ end
 
 # CorrDist
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
-_centralize_colwise(x::AbstractMatrix) = x .- mean(x, 1)
+_centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
 function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end

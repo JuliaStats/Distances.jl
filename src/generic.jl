@@ -62,19 +62,19 @@ end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
-    r = Vector{result_type(metric, a, b)}(uninitialized, n)
+    r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
     n = size(b, 2)
-    r = Vector{result_type(metric, a, b)}(uninitialized, n)
+    r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
-    r = Vector{result_type(metric, a, b)}(uninitialized, n)
+    r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
@@ -117,12 +117,12 @@ end
 function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     m = size(a, 2)
     n = size(b, 2)
-    r = Matrix{result_type(metric, a, b)}(uninitialized, m, n)
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
     pairwise!(r, metric, a, b)
 end
 
 function pairwise(metric::PreMetric, a::AbstractMatrix)
     n = size(a, 2)
-    r = Matrix{result_type(metric, a, a)}(uninitialized, n, n)
+    r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a)
 end

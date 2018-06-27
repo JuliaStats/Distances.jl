@@ -3,3 +3,4 @@
 *.jl.mem
 *.ji
 benchmark/params.jld
+Manifest.toml
