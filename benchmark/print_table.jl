@@ -1,5 +1,6 @@
 using BenchmarkTools
 using Distances
+using Printf
 
 include("benchmarks.jl")
 
@@ -38,11 +39,11 @@ order = [
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 2.0 # Long enough
 
 # Tuning
-if !isfile(@__DIR__, "params.jld")
+if !isfile(@__DIR__, "params.json")
     tuning = tune!(SUITE; verbose = true);
-    BenchmarkTools.save("params.jld", "SUITE", params(SUITE))
+    BenchmarkTools.save("params.json", "SUITE", params(SUITE))
 end
-loadparams!(SUITE, BenchmarkTools.load("params.jld", "SUITE"), :evals, :samples);
+loadparams!(SUITE, BenchmarkTools.load("params.json")[1], :evals, :samples);
 
 # Run and judge
 results = run(SUITE; verbose = true)

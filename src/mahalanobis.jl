@@ -17,7 +17,7 @@ function evaluate(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector) 
     if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
-    
+
     Q = dist.qmat
     z = a - b
     return dot(z, Q * z)
@@ -48,7 +48,7 @@ function pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix,
     Qb = Q * b
     sa2 = dot_percol(a, Qa)
     sb2 = dot_percol(b, Qb)
-    At_mul_B!(r, a, Qb)
+    mul!(r, a', Qb)
 
     for j = 1:nb
         @simd for i = 1:na
@@ -64,7 +64,7 @@ function pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T}, a::AbstractMatrix)
 
     Qa = Q * a
     sa2 = dot_percol(a, Qa)
-    At_mul_B!(r, a, Qa)
+    mul!(r, a', Qa)
 
     for j = 1:n
         for i = 1:(j - 1)
