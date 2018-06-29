@@ -509,7 +509,7 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
-    test_pairwise(Bregman(), x -> sqeuclidean(x), X, Y, x -> 2*x);
+    test_pairwise(Bregman(), x -> sqeuclidean(x, zeros(x)), X, Y, x -> 2*x);
 end
 
 @testset "Euclidean precision" begin
