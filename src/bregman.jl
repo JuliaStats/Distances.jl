@@ -23,7 +23,7 @@ end
 
 bregman(args...; kwargs...) = evaluate(Bregman(), args...; kwargs...)
 
-function colwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatrix, ∇::Function; inner=Base.dot)
+function colwise(dist::Bregman, F::Function, p::AbstractArray, q::AbstractArray, ∇::Function; inner=Base.dot)
     # Check inputs. 
     @assert isa(F(p[:, 1]), Real) && isa(F(q[:, 1]), Real) # Function codomain 
     if size(p) == size(q) # Matrix sizes.
@@ -34,16 +34,16 @@ function colwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatri
     else
         throw(DimensionMismatch("The gradients don't conform to the vectors"))
     end
-    # Allocate return.   
-    results = collect(1:1:size(p)[2])
+    results = Array{Any}(collect(1:1:size(p)[2]))
     # Compute and return. 
     map!(results, results) do colindex
         return evaluate(dist, F, p[:, colindex], q[:, colindex], ∇; inner=inner)
     end
+    @show results
     return results 
 end
 
-function pairwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatrix, ∇::Function; inner=Base.dot)
+function pairwise(dist::Bregman, F::Function, p::AbstractArray, q::AbstractArray, ∇::Function; inner=Base.dot)
     # Check inputs. 
     @assert isa(F(p[:, 1]), Real) && isa(F(q[:, 1]), Real) # Function codomain 
     if size(p) == size(q) # Matrix sizes.
@@ -66,7 +66,7 @@ function pairwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatr
     return results 
 end
 
-function colwise!(results::AbstractArray, dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatrix, ∇::Function; inner=Base.dot)
+function colwise!(results::AbstractArray, dist::Bregman, F::Function, p::AbstractArray, q::AbstractArray, ∇::Function; inner=Base.dot)
     # Check inputs. 
     @assert isa(F(p[:, 1]), Real) && isa(F(q[:, 1]), Real) # Function codomain 
     if size(p) == size(q) # Matrix sizes.

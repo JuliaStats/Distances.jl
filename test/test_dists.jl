@@ -364,9 +364,6 @@ function test_colwise_bregman(dist, F, x, y, ∇, T)
         r1 = zeros(T, n)
         r2 = zeros(T, n)
         r3 = zeros(T, n) 
-        r1 = zeros(T, n)
-        r2 = zeros(T, n)
-        r3 = zeros(T, n)
         for j = 1:n
             r1[j] = evaluate(dist, F, x[:, j], y[:, j], ∇)
             r2[j] = evaluate(dist, F, x[:, 1], y[:, j], ∇)
@@ -374,8 +371,8 @@ function test_colwise_bregman(dist, F, x, y, ∇, T)
         end
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, F, x, y, ∇) .≈ r1)
-        @test all(colwise(dist, F, x[:, 1], y, ∇) .≈ r2)
-        @test all(colwise(dist, F, x, y[:, 1], ∇) .≈ r3)
+        @test all(colwise(dist, F, repmat(x[:, 1], 1, n), y, ∇) .≈ r2)
+        @test all(colwise(dist, F, x,  repmat(y[:, 1], 1, n), ∇) .≈ r3)
     end
 end
 
