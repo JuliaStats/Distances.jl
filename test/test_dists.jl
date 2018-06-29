@@ -276,6 +276,7 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
+    @test_throws DimensionMismatch bregman(x -> sqeuclidean(x, zeros(x)), [1, 2, 3], [1, 2], x -> 0.5*x) # Test size mismatch check on input vectors 
 end # testset
 
 @testset "mahalanobis" begin
@@ -361,6 +362,24 @@ function test_colwise(dist, x, y, T)
     end
 end
 
+function test_colwise_bregman(dist, F, x, y, ∇, T)
+    @testset "Colwise test for $(typeof(dist))" begin
+        n = size(x, 2)
+        r1 = zeros(T, n)
+        r2 = zeros(T, n)
+        r3 = zeros(T, n)
+        for j = 1:n
+            r1[j] = evaluate(dist, F. x[:, j], y[:, j], ∇)
+            r2[j] = evaluate(dist, x[:, 1], y[:, j, ∇])
+            r3[j] = evaluate(dist, x[:, j], y[:, 1], ∇)
+        end
+        # ≈ and all( .≈ ) seem to behave slightly differently for F64
+        @test all(colwise(dist, F, x, y, ∇) .≈ r1)
+        @test all(colwise(dist, F, x[:, 1], y, ∇) .≈ r2)
+        @test all(colwise(dist, F, x, y[:, 1], ∇) .≈ r3)
+    end
+end
+
 @testset "column-wise metrics on $T" for T in (Float64, F64)
     m = 5
     n = 8
@@ -414,6 +433,7 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
+    test_colwise(Bregman(), x -> sqeuclidean(x), X, Y, x -> 2*x);
 end
 
 
@@ -486,6 +506,7 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
+    test_pairwise(Bregman(), x -> sqeuclidean(x), X, Y, x -> 2*x);
 end
 
 @testset "Euclidean precision" begin
@@ -503,3 +524,8 @@ end
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
 end
+
+@testset "Bregman Divergence" begin
+    @test bregman(x -> sqeuclidean(x, zeros(x)), [1, 2, 3], [1, 2, 3], x -> 0.5*x) == 0 # Check the formula for a simple case. 
+    @test_throws AssertionError bregman(x -> x, [1, 2, 3], [1, 2, 3], x -> x) # Test codomain restriction on F (i.e., F: X --> R)
+end 

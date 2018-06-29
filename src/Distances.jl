@@ -54,6 +54,7 @@ export
     MeanSqDeviation,
     RMSDeviation,
     NormRMSDeviation,
+    Bregman
 
     # convenient functions
     euclidean,
@@ -84,6 +85,7 @@ export
     mahalanobis,
     bhattacharyya,
     hellinger,
+    bregman
 
     haversine,
 
@@ -99,5 +101,6 @@ include("wmetrics.jl")
 include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
+include("bregman.jl")
 
 end # module end
