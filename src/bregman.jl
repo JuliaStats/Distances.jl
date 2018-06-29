@@ -13,7 +13,7 @@ end
 function evaluate(dist::Bregman, F::Function, p::AbstractVector, q::AbstractVector, ∇::Function; inner=Base.dot)
     # Check inputs. 
     @assert isa(F(p), Real) &&isa(F(q), Real) # Function codomain
-    if (size(∇(p)) == size(∇(q)) == size(p) == size(q)) # Sizes of vectors 
+    if size(∇(p)) == size(∇(q)) == size(p) == size(q) # Sizes of vectors 
     else
         throw(DimensionMismatch("Either the arrays don't vectors, or the gradients don't match the vectors."))
     end
@@ -35,7 +35,7 @@ function colwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatri
         throw(DimensionMismatch("The gradients don't conform to the vectors"))
     end
     # Allocate return.   
-    results = collect(1:1:size(p)[1])
+    results = collect(1:1:size(p)[2])
     # Compute and return. 
     map!(results, results) do colindex
         return evaluate(dist, F, p[:, colindex], q[:, colindex], ∇; inner=inner)
@@ -55,7 +55,6 @@ function pairwise(dist::Bregman, F::Function, p::AbstractMatrix, q::AbstractMatr
         throw(DimensionMismatch("The gradients don't conform to the vectors"))
     end
     # Define output.
-    rows = size(p)[1];
     cols = size(p)[2];
     results = Matrix(cols, cols)
     # Compute 
@@ -98,9 +97,8 @@ function pairwise!(results::AbstractArray, dist::Bregman, F::Function, p::Abstra
     else
         throw(DimensionMismatch("The gradients don't conform to the vectors"))
     end
-    rows = size(p)[1];
     cols = size(p)[2];
-    @assert size(results) = (cols, cols)
+    @assert size(results) == (cols, cols)
     # Compute 
     for i in 1:cols
         for j in 1:cols
