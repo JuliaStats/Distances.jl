@@ -5,6 +5,18 @@ function test_metricity(dist, x, y, z)
         dxy = evaluate(dist, x, y)
         dxz = evaluate(dist, x, z)
         dyz = evaluate(dist, y, z)
+        if isa(dist, PreMetric)
+            # Unfortunately small non-zero numbers (~10^-16) are appearing
+            # in our tests due to accumulating floating point rounding errors.
+            # We either need to allow small errors in our tests or change the
+            # way we do accumulations...
+            @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
+            @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
+            @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
+            @test dxy ≥ zero(eltype(x))
+            @test dxz ≥ zero(eltype(x))
+            @test dyz ≥ zero(eltype(x))
+        end
         if isa(dist, SemiMetric)
             @test dxy ≈ evaluate(dist, y, x)
             @test dxz ≈ evaluate(dist, z, x)
