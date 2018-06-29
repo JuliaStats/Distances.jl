@@ -3,18 +3,8 @@
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         dxy = evaluate(dist, x, y)
-        if isa(dist, PreMetric)
-            # Unfortunately small non-zero numbers (~10^-16) are appearing
-            # in our tests due to accumulating floating point rounding errors.
-            # We either need to allow small errors in our tests or change the
-            # way we do accumulations...
-            @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
-            @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
-            @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
-            @test dxy ≥ zero(eltype(x))
-            @test dxz ≥ zero(eltype(x))
-            @test dyz ≥ zero(eltype(x))
-        end
+        dxz = evaluate(dist, x, z)
+        dyz = evaluate(dist, y, z)
         if isa(dist, SemiMetric)
             @test dxy ≈ evaluate(dist, y, x)
             @test dxz ≈ evaluate(dist, z, x)
@@ -40,7 +30,7 @@ function test_metricity_bregman(dist::Bregman, F::Function, p, q, ∇::Function)
     @test evaluate(dist, F, q, q, ∇) + one(eltype(q)) ≈ one(eltype(p))
     @test evaluate(dist, F, p, q, ∇) ≥ zero(eltype(p))
     @test evaluate(dist, F, q, p, ∇) ≥ zero(eltype(q))
-end 
+end
 
 @testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
     n = 10
