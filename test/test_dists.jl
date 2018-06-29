@@ -3,8 +3,6 @@
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         dxy = evaluate(dist, x, y)
-        dxz = evaluate(dist, x, z)
-        dyz = evaluate(dist, y, z)
         if isa(dist, PreMetric)
             # Unfortunately small non-zero numbers (~10^-16) are appearing
             # in our tests due to accumulating floating point rounding errors.
@@ -36,6 +34,13 @@ function test_metricity(dist, x, y, z)
         end
     end
 end
+
+function test_metricity_bregman(dist::Bregman, F::Function, p, q, ∇::Function)
+    @test evaluate(dist, F, p, p, ∇) + one(eltype(p)) ≈ one(eltype(p))
+    @test evaluate(dist, F, q, q, ∇) + one(eltype(q)) ≈ one(eltype(p))
+    @test evaluate(dist, F, p, q, ∇) ≥ zero(eltype(p))
+    @test evaluate(dist, F, q, p, ∇) ≥ zero(eltype(q))
+end 
 
 @testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
     n = 10
@@ -110,6 +115,7 @@ end
     test_metricity(RenyiDivergence(2), p, q, r)
     test_metricity(RenyiDivergence(10), p, q, r)
     test_metricity(JSDivergence(), p, q, r)
+    test_metricity_bregman(Bregman(), x -> sqeuclidean(x, zeros(x)), p, q, x -> 2*x)
 end
 
 @testset "individual metrics" begin
