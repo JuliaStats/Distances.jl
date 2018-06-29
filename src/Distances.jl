@@ -54,7 +54,7 @@ export
     MeanSqDeviation,
     RMSDeviation,
     NormRMSDeviation,
-    Bregman
+    Bregman,
 
     # convenient functions
     euclidean,
@@ -85,7 +85,7 @@ export
     mahalanobis,
     bhattacharyya,
     hellinger,
-    bregman
+    bregman,
 
     haversine,
 
