@@ -367,9 +367,12 @@ function test_colwise_bregman(dist, F, x, y, ∇, T)
         n = size(x, 2)
         r1 = zeros(T, n)
         r2 = zeros(T, n)
+        r3 = zeros(T, n)n = size(x, 2)
+        r1 = zeros(T, n)
+        r2 = zeros(T, n)
         r3 = zeros(T, n)
         for j = 1:n
-            r1[j] = evaluate(dist, F. x[:, j], y[:, j], ∇)
+            r1[j] = evaluate(dist, F, x[:, j], y[:, j], ∇)
             r2[j] = evaluate(dist, x[:, 1], y[:, j, ∇])
             r3[j] = evaluate(dist, x[:, j], y[:, 1], ∇)
         end
