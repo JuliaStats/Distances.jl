@@ -369,7 +369,7 @@ function test_colwise_bregman(dist, F, x, y, ∇, T)
         r3 = zeros(T, n)
         for j = 1:n
             r1[j] = evaluate(dist, F, x[:, j], y[:, j], ∇)
-            r2[j] = evaluate(dist, x[:, 1], y[:, j, ∇])
+            r2[j] = evaluate(dist, x[:, 1], y[:, j], ∇)
             r3[j] = evaluate(dist, x[:, j], y[:, 1], ∇)
         end
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
