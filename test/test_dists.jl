@@ -436,7 +436,7 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
-    test_colwise_bregman(Bregman(), x -> sqeuclidean(x), X, Y, x -> 2*x, T);
+    test_colwise_bregman(Bregman(), x -> sqeuclidean(x, zeros(x)), X, Y, x -> 2*x, T);
 end
 
 
