@@ -37,13 +37,6 @@ function test_metricity(dist, x, y, z)
     end
 end
 
-function test_metricity_bregman(dist::Bregman, F::Function, p, q, ∇::Function)
-    @test evaluate(dist, F, p, p, ∇) + one(eltype(p)) ≈ one(eltype(p))
-    @test evaluate(dist, F, q, q, ∇) + one(eltype(q)) ≈ one(eltype(p))
-    @test evaluate(dist, F, p, q, ∇) ≥ zero(eltype(p))
-    @test evaluate(dist, F, q, p, ∇) ≥ zero(eltype(q))
-end
-
 @testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
     n = 10
     x = rand(T, n)
@@ -66,6 +59,8 @@ end
 
     test_metricity(BhattacharyyaDist(), x, y, z)
     test_metricity(HellingerDist(), x, y, z)
+    test_metricity(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), x, y, z);
+
 
     x₁ = rand(T, 2)
     x₂ = rand(T, 2)
@@ -117,7 +112,6 @@ end
     test_metricity(RenyiDivergence(2), p, q, r)
     test_metricity(RenyiDivergence(10), p, q, r)
     test_metricity(JSDivergence(), p, q, r)
-    test_metricity_bregman(Bregman(), x -> sqeuclidean(x, zeros(x)), p, q, x -> 2*x)
 end
 
 @testset "individual metrics" begin
@@ -284,7 +278,7 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
-    @test_throws DimensionMismatch bregman(x -> sqeuclidean(x, zeros(x)), [1, 2, 3], [1, 2], x -> 0.5*x) # Test size mismatch check on input vectors 
+    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), mat23, mat22)
 end # testset
 
 @testset "mahalanobis" begin
@@ -370,24 +364,6 @@ function test_colwise(dist, x, y, T)
     end
 end
 
-function test_colwise_bregman(dist, F, x, y, ∇, T)
-    @testset "Colwise test for $(typeof(dist))" begin
-        n = size(x, 2)
-        r1 = zeros(T, n)
-        r2 = zeros(T, n)
-        r3 = zeros(T, n) 
-        for j = 1:n
-            r1[j] = evaluate(dist, F, x[:, j], y[:, j], ∇)
-            r2[j] = evaluate(dist, F, x[:, 1], y[:, j], ∇)
-            r3[j] = evaluate(dist, F, x[:, j], y[:, 1], ∇)
-        end
-        # ≈ and all( .≈ ) seem to behave slightly differently for F64
-        @test all(colwise(dist, F, x, y, ∇) .≈ r1)
-        @test all(colwise(dist, F, repmat(x[:, 1], 1, n), y, ∇) .≈ r2)
-        @test all(colwise(dist, F, x,  repmat(y[:, 1], 1, n), ∇) .≈ r3)
-    end
-end
-
 @testset "column-wise metrics on $T" for T in (Float64, F64)
     m = 5
     n = 8
@@ -409,6 +385,7 @@ end
     test_colwise(Chebyshev(), X, Y, T)
     test_colwise(Minkowski(2.5), X, Y, T)
     test_colwise(Hamming(), A, B, T)
+    test_colwise(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), X, Y, T);
 
     test_colwise(CosineDist(), X, Y, T)
     test_colwise(CorrDist(), X, Y, T)
@@ -441,9 +418,7 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
-    test_colwise_bregman(Bregman(), x -> sqeuclidean(x, zeros(x)), X, Y, x -> 2*x, T);
 end
-
 
 function test_pairwise(dist, x, y, T)
     @testset "Pairwise test for $(typeof(dist))" begin
@@ -500,6 +475,7 @@ end
     test_pairwise(BhattacharyyaDist(), X, Y, T)
     test_pairwise(HellingerDist(), X, Y, T)
     test_pairwise(BrayCurtis(), X, Y, T)
+    test_pairwise(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), X, Y, T)
 
     w = rand(m)
 
@@ -533,6 +509,6 @@ end
 end
 
 @testset "Bregman Divergence" begin
-    @test bregman(x -> sqeuclidean(x, zeros(x)), [1, 2, 3], [1, 2, 3], x -> 0.5*x) == 0 # Check the formula for a simple case. 
-    @test_throws AssertionError bregman(x -> x, [1, 2, 3], [1, 2, 3], x -> x) # Test codomain restriction on F (i.e., F: X --> R)
+    @test bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x, [1, 2, 3], [1, 2, 3]) == 0
+    @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
 end 
