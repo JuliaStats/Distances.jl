@@ -279,6 +279,8 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
     @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), [1, 2, 3], [1, 2])
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zeros(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
 end # testset
 
 @testset "mahalanobis" begin
