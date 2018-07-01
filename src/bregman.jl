@@ -25,18 +25,19 @@ function evaluate(dist::Bregman, p::AbstractVector, q::AbstractVector)
     FP_val = F(p);
     FQ_val = F(q); 
     DQ_val = ∇(q);
+    p_size = size(p)
     # Check F codomain. 
     if isa(FP_val, Real) && isa(FQ_val, Real) 
     else 
         throw(ArgumentError("F Codomain Error: F doesn't map the vectors to real numbers"))
     end 
     # Check vector size. 
-    if size(p) == size(q) 
+    if p_size == size(q) 
     else
         throw(DimensionMismatch("The vector p ($(size(p))) and q ($(size(q))) are different sizes."))
     end
     # Check gradient size. 
-    if size(DQ_val) == size(p)
+    if size(DQ_val) == p_size
     else 
         throw(DimensionMismatch("The gradient result is not the same size as p and q"))
     end 
