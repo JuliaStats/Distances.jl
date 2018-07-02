@@ -27,7 +27,7 @@ function evaluate(dist::Bregman, p::AbstractVector, q::AbstractVector)
     FP_val = dist.F(p);
     FQ_val = dist.F(q); 
     DQ_val = dist.∇(q);
-    p_size = size(p)
+    p_size = size(p);
     # Check F codomain. 
     if !(isa(FP_val, Real) && isa(FQ_val, Real))
         throw(ArgumentError("F Codomain Error: F doesn't map the vectors to real numbers"))
