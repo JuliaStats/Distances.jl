@@ -59,7 +59,7 @@ end
 
     test_metricity(BhattacharyyaDist(), x, y, z)
     test_metricity(HellingerDist(), x, y, z)
-    test_metricity(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), x, y, z);
+    test_metricity(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), x, y, z);
 
 
     x₁ = rand(T, 2)
@@ -278,9 +278,9 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
-    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), mat23, mat22)
-    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), [1, 2, 3], [1, 2])
-    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zeros(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
+    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), [1, 2, 3], [1, 2])
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
 end # testset
 
 @testset "mahalanobis" begin
@@ -387,7 +387,7 @@ end
     test_colwise(Chebyshev(), X, Y, T)
     test_colwise(Minkowski(2.5), X, Y, T)
     test_colwise(Hamming(), A, B, T)
-    test_colwise(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), X, Y, T);
+    test_colwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T);
 
     test_colwise(CosineDist(), X, Y, T)
     test_colwise(CorrDist(), X, Y, T)
@@ -477,7 +477,7 @@ end
     test_pairwise(BhattacharyyaDist(), X, Y, T)
     test_pairwise(HellingerDist(), X, Y, T)
     test_pairwise(BrayCurtis(), X, Y, T)
-    test_pairwise(Bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x), X, Y, T)
+    test_pairwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T)
 
     w = rand(m)
 
@@ -511,6 +511,24 @@ end
 end
 
 @testset "Bregman Divergence" begin
-    @test bregman(x -> sqeuclidean(x, zeros(x)), x -> 2*x, [1, 2, 3], [1, 2, 3]) == 0
+    # Some basic tests. 
     @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
+    # Test if Bregman() correctly implements the gkl divergence between two random vectors. 
+    F(p) = LinearAlgebra.dot(p, log.(p));
+    ∇(p) = map(x -> log(x) + 1, p)
+    testDist = Bregman(F, ∇)
+    p = vec(rand(1, 4))
+    q = vec(rand(1, 4))
+    p = p/sum(p);
+    q = q/sum(q);
+    @test evaluate(testDist, p, q) ≈ gkl_divergence(p, q)
+    # Test if Bregman() correctly implements the squared euclidean dist. between them. 
+    @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
+    # Test if Bregman() correctly implements the IS distance. 
+    F(p) = -1 * sum(log.(p))
+    ∇(p) = map(x -> -1 * x^(-1), p)
+    function ISdist(p::AbstractVector, q::AbstractVector)
+        return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
+    end
+    @test bregman(F, ∇, p, q) ≈ ISdist(p, q) 
 end 
