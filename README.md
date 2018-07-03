@@ -37,6 +37,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Root mean squared deviation
 * Normalized root mean squared deviation
 * Bray-Curtis dissimilarity
+* Bregman divergence 
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
@@ -163,6 +164,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedCityblock   |  `wcityblock(x, y, w)`     | `sum(abs(x - y) .* w)`  |
 |  WeightedMinkowski   |  `wminkowski(x, y, w, p)`  | `sum(abs(x - y).^p .* w) ^ (1/p)` |
 |  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
+|  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` | 
 
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way. The arguments `x` and `y` are arrays of real numbers; `k` and `l` are arrays of distinct elements of any kind; a and b are arrays of Bools; and finally, `p` and `q` are arrays forming a discrete probability distribution and are therefore both expected to sum to one.
 

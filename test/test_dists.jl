@@ -8,7 +8,7 @@ function test_metricity(dist, x, y, z)
         if isa(dist, PreMetric)
             # Unfortunately small non-zero numbers (~10^-16) are appearing
             # in our tests due to accumulating floating point rounding errors.
-            # We either need to allow small errors in our tests or change the
+            # We either need to allow small errors in our tests or change the
             # way we do accumulations...
             @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
             @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
@@ -59,6 +59,8 @@ end
 
     test_metricity(BhattacharyyaDist(), x, y, z)
     test_metricity(HellingerDist(), x, y, z)
+    test_metricity(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), x, y, z);
+
 
     x₁ = rand(T, 2)
     x₂ = rand(T, 2)
@@ -276,6 +278,9 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
+    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), [1, 2, 3], [1, 2])
+    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
 end # testset
 
 @testset "mahalanobis" begin
@@ -382,6 +387,7 @@ end
     test_colwise(Chebyshev(), X, Y, T)
     test_colwise(Minkowski(2.5), X, Y, T)
     test_colwise(Hamming(), A, B, T)
+    test_colwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T);
 
     test_colwise(CosineDist(), X, Y, T)
     test_colwise(CorrDist(), X, Y, T)
@@ -415,7 +421,6 @@ end
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
 end
-
 
 function test_pairwise(dist, x, y, T)
     @testset "Pairwise test for $(typeof(dist))" begin
@@ -472,6 +477,7 @@ end
     test_pairwise(BhattacharyyaDist(), X, Y, T)
     test_pairwise(HellingerDist(), X, Y, T)
     test_pairwise(BrayCurtis(), X, Y, T)
+    test_pairwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T)
 
     w = rand(m)
 
@@ -503,3 +509,26 @@ end
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
 end
+
+@testset "Bregman Divergence" begin
+    # Some basic tests. 
+    @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
+    # Test if Bregman() correctly implements the gkl divergence between two random vectors. 
+    F(p) = LinearAlgebra.dot(p, log.(p));
+    ∇(p) = map(x -> log(x) + 1, p)
+    testDist = Bregman(F, ∇)
+    p = rand(4)
+    q = rand(4)
+    p = p/sum(p);
+    q = q/sum(q);
+    @test evaluate(testDist, p, q) ≈ gkl_divergence(p, q)
+    # Test if Bregman() correctly implements the squared euclidean dist. between them. 
+    @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
+    # Test if Bregman() correctly implements the IS distance. 
+    F(p) = -1 * sum(log.(p))
+    ∇(p) = map(x -> -1 * x^(-1), p)
+    function ISdist(p::AbstractVector, q::AbstractVector)
+        return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
+    end
+    @test bregman(F, ∇, p, q) ≈ ISdist(p, q) 
+end 
