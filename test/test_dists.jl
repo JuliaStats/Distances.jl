@@ -517,8 +517,8 @@ end
     F(p) = LinearAlgebra.dot(p, log.(p));
     ∇(p) = map(x -> log(x) + 1, p)
     testDist = Bregman(F, ∇)
-    p = vec(rand(1, 4))
-    q = vec(rand(1, 4))
+    p = rand(4)
+    q = rand(4)
     p = p/sum(p);
     q = q/sum(q);
     @test evaluate(testDist, p, q) ≈ gkl_divergence(p, q)
