@@ -3,6 +3,7 @@ __precompile__()
 module Distances
 
 using LinearAlgebra
+using Statistics
 
 export
     # generic types/functions

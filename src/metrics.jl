@@ -157,7 +157,7 @@ const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        @simd for I in eachindex(a, b)
+        @simd for I in 1:length(a)
             ai = a[I]
             bi = b[I]
             s = eval_reduce(d, s, eval_op(d, ai, bi))
