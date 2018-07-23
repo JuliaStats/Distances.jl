@@ -511,9 +511,9 @@ end
 end
 
 @testset "Bregman Divergence" begin
-    # Some basic tests. 
+    # Some basic tests.
     @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
-    # Test if Bregman() correctly implements the gkl divergence between two random vectors. 
+    # Test if Bregman() correctly implements the gkl divergence between two random vectors.
     F(p) = LinearAlgebra.dot(p, log.(p));
     ∇(p) = map(x -> log(x) + 1, p)
     testDist = Bregman(F, ∇)
@@ -522,13 +522,28 @@ end
     p = p/sum(p);
     q = q/sum(q);
     @test evaluate(testDist, p, q) ≈ gkl_divergence(p, q)
-    # Test if Bregman() correctly implements the squared euclidean dist. between them. 
+    # Test if Bregman() correctly implements the squared euclidean dist. between them.
     @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
-    # Test if Bregman() correctly implements the IS distance. 
+    # Test if Bregman() correctly implements the IS distance.
     F(p) = -1 * sum(log.(p))
     ∇(p) = map(x -> -1 * x^(-1), p)
     function ISdist(p::AbstractVector, q::AbstractVector)
         return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
     end
-    @test bregman(F, ∇, p, q) ≈ ISdist(p, q) 
-end 
+    @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
+end
+
+@testset "zero allocation colwise!" begin
+    d = Euclidean()
+    a = rand(2, 41)
+    b = rand(2, 41)
+    z = zeros(41)
+    colwise!(z, d, a, b)
+    # This fails when bounds checking is enforced
+    bounds = Base.JLOptions().check_bounds
+    if bounds == 0
+        @test (@allocated colwise!(z, d, a, b)) == 0
+    else
+        @test_broken (@allocated colwise!(z, d, a, b)) == 0
+    end
+end
