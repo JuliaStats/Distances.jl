@@ -8,14 +8,14 @@ F64(x::F64) = x
 for op in (:+, :-, :sin, :cos, :asin, :acos)
     @eval Base.$op(a::F64) = F64($op(a.x))
 end
-for op in (:+, :-, :*, :/, :atan2)
+for op in (:+, :-, :*, :/, isdefined(Base, :atan2) ? :atan2 : :atan)
     @eval Base.$op(a::F64, b::F64) = F64($op(a.x, b.x))
 end
 for op in (:zero, :one,)
     @eval Base.$op(::Type{F64}) = F64($op(Float64))
 end
 
-if VERSION.minor >= 7
+if VERSION >= v"0.7-"
     Random.rand(rng::AbstractRNG, ::Random.SamplerTrivial{Random.CloseOpen01{F64}}) = F64(rand(rng))
 else
     Base.rand(rng::AbstractRNG, ::Type{F64}) = F64(rand())
