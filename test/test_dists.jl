@@ -38,7 +38,8 @@ function test_metricity(dist, x, y, z)
 end
 
 @testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
-    n = 10
+    Random.seed!(123)
+    n = 100
     x = rand(T, n)
     y = rand(T, n)
     z = rand(T, n)
