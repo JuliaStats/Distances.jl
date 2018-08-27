@@ -1,5 +1,3 @@
-__precompile__()
-
 module Distances
 
 using LinearAlgebra
@@ -48,6 +46,7 @@ export
     Mahalanobis,
     BhattacharyyaDist,
     HellingerDist,
+    PeriodicEuclidean,
 
     Haversine,
 
@@ -87,6 +86,7 @@ export
     bhattacharyya,
     hellinger,
     bregman,
+    peuclidean,
 
     haversine,
 
@@ -99,6 +99,7 @@ include("common.jl")
 include("generic.jl")
 include("metrics.jl")
 include("wmetrics.jl")
+include("pmetrics.jl")
 include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")

@@ -91,6 +91,8 @@ end
     test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
     test_metricity(WeightedHamming(w), a, b, c)
 
+    test_metricity(PeriodicEuclidean(w), x, y, z)
+
     Q = rand(T, n, n)
     Q = Q * Q'  # make sure Q is positive-definite
 
@@ -125,6 +127,8 @@ end
     @test chebyshev(a, b) == 1.0
     @test minkowski(a, b, 2) == 1.0
     @test hamming(a, b) == 1
+    @test peuclidean(a, b, 0.5) == 0
+    @test peuclidean(a, b, 2) == 1.0
 
     bt = [true, false, true]
     bf = [false, true, true]
@@ -143,6 +147,9 @@ end
             @test chebyshev(x, y) == 6.0
             @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
             @test minkowski(x, y, 2) == sqrt(57.0)
+            @test peuclidean(x, y, fill(10.0, 4)) == sqrt(37)
+            @test peuclidean(x - vec(y), zero(y), fill(10.0, 4)) == peuclidean(x, y, fill(10.0, 4))
+            @test peuclidean(x, y, [10.0, 10.0, 10.0, Inf]) == sqrt(57)
             @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
             @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
             x_int, y_int = Int64.(x), Int64.(y)
@@ -416,6 +423,8 @@ end
     test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
     test_colwise(WeightedHamming(w), A, B, T)
 
+    test_colwise(PeriodicEuclidean(w), X, Y, T)
+
     Q = rand(T, m, m)
     Q = Q * Q'  # make sure Q is positive-definite
 
@@ -487,6 +496,8 @@ end
     test_pairwise(WeightedCityblock(w), X, Y, T)
     test_pairwise(WeightedMinkowski(w, 2.5), X, Y, T)
     test_pairwise(WeightedHamming(w), A, B, T)
+
+    test_pairwise(PeriodicEuclidean(w), X, Y, T)
 
     Q = rand(m, m)
     Q = Q * Q'  # make sure Q is positive-definite

@@ -29,6 +29,8 @@ function create_distances(w, Q)
         WeightedMinkowski(w, 3.0),
         WeightedHamming(w),
 
+        PeriodicEuclidean(w),
+
         SqMahalanobis(Q),
         Mahalanobis(Q),
     ]
