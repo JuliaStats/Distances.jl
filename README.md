@@ -14,6 +14,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 
 * Euclidean distance
 * Squared Euclidean distance
+* Periodic Euclidean distance
 * Cityblock distance
 * Jaccard distance
 * Rogers-Tanimoto distance
@@ -42,7 +43,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
 
-## Basic Use
+## Basic use
 
 The library supports three ways of computation: *computing the distance between two vectors*, *column-wise computation*, and *pairwise computation*.
 
