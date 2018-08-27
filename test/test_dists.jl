@@ -264,6 +264,8 @@ end #testset
 
         w = T[]
         @test isa(whamming(a, b, w), T)
+        @test peuclidean(a, b, w) == 0.0
+        @test isa(peuclidean(a, b, w), T)
     end
 end # testset
 
@@ -272,8 +274,10 @@ end # testset
     @test_throws DimensionMismatch sqeuclidean(a, b)
     a = [1, 0]; b = [2.0] ; w = [3.0]
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
+    @test_throws DimensionMismatch peuclidean(a, b, w)
     a = [1, 0]; b = [2.0, 4.0] ; w = [3.0]
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
+    @test_throws DimensionMismatch peuclidean(a, b, w)
     p = [0.5, 0.5]; q = [0.3, 0.3, 0.4]
     @test_throws DimensionMismatch bhattacharyya(p, q)
     @test_throws DimensionMismatch hellinger(q, p)
