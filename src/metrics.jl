@@ -17,9 +17,8 @@ struct Cityblock <: Metric end
 struct Jaccard <: Metric end
 struct RogersTanimoto <: Metric end
 
-struct Minkowski{T <: Real} <: Metric
-    p::T
-end
+struct Minkowski{p} <: Metric end
+Minkowski(p::T) where {T <: Real} = Minkowski{p}()
 
 struct Hamming <: Metric end
 
@@ -228,9 +227,9 @@ chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
 # Minkowski
-@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
+@inline eval_op(dist::Minkowski{p}, ai, bi) where {p} = abs(ai - bi).^p
 @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
-eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
+eval_end(dist::Minkowski{p}, s) where {p} = s.^(1 / p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski(a::T, b::T, p::Real) where {T <: Number} = evaluate(Minkowski(p), a, b)
 

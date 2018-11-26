@@ -21,10 +21,11 @@ struct WeightedCityblock{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-struct WeightedMinkowski{W <: RealAbstractArray,T <: Real} <: Metric
+struct WeightedMinkowski{W <: RealAbstractArray,p} <: Metric
     weights::W
-    p::T
 end
+WeightedMinkowski(w::W, p::T) where {W <: RealAbstractArray, T <: Real} =
+    WeightedMinkowski{W, p}(w)
 
 struct WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
@@ -100,9 +101,9 @@ weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(Weig
 wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedCityblock(w), a, b)
 
 # Minkowski
-@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi).^dist.p * wi
+@inline eval_op(dist::WeightedMinkowski{W,p}, ai, bi, wi) where {W,p} = abs(ai - bi).^p * wi
 @inline eval_reduce(::WeightedMinkowski, s1, s2) = s1 + s2
-eval_end(dist::WeightedMinkowski, s) = s.^(1 / dist.p)
+eval_end(dist::WeightedMinkowski{W,p}, s) where {W,p} = s.^(1 / p)
 wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
 
 # WeightedHamming
