@@ -332,10 +332,12 @@ function eval_end(dist::RenyiDivergence, s::Tuple{T,T,T,T}) where {T <: Real}
     end
 end
 
-# Combine docs with RenyiDivergence
-@doc (@doc RenyiDivergence) renyi_divergence
-
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
+# Combine docs with RenyiDivergence. Getting the docstring with @doc causes
+# problems with package compilation.
+let docstring = Base.Docs.getdoc(RenyiDivergence)
+    @doc docstring renyi_divergence
+end
 
 # JSDivergence
 @inline function eval_op(::JSDivergence, ai::T, bi::T) where {T}
