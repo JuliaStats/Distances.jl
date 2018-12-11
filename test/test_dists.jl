@@ -534,6 +534,7 @@ end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
 end
 
+#=
 @testset "zero allocation colwise!" begin
     d = Euclidean()
     a = rand(2, 41)
@@ -548,3 +549,4 @@ end
         @test_broken (@allocated colwise!(z, d, a, b)) == 0
     end
 end
+=#
