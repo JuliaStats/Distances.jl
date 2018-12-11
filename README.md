@@ -15,6 +15,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Euclidean distance
 * Squared Euclidean distance
 * Cityblock distance
+* Total variation distance
 * Jaccard distance
 * Rogers-Tanimoto distance
 * Chebyshev distance
@@ -136,6 +137,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  Euclidean           |  `euclidean(x, y)`         | `sqrt(sum((x - y) .^ 2))` |
 |  SqEuclidean         |  `sqeuclidean(x, y)`       | `sum((x - y).^2)` |
 |  Cityblock           |  `cityblock(x, y)`         | `sum(abs(x - y))` |
+|  TotalVariation      |  `totalvariation(x, y)`    | `sum(abs(x - y)) / 2` |
 |  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
 |  Minkowski           |  `minkowski(x, y, p)`      | `sum(abs(x - y).^p) ^ (1/p)` |
 |  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
