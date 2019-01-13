@@ -98,8 +98,14 @@ struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: Metric end
 
+struct PeriodicEuclidean{N,T <: Real} <: Metric
+    periods::NTuple{N,T}
+end
+PeriodicEuclidean(periods) = PeriodicEuclidean(promote_type(typeof.(periods)...).(periods))
+PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),eltype(periods)}(tuple(periods...))
+PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
 
-const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
+const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence,PeriodicEuclidean}
 
 """
     Euclidean([thresh])
@@ -138,6 +144,22 @@ Create a squared-euclidean semi-metric. For the meaning of `thresh`,
 see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
+
+"""
+    PeriodicEuclidean(L)
+Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
+a cylinder). Periods per dimension are contained in the vector `L`.
+For dimensions without periodicity put `Inf` in the respective component.
+
+# Example
+```
+julia> x, y, L = [0.0, 0.0], [0.7, 0.0], (0.5, Inf)
+([0.0, 0.0], [0.7, 0.0], [0.5, Inf])
+
+julia> evaluate(PeriodicEuclidean(L),x,y)
+```
+"""
+PeriodicEuclidean() = Euclidean()
 
 ###########################################################
 #
@@ -212,6 +234,28 @@ sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
+
+# PeriodicEuclidean
+Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
+@inline function eval_start(d::PeriodicEuclidean, a::AbstractArray, b::AbstractArray)
+    (zero(result_type(d, a, b)), d.periods)
+end
+@inline eval_op(::PeriodicEuclidean, ai, bi) = abs(ai - bi)
+@inline function eval_reduce(::PeriodicEuclidean, s1, s2)
+    li = first(s1[2])
+    d = mod(s2, li)
+    d = min(d, li - d)
+    (s1[1] + abs2(d), Base.tail(s1[2]))
+end
+@inline eval_end(::PeriodicEuclidean, s) = sqrt(s[1])
+function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Number}
+    p = first(dist.periods)
+    d = mod(abs(a - b), p)
+    d = min(d, p - d)
+end
+peuclidean(a::AbstractArray, b::AbstractArray, p) = evaluate(PeriodicEuclidean(p), a, b)
+peuclidean(a::AbstractArray, b::AbstractArray) = euclidean(a, b)
+peuclidean(a::Number, b::Number, p::Number) = evaluate(PeriodicEuclidean(p), a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
