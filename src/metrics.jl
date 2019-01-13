@@ -105,7 +105,9 @@ PeriodicEuclidean(periods) = PeriodicEuclidean(promote_type(typeof.(periods)...)
 PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),eltype(periods)}(tuple(periods...))
 PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
 
-const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence,PeriodicEuclidean}
+const VarLengthMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
+const FixLengthMetrics{N} = Union{PeriodicEuclidean{N}} # TODO: include UnionWeightedMetrics
+const UnionMetrics = Union{VarLengthMetrics,FixLengthMetrics}
 
 """
     Euclidean([thresh])
@@ -169,11 +171,25 @@ PeriodicEuclidean() = Euclidean()
 
 const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
 
-# Specialized for Arrays and avoids a branch on the size
-@inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
-    @boundscheck if length(a) != length(b)
+function checklength(d::VarLengthMetrics, a, b)
+    if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
+    return nothing
+end
+function checklength(d::FixLengthMetrics{N}, a, b) where {N}
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) != N
+        throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $N."))
+    end
+    return nothing
+end
+
+# Specialized for Arrays and avoids a branch on the size
+@inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
+    @boundscheck checklength(d, a, b)
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
@@ -189,9 +205,7 @@ const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},
 end
 
 @inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
-    @boundscheck if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
+    @boundscheck checklength(d, a, b)
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
