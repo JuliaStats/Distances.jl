@@ -101,8 +101,8 @@ struct NormRMSDeviation <: Metric end
 struct PeriodicEuclidean{N,T <: Real} <: Metric
     periods::NTuple{N,T}
 end
-PeriodicEuclidean(periods) = PeriodicEuclidean(promote_type(typeof.(periods)...).(periods))
-PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),eltype(periods)}(tuple(periods...))
+PeriodicEuclidean(periods::Tuple) = PeriodicEuclidean(promote_type(typeof.(periods)...).(periods))
+PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),T}(tuple(periods...))
 PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
 
 const VarLengthMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
