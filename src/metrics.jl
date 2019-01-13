@@ -156,7 +156,7 @@ For dimensions without periodicity put `Inf` in the respective component.
 # Example
 ```
 julia> x, y, L = [0.0, 0.0], [0.7, 0.0], (0.5, Inf)
-([0.0, 0.0], [0.7, 0.0], [0.5, Inf])
+([0.0, 0.0], [0.7, 0.0], (0.5, Inf))
 
 julia> evaluate(PeriodicEuclidean(L),x,y)
 ```
