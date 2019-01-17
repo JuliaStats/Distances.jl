@@ -101,7 +101,7 @@ struct NormRMSDeviation <: Metric end
 struct PeriodicEuclidean{N,T <: Real} <: Metric
     periods::NTuple{N,T}
 end
-PeriodicEuclidean(periods::Tuple) = PeriodicEuclidean(promote_type(typeof.(periods)...).(periods))
+PeriodicEuclidean(periods::Tuple) = PeriodicEuclidean(promote(periods...))
 PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),T}(tuple(periods...))
 PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
 
