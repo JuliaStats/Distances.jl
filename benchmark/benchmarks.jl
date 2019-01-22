@@ -8,6 +8,7 @@ function create_distances(w, Q)
         SqEuclidean(),
         Euclidean(),
         Cityblock(),
+        TotalVariation(),
         Chebyshev(),
         Minkowski(3.0),
         Hamming(),
