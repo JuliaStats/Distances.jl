@@ -126,3 +126,25 @@ function pairwise(metric::PreMetric, a::AbstractMatrix)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a)
 end
+
+# Generic pairwise evaluation to a condensed form, for symmetrical distances
+
+function pairwise!(r::AbstractVector, metric::SemiMetric, a::AbstractMatrix)
+    n = size(a, 2)
+    length(r) == div((n * (n - 1)), 2) || throw(DimensionMismatch("Incorrect size of r."))
+    k = 1
+    for j = 1:n
+        aj = view(a, :, j)
+        for i = (j + 1):n
+            @inbounds r[k] = evaluate(metric, view(a, :, i), aj)
+            k += 1
+        end
+    end
+    r
+end
+
+function cond_pairwise(metric::SemiMetric, a::AbstractMatrix)
+    n = size(a, 2)
+    r = Vector{result_type(metric, a, a)}(div(n * (n - 1), 2))
+    pairwise!(r, metric, a)
+end
