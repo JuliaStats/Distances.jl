@@ -11,6 +11,7 @@ order = [
     :SqEuclidean,
     :Euclidean,
     :Cityblock,
+    :TotalVariation,
     :Chebyshev,
     :Minkowski,
     :Hamming,

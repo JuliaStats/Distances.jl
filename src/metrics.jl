@@ -14,6 +14,7 @@ struct SqEuclidean <: SemiMetric
 end
 struct Chebyshev <: Metric end
 struct Cityblock <: Metric end
+struct TotalVariation <: Metric end
 struct Jaccard <: Metric end
 struct RogersTanimoto <: Metric end
 
@@ -105,7 +106,7 @@ PeriodicEuclidean(periods::Tuple) = PeriodicEuclidean(promote(periods...))
 PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),T}(tuple(periods...))
 PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
 
-const VarLengthMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
+const VarLengthMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
 const FixLengthMetrics{N} = Union{PeriodicEuclidean{N}} # TODO: include UnionWeightedMetrics
 const UnionMetrics = Union{VarLengthMetrics,FixLengthMetrics}
 
@@ -276,6 +277,13 @@ peuclidean(a::Number, b::Number, p::Number) = evaluate(PeriodicEuclidean(p), a, 
 @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
 cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
+
+# Total variation
+@inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
+@inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
+eval_end(::TotalVariation, s) = s / 2
+totalvariation(a::AbstractArray, b::AbstractArray) = evaluate(TotalVariation(), a, b)
+totalvariation(a::T, b::T) where {T <: Number} = evaluate(TotalVariation(), a, b)
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
