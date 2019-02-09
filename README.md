@@ -69,7 +69,7 @@ r = euclidean(x, y)
 
 #### Computing distances between corresponding columns
 
-Suppose you have two ``m-by-n`` matrix ``X`` and ``Y``, then you can compute all distances between corresponding columns of X and Y in one batch, using the ``colwise`` function, as
+Suppose you have two ``m-by-n`` matrix ``X`` and ``Y``, then you can compute all distances between corresponding columns of ``X`` and ``Y`` in one batch, using the ``colwise`` function, as
 
 ```julia
 r = colwise(dist, X, Y)
@@ -81,10 +81,10 @@ Note that either of ``X`` and ``Y`` can be just a single vector -- then the ``co
 
 #### Computing pairwise distances
 
-Let ``X`` and ``Y`` respectively have ``m`` and ``n`` columns. Then the ``pairwise`` function computes distances between each pair of columns in ``X`` and ``Y``:
+Let ``X`` and ``Y`` respectively have ``m`` and ``n`` columns. Then the ``pairwise`` function with the ``dims=2`` argument computes distances between each pair of columns in ``X`` and ``Y``:
 
 ```julia
-R = pairwise(dist, X, Y)
+R = pairwise(dist, X, Y, dims=2)
 ```
 
 In the output, ``R`` is a matrix of size ``(m, n)``, such that ``R[i,j]`` is the distance between ``X[:,i]`` and ``Y[:,j]``. Computing distances for all pairs using ``pairwise`` function is often remarkably faster than evaluting for each pair individually.
@@ -92,20 +92,24 @@ In the output, ``R`` is a matrix of size ``(m, n)``, such that ``R[i,j]`` is the
 If you just want to just compute distances between columns of a matrix ``X``, you can write
 
 ```julia
-R = pairwise(dist, X)
+R = pairwise(dist, X, dims=2)
 ```
 
 This statement will result in an ``m-by-m`` matrix, where ``R[i,j]`` is the distance between ``X[:,i]`` and ``X[:,j]``.
 ``pairwise(dist, X)`` is typically more efficient than ``pairwise(dist, X, X)``, as the former will take advantage of the symmetry when ``dist`` is a semi-metric (including metric).
 
+For performance reasons, it is recommended to use matrices with observations in columns (as shown above). Indeed,
+the ``Array`` type in Julia is column-major, making it more efficient to access memory column by column. However,
+matrices with observations stored in rows are also supported via the argument ``dims=1``.
+
 #### Computing column-wise and pairwise distances inplace
 
-If the vector/matrix to store the results are pre-allocated, you may use the storage (without creating a new array) using the following syntax:
+If the vector/matrix to store the results are pre-allocated, you may use the storage (without creating a new array) using the following syntax (``i`` being either ``1`` or ``2``):
 
 ```julia
 colwise!(r, dist, X, Y)
-pairwise!(R, dist, X, Y)
-pairwise!(R, dist, X)
+pairwise!(R, dist, X, Y, dims=i)
+pairwise!(R, dist, X, dims=i)
 ```
 
 Please pay attention to the difference, the functions for inplace computation are ``colwise!`` and ``pairwise!`` (instead of ``colwise`` and ``pairwise``).

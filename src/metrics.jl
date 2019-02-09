@@ -268,7 +268,8 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
 _centralize(x::AbstractArray) = x .- mean(x)
 evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
 # Ambiguity resolution
-evaluate(::CorrDist, a::Array, b::Array) = cosine_dist(_centralize(a), _centralize(b))
+evaluate(::CorrDist, a::Array, b::Array) =
+    cosine_dist(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
@@ -462,7 +463,8 @@ nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 ###########################################################
 
 # SqEuclidean
-function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::SqEuclidean,
+                    a::AbstractMatrix, b::AbstractMatrix)
     mul!(r, a', b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
@@ -498,7 +500,7 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::A
     r
 end
 
-function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -531,7 +533,8 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
 end
 
 # Euclidean
-function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::Euclidean,
+                    a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     sa2 = sumsq_percol(a)
@@ -558,7 +561,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     r
 end
 
-function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -586,7 +589,8 @@ end
 
 # CosineDist
 
-function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::CosineDist,
+                    a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     ra = sqrt!(sumsq_percol(a))
@@ -598,7 +602,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
     end
     r
 end
-function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = sqrt!(sumsq_percol(a))
@@ -623,9 +627,10 @@ end
 function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::CorrDist,
+                   a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(Val(2), r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize_colwise(a))
+function _pairwise!(::Val{2}, r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
+    _pairwise!(Val(2), r, CosineDist(), _centralize_colwise(a))
 end

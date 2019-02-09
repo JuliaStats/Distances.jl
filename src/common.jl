@@ -35,7 +35,7 @@ end
 function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     ma, na = size(a)
     mb, nb = size(b)
-    ma == mb || throw(DimensionMismatch("The numbers of rows in a and b must match."))
+    ma == mb || throw(DimensionMismatch("The numbers of rows or columns in a and b must match."))
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
     return (ma, na, nb)
 end
@@ -92,8 +92,10 @@ end
 ###########################################################
 
 function sqrt!(a::AbstractArray)
-    @simd for i in eachindex(a)
-        @inbounds a[i] = sqrt(a[i])
+    @inbounds @simd for i in eachindex(a)
+        x = a[i]
+        # > 0 is there to tolerate precision issues
+        a[i] = x > 0 ? sqrt(x) : zero(x)
     end
     a
 end

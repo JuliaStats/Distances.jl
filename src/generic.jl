@@ -81,7 +81,8 @@ end
 
 # Generic pairwise evaluation
 
-function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, metric::PreMetric,
+                    a::AbstractMatrix, b::AbstractMatrix)
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -94,11 +95,11 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix, b::A
     r
 end
 
-function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix)
-    pairwise!(r, metric, a, a)
+function _pairwise!(::Val{2}, r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix)
+    _pairwise!(Val(2), r, metric, a, b)
 end
 
-function pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
+function _pairwise!(::Val{2}, r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -114,15 +115,58 @@ function pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     r
 end
 
-function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
-    m = size(a, 2)
-    n = size(b, 2)
-    r = Matrix{result_type(metric, a, b)}(undef, m, n)
-    pairwise!(r, metric, a, b)
+function deprecated_dims(dims::Union{Nothing,Integer})
+    if dims === nothing
+        Base.depwarn("implicit `dims=2` argument now has to be passed explicitly " *
+                     "to specify that distances between columns should be computed",
+                     :pairwise!)
+        return 2
+    else
+        return dims
+    end
 end
 
-function pairwise(metric::PreMetric, a::AbstractMatrix)
-    n = size(a, 2)
+function _pairwise!(::Val{1}, r::AbstractMatrix, metric::PreMetric,
+                    a::AbstractMatrix, b::AbstractMatrix=a)
+    _pairwise!(Val(2), r, metric, transpose(a), transpose(b))
+end
+
+function pairwise!(r::AbstractMatrix, metric::PreMetric,
+                   a::AbstractMatrix, b::AbstractMatrix=a;
+                   dims::Union{Nothing,Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    if dims == 1
+        na, ma = size(a)
+        nb, mb = size(b)
+        ma == mb || throw(DimensionMismatch("The numbers of columns in a and b " *
+                                            "must match (got $ma and $mb)."))
+    else
+        ma, na = size(a)
+        mb, nb = size(b)
+        ma == mb || throw(DimensionMismatch("The numbers of rows in a and b " *
+                                            "must match (got $ma and $mb)."))
+    end
+    size(r) == (na, nb) ||
+        throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((na, nb)))."))
+    _pairwise!(Val(dims), r, metric, a, b)
+end
+
+function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
+                  dims::Union{Nothing,Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    m = size(a, dims)
+    n = size(b, dims)
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    pairwise!(r, metric, a, b, dims=dims)
+end
+
+function pairwise(metric::PreMetric, a::AbstractMatrix;
+                  dims::Union{Nothing,Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
-    pairwise!(r, metric, a)
+    pairwise!(r, metric, a, dims=dims)
 end
