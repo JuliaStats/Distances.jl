@@ -268,8 +268,7 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
 _centralize(x::AbstractArray) = x .- mean(x)
 evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
 # Ambiguity resolution
-evaluate(::CorrDist, a::Array, b::Array) =
-    cosine_dist(_centralize(a), _centralize(b))
+evaluate(::CorrDist, a::Array, b::Array) = cosine_dist(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
