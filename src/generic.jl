@@ -81,8 +81,8 @@ end
 
 # Generic pairwise evaluation
 
-function _pairwise!(::Val{2}, r::AbstractMatrix, metric::PreMetric,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, metric::PreMetric,
+                    a::AbstractMatrix, b::AbstractMatrix=a)
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -95,11 +95,7 @@ function _pairwise!(::Val{2}, r::AbstractMatrix, metric::PreMetric,
     r
 end
 
-function _pairwise!(::Val{2}, r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix)
-    _pairwise!(Val(2), r, metric, a, b)
-end
-
-function _pairwise!(::Val{2}, r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -126,13 +122,8 @@ function deprecated_dims(dims::Union{Nothing,Integer})
     end
 end
 
-function _pairwise!(::Val{1}, r::AbstractMatrix, metric::PreMetric,
-                    a::AbstractMatrix, b::AbstractMatrix=a)
-    _pairwise!(Val(2), r, metric, transpose(a), transpose(b))
-end
-
 function pairwise!(r::AbstractMatrix, metric::PreMetric,
-                   a::AbstractMatrix, b::AbstractMatrix=a;
+                   a::AbstractMatrix, b::AbstractMatrix;
                    dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
@@ -149,7 +140,29 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
     end
     size(r) == (na, nb) ||
         throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((na, nb)))."))
-    _pairwise!(Val(dims), r, metric, a, b)
+    if dims == 1
+        _pairwise!(r, metric, transpose(a), transpose(b))
+    else
+        _pairwise!(r, metric, a, b)
+    end
+end
+
+function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
+                   dims::Union{Nothing,Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    if dims == 1
+        n, m = size(a)
+    else
+        m, n = size(a)
+    end
+    size(r) == (n, n) ||
+        throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((n, n)))."))
+    if dims == 1
+        _pairwise!(r, metric, transpose(a))
+    else
+        _pairwise!(r, metric, a)
+    end
 end
 
 function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;

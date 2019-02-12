@@ -92,10 +92,8 @@ end
 ###########################################################
 
 function sqrt!(a::AbstractArray)
-    @inbounds @simd for i in eachindex(a)
-        x = a[i]
-        # > 0 is there to tolerate precision issues
-        a[i] = x > 0 ? sqrt(x) : zero(x)
+    @simd for i in eachindex(a)
+        @inbounds a[i] = sqrt(a[i])
     end
     a
 end

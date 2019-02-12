@@ -117,7 +117,7 @@ whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(Weight
 ###########################################################
 
 # SqEuclidean
-function _pairwise!(::Val{2}, r::AbstractMatrix, dist::WeightedSqEuclidean,
+function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
     w = dist.weights
     m, na, nb = get_pairwise_dims(length(w), r, a, b)
@@ -132,7 +132,7 @@ function _pairwise!(::Val{2}, r::AbstractMatrix, dist::WeightedSqEuclidean,
     end
     r
 end
-function _pairwise!(::Val{2}, r::AbstractMatrix, dist::WeightedSqEuclidean,
+function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
                     a::AbstractMatrix)
     w = dist.weights
     m, n = get_pairwise_dims(length(w), r, a)
@@ -159,10 +159,10 @@ end
 function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
-function _pairwise!(::Val{2}, r::AbstractMatrix, dist::WeightedEuclidean,
+function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(Val(2), r, WeightedSqEuclidean(dist.weights), a, b))
+    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
 end
-function _pairwise!(::Val{2}, r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix)
-    sqrt!(_pairwise!(Val(2), r, WeightedSqEuclidean(dist.weights), a))
+function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix)
+    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a))
 end
