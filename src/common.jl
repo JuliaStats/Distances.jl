@@ -35,7 +35,7 @@ end
 function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     ma, na = size(a)
     mb, nb = size(b)
-    ma == mb || throw(DimensionMismatch("The numbers of rows in a and b must match."))
+    ma == mb || throw(DimensionMismatch("The numbers of rows or columns in a and b must match."))
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
     return (ma, na, nb)
 end

@@ -441,10 +441,13 @@ function test_pairwise(dist, x, y, T)
         for j = 1:nx, i = 1:nx
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
-        # ≈ and all( .≈ ) seem to behave slightly differently for F64
-        # And, as earlier, we have small rounding errors in accumulations
-        @test all(pairwise(dist, x, y) .+ one(T) .≈ rxy .+ one(T))
-        @test all(pairwise(dist, x) .+ one(T) .≈ rxx .+ one(T))
+        # As earlier, we have small rounding errors in accumulations
+        @test pairwise(dist, x, y) ≈ rxy
+        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, x, y, dims=2) ≈ rxy
+        @test pairwise(dist, x, dims=2) ≈ rxx
+        @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
+        @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
     end
 end
 
