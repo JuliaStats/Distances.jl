@@ -47,6 +47,7 @@ end
     test_metricity(SqEuclidean(), x, y, z)
     test_metricity(Euclidean(), x, y, z)
     test_metricity(Cityblock(), x, y, z)
+    test_metricity(TotalVariation(), x, y, z)
     test_metricity(Chebyshev(), x, y, z)
     test_metricity(Minkowski(2.5), x, y, z)
 
@@ -124,6 +125,7 @@ end
 
     @test euclidean(a, b) == 1.0
     @test cityblock(a, b) == 1.0
+    @test totalvariation(a, b) == 0.5
     @test chebyshev(a, b) == 1.0
     @test minkowski(a, b, 2) == 1.0
     @test hamming(a, b) == 1
@@ -144,6 +146,7 @@ end
             @test euclidean(x, y) == sqrt(57.0)
             @test jaccard(x, y) == 13.0 / 28
             @test cityblock(x, y) == 13.0
+            @test totalvariation(x, y) == 6.5
             @test chebyshev(x, y) == 6.0
             @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
             @test minkowski(x, y, 2) == sqrt(57.0)
@@ -249,6 +252,8 @@ end #testset
         @test isa(euclidean(a, b), T)
         @test cityblock(a, b) == 0.0
         @test isa(cityblock(a, b), T)
+        @test totalvariation(a, b) == 0.0
+        @test isa(totalvariation(a, b), T)
         @test chebyshev(a, b) == 0.0
         @test isa(chebyshev(a, b), T)
         @test braycurtis(a, b) == 0.0
@@ -396,6 +401,7 @@ end
     test_colwise(SqEuclidean(), X, Y, T)
     test_colwise(Euclidean(), X, Y, T)
     test_colwise(Cityblock(), X, Y, T)
+    test_colwise(TotalVariation(), X, Y, T)
     test_colwise(Chebyshev(), X, Y, T)
     test_colwise(Minkowski(2.5), X, Y, T)
     test_colwise(Hamming(), A, B, T)
@@ -472,6 +478,7 @@ end
     test_pairwise(SqEuclidean(), X, Y, T)
     test_pairwise(Euclidean(), X, Y, T)
     test_pairwise(Cityblock(), X, Y, T)
+    test_pairwise(TotalVariation(), X, Y, T)
     test_pairwise(Chebyshev(), X, Y, T)
     test_pairwise(Minkowski(2.5), X, Y, T)
     test_pairwise(Hamming(), A, B, T)
@@ -549,6 +556,7 @@ end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
 end
 
+#=
 @testset "zero allocation colwise!" begin
     d = Euclidean()
     a = rand(2, 41)
@@ -563,3 +571,4 @@ end
         @test_broken (@allocated colwise!(z, d, a, b)) == 0
     end
 end
+=#
