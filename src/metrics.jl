@@ -14,6 +14,7 @@ struct SqEuclidean <: SemiMetric
 end
 struct Chebyshev <: Metric end
 struct Cityblock <: Metric end
+struct TotalVariation <: Metric end
 struct Jaccard <: Metric end
 struct RogersTanimoto <: Metric end
 
@@ -98,16 +99,14 @@ struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: Metric end
 
-struct PeriodicEuclidean{N,T <: Real} <: Metric
-    periods::NTuple{N,T}
-end
-PeriodicEuclidean(periods::Tuple) = PeriodicEuclidean(promote_type(typeof.(periods)...).(periods))
-PeriodicEuclidean(periods::AbstractVector{T}) where {T<:Real} = PeriodicEuclidean{length(periods),T}(tuple(periods...))
-PeriodicEuclidean(period::T) where {T<:Real} = PeriodicEuclidean{1,T}(tuple(period))
+const RealAbstractArray{T <: Real} =  AbstractArray{T}
 
-const VarLengthMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
-const FixLengthMetrics{N} = Union{PeriodicEuclidean{N}} # TODO: include UnionWeightedMetrics
-const UnionMetrics = Union{VarLengthMetrics,FixLengthMetrics}
+struct PeriodicEuclidean{W <: RealAbstractArray} <: Metric
+    periods::W
+end
+
+const ParametrizedMetrics = Union{PeriodicEuclidean}
+const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence,ParametrizedMetrics}
 
 """
     Euclidean([thresh])
@@ -149,19 +148,20 @@ SqEuclidean() = SqEuclidean(0)
 
 """
     PeriodicEuclidean(L)
+
 Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
 a cylinder). Periods per dimension are contained in the vector `L`.
 For dimensions without periodicity put `Inf` in the respective component.
 
 # Example
-```
-julia> x, y, L = [0.0, 0.0], [0.7, 0.0], (0.5, Inf)
-([0.0, 0.0], [0.7, 0.0], (0.5, Inf))
+```jldoctest
+julia> x, y, L = [0.0, 0.0], [0.75, 0.0], [0.5, Inf];
 
-julia> evaluate(PeriodicEuclidean(L),x,y)
+julia> evaluate(PeriodicEuclidean(L), x, y)
+0.25
 ```
 """
-PeriodicEuclidean() = Euclidean()
+PeriodicEuclidean() = PeriodicEuclidean([])
 
 ###########################################################
 #
@@ -171,25 +171,14 @@ PeriodicEuclidean() = Euclidean()
 
 const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
 
-function checklength(d::VarLengthMetrics, a, b)
-    if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-    return nothing
-end
-function checklength(d::FixLengthMetrics{N}, a, b) where {N}
-    if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-    if length(a) != N
-        throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $N."))
-    end
-    return nothing
-end
-
 # Specialized for Arrays and avoids a branch on the size
 @inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
-    @boundscheck checklength(d, a, b)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if d isa ParametrizedMetrics
+        length(a) != length(getfield(d, 1)) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(getfield(d, 1)))."))
+    end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
@@ -198,14 +187,19 @@ end
         @simd for I in 1:length(a)
             ai = a[I]
             bi = b[I]
-            s = eval_reduce(d, s, eval_op(d, ai, bi))
+            s = eval_reduce(d, s, eval_op(d, ai, bi, I))
         end
         return eval_end(d, s)
     end
 end
 
 @inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
-    @boundscheck checklength(d, a, b)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if d isa ParametrizedMetrics
+        length(a) != length(getfield(d, 1)) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(getfield(d, 1)))."))
+    end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
@@ -215,13 +209,13 @@ end
             @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
-                s = eval_reduce(d, s, eval_op(d, ai, bi))
+                s = eval_reduce(d, s, eval_op(d, ai, bi, I))
             end
         else
             for (Ia, Ib) in zip(eachindex(a), eachindex(b))
                 ai = a[Ia]
                 bi = b[Ib]
-                s = eval_reduce(d, s, eval_op(d, ai, bi))
+                s = eval_reduce(d, s, eval_op(d, ai, bi, Ia))
             end
         end
     end
@@ -229,6 +223,9 @@ end
 end
 result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
     typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
+function result_type(dist::ParametrizedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
+    typeof(evaluate(dist, one(T1), one(T2)))
+end
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
@@ -236,14 +233,14 @@ eval_end(d::UnionMetrics, s) = s
 evaluate(dist::UnionMetrics, a::T, b::T) where {T <: Number} = eval_end(dist, eval_op(dist, a, b))
 
 # SqEuclidean
-@inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
+@inline eval_op(::SqEuclidean, ai, bi, i::Int=1) = abs2(ai - bi)
 @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
 sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
 sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
-@inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
+@inline eval_op(::Euclidean, ai, bi, i::Int=1) = abs2(ai - bi)
 @inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
@@ -252,33 +249,42 @@ euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 # PeriodicEuclidean
 Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
 @inline function eval_start(d::PeriodicEuclidean, a::AbstractArray, b::AbstractArray)
-    (zero(result_type(d, a, b)), d.periods)
+    # (zero(result_type(d, a, b)), d.periods)
+    zero(result_type(d, a, b))
 end
-@inline eval_op(::PeriodicEuclidean, ai, bi) = abs(ai - bi)
-@inline function eval_reduce(::PeriodicEuclidean, s1, s2)
-    li = first(s1[2])
-    d = mod(s2, li)
-    d = min(d, li - d)
-    (s1[1] + abs2(d), Base.tail(s1[2]))
+@inline function eval_op(d::PeriodicEuclidean, ai, bi, i::Int=1)
+    s = abs(ai - bi)
+    li = d.periods[i]
+    s = mod(s, li)
+    s = min(s, li - s)
+    abs2(s)
 end
-@inline eval_end(::PeriodicEuclidean, s) = sqrt(s[1])
-function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Number}
-    p = first(dist.periods)
+@inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
+@inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
+function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Real}
+    p = isempty(dist.periods) ? one(eltype(dist)) : first(dist.periods)
     d = mod(abs(a - b), p)
     d = min(d, p - d)
 end
 peuclidean(a::AbstractArray, b::AbstractArray, p) = evaluate(PeriodicEuclidean(p), a, b)
 peuclidean(a::AbstractArray, b::AbstractArray) = euclidean(a, b)
-peuclidean(a::Number, b::Number, p::Number) = evaluate(PeriodicEuclidean(p), a, b)
+peuclidean(a::Real, b::Real, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
 
 # Cityblock
-@inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
+@inline eval_op(::Cityblock, ai, bi, i::Int=1) = abs(ai - bi)
 @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
 cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
 
+# Total variation
+@inline eval_op(::TotalVariation, ai, bi, i::Int=1) = abs(ai - bi)
+@inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
+eval_end(::TotalVariation, s) = s / 2
+totalvariation(a::AbstractArray, b::AbstractArray) = evaluate(TotalVariation(), a, b)
+totalvariation(a::T, b::T) where {T <: Number} = evaluate(TotalVariation(), a, b)
+
 # Chebyshev
-@inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
+@inline eval_op(::Chebyshev, ai, bi, i::Int=1) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
 @inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
@@ -286,14 +292,14 @@ chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
 # Minkowski
-@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
+@inline eval_op(dist::Minkowski, ai, bi, i::Int=1) = abs(ai - bi).^dist.p
 @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski(a::T, b::T, p::Real) where {T <: Number} = evaluate(Minkowski(p), a, b)
 
 # Hamming
-@inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
+@inline eval_op(::Hamming, ai, bi, i::Int=1) = ai != bi ? 1 : 0
 @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
@@ -302,7 +308,7 @@ hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
 @inline function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), zero(T)
 end
-@inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
+@inline eval_op(::CosineDist, ai, bi, i::Int=1) = ai * bi, ai * ai, bi * bi
 @inline function eval_reduce(::CosineDist, s1, s2)
     a1, b1, c1 = s1
     a2, b2, c2 = s2
@@ -323,17 +329,17 @@ corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
 result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
-@inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
+@inline eval_op(::ChiSqDist, ai, bi, i::Int=1) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
 @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
 # KLDivergence
-@inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
+@inline eval_op(::KLDivergence, ai, bi, i::Int=1) = ai > 0 ? ai * log(ai / bi) : zero(ai)
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # GenKLDivergence
-@inline eval_op(::GenKLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) - ai + bi : bi
+@inline eval_op(::GenKLDivergence, ai, bi, i::Int=1) = ai > 0 ? ai * log(ai / bi) - ai + bi : bi
 @inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
 gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
 
@@ -342,7 +348,7 @@ gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(),
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
-@inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where {T <: Real}
+@inline function eval_op(dist::RenyiDivergence, ai::T, bi::T, i::Int=1) where {T <: Real}
     if ai == zero(T)
         return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
@@ -388,7 +394,7 @@ end
 renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
 
 # JSDivergence
-@inline function eval_op(::JSDivergence, ai::T, bi::T) where {T}
+@inline function eval_op(::JSDivergence, ai::T, bi::T, i::Int=1) where {T}
     u = (ai + bi) / 2
     ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
     tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
@@ -402,7 +408,7 @@ js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, 
 @inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
-@inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
+@inline eval_op(::SpanNormDist, ai, bi, i::Int=1)  = ai - bi
 @inline function eval_reduce(::SpanNormDist, s1, s2)
     min_d, max_d = s1
     if s2 > max_d
@@ -424,7 +430,7 @@ end
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
-@inline function eval_op(::Jaccard, s1, s2)
+@inline function eval_op(::Jaccard, s1, s2, i::Int=1)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
     abs_p - abs_m, abs_p + abs_m
@@ -444,7 +450,7 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 
 @inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline eval_start(::BrayCurtis, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
-@inline function eval_op(::BrayCurtis, s1, s2)
+@inline function eval_op(::BrayCurtis, s1, s2, i::Int=1)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
     abs_m, abs_p
@@ -464,7 +470,7 @@ braycurtis(a::AbstractArray, b::AbstractArray) = evaluate(BrayCurtis(), a, b)
 # Tanimoto
 
 @inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
-@inline function eval_op(::RogersTanimoto, s1, s2)
+@inline function eval_op(::RogersTanimoto, s1, s2, i::Int=1)
     tt = s1 && s2
     tf = s1 && !s2
     ft = !s1 && s2
@@ -512,7 +518,8 @@ nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 ###########################################################
 
 # SqEuclidean
-function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
+                    a::AbstractMatrix, b::AbstractMatrix)
     mul!(r, a', b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
@@ -548,7 +555,7 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix, b::A
     r
 end
 
-function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -581,7 +588,8 @@ function pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
 end
 
 # Euclidean
-function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::Euclidean,
+                    a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     sa2 = sumsq_percol(a)
@@ -608,7 +616,7 @@ function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix, b::Abs
     r
 end
 
-function pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -636,7 +644,8 @@ end
 
 # CosineDist
 
-function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::CosineDist,
+                    a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     ra = sqrt!(sumsq_percol(a))
@@ -648,7 +657,7 @@ function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix, b::Ab
     end
     r
 end
-function pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = sqrt!(sumsq_percol(a))
@@ -673,9 +682,10 @@ end
 function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
+function _pairwise!(r::AbstractMatrix, dist::CorrDist,
+                    a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
-    pairwise!(r, CosineDist(), _centralize_colwise(a))
+function _pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
+    _pairwise!(r, CosineDist(), _centralize_colwise(a))
 end
