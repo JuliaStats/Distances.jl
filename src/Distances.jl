@@ -20,6 +20,7 @@ export
     # distance classes
     Euclidean,
     SqEuclidean,
+    PeriodicEuclidean,
     Cityblock,
     TotalVariation,
     Chebyshev,
@@ -47,7 +48,6 @@ export
     Mahalanobis,
     BhattacharyyaDist,
     HellingerDist,
-    PeriodicEuclidean,
 
     Haversine,
 
@@ -60,6 +60,7 @@ export
     # convenient functions
     euclidean,
     sqeuclidean,
+    peuclidean,
     cityblock,
     totalvariation,
     jaccard,
@@ -88,7 +89,6 @@ export
     bhattacharyya,
     hellinger,
     bregman,
-    peuclidean,
 
     haversine,
 

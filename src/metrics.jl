@@ -149,7 +149,10 @@ SqEuclidean() = SqEuclidean(0)
     PeriodicEuclidean(L)
 
 Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
-a cylinder). Periods per dimension are contained in the vector `L`.
+a cylinder). Periods per dimension are contained in the vector `L`:
+```math
+\\sqrt{\\sum_i(\\min\\mod(|x_i - y_i|, p), p - \\mod(|x_i - y_i|, p))^2}.
+```
 For dimensions without periodicity put `Inf` in the respective component.
 
 # Example

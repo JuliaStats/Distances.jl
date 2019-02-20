@@ -10,6 +10,7 @@ include("benchmarks.jl")
 order = [
     :SqEuclidean,
     :Euclidean,
+    :PeriodicEuclidean,
     :Cityblock,
     :TotalVariation,
     :Chebyshev,
@@ -31,7 +32,6 @@ order = [
     :WeightedCityblock,
     :WeightedMinkowski,
     :WeightedHamming,
-    :PeriodicEuclidean,
     :SqMahalanobis,
     :Mahalanobis,
     :Haversine,

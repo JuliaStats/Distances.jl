@@ -7,6 +7,7 @@ function create_distances(w, Q)
     dists = [
         SqEuclidean(),
         Euclidean(),
+        PeriodicEuclidean(w),
         Cityblock(),
         TotalVariation(),
         Chebyshev(),
@@ -29,8 +30,6 @@ function create_distances(w, Q)
         WeightedCityblock(w),
         WeightedMinkowski(w, 3.0),
         WeightedHamming(w),
-
-        PeriodicEuclidean(w),
 
         SqMahalanobis(Q),
         Mahalanobis(Q),
