@@ -99,9 +99,7 @@ struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: Metric end
 
-const RealAbstractArray{T <: Real} =  AbstractArray{T}
-
-struct PeriodicEuclidean{W <: RealAbstractArray} <: Metric
+struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
     periods::W
 end
 
@@ -163,7 +161,7 @@ julia> evaluate(PeriodicEuclidean(L), x, y)
 0.25
 ```
 """
-PeriodicEuclidean() = PeriodicEuclidean([])
+PeriodicEuclidean() = PeriodicEuclidean(Int[])
 
 ###########################################################
 #
@@ -218,17 +216,28 @@ end
                 s = eval_reduce(d, s, p === nothing ? eval_op(d, ai, bi) : eval_op(d, ai, bi, p[I]))
             end
         else
-            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-                ai = a[Ia]
-                bi = b[Ib]
-                s = eval_reduce(d, s, p === nothing ? eval_op(d, ai, bi) : eval_op(d, ai, bi, p[Ia]))
+            if p === nothing
+                for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+                    ai = a[Ia]
+                    bi = b[Ib]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi))
+                end
+            else
+                for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
+                    ai = a[Ia]
+                    bi = b[Ib]
+                    pi = p[Ip]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+                end
             end
         end
     end
     return eval_end(d, s)
 end
 result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
-    typeof(parameters(dist) === nothing ? eval_end(dist, eval_op(dist, one(T1), one(T2))) : evaluate(dist, one(T1), one(T2)))
+    typeof(eval_end(dist, parameters(dist) === nothing ?
+                        eval_op(dist, one(T1), one(T2)) :
+                        eval_op(dist, one(T1), one(T2), one(eltype(dist)))))
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
@@ -256,21 +265,22 @@ Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
     zero(result_type(d, a, b))
 end
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, pi)
-    s = abs(ai - bi)
-    s = mod(s, pi)
-    s = min(s, pi - s)
-    abs2(s)
+    s1 = abs(ai - bi)
+    s2 = mod(s1, pi)
+    s3 = min(s2, pi - s2)
+    abs2(s3)
 end
 @inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
 function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Real}
-    p = isempty(dist.periods) ? one(eltype(dist)) : first(dist.periods)
+    p = first(dist.periods)
     d = mod(abs(a - b), p)
-    d = min(d, p - d)
+    min(d, p - d)
 end
-peuclidean(a::AbstractArray, b::AbstractArray, p) = evaluate(PeriodicEuclidean(p), a, b)
+peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
+    evaluate(PeriodicEuclidean(p), a, b)
 peuclidean(a::AbstractArray, b::AbstractArray) = euclidean(a, b)
-peuclidean(a::Real, b::Real, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
+peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
