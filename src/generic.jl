@@ -122,6 +122,17 @@ function deprecated_dims(dims::Union{Nothing,Integer})
     end
 end
 
+"""
+    pairwise!(r::AbstractMatrix, metric::PreMetric,
+              a::AbstractMatrix, b::AbstractMatrix=a; dims)
+
+Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
+in `a` and `b` according to distance `metric`, and store the result in `r`.
+If a single matrix `a` is provided, compute distances between its rows or columns.
+
+`a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
+`r` must be a square matrix with size `size(a, dims) == size(b, dims)`.
+"""
 function pairwise!(r::AbstractMatrix, metric::PreMetric,
                    a::AbstractMatrix, b::AbstractMatrix;
                    dims::Union{Nothing,Integer}=nothing)
@@ -165,6 +176,15 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
     end
 end
 
+"""
+    pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
+
+Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
+in `a` and `b` according to distance `metric`. If a single matrix `a` is provided,
+compute distances between its rows or columns.
+
+`a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
+"""
 function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
                   dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
@@ -182,4 +202,17 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
+end
+
+"""
+    pairwise(metric::PreMetric, t)
+
+Compute distances between each pair of observations (i.e. rows) in table `t`
+according to distance `metric`. `t` can be any type of table supported by
+the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface.
+"""
+function pairwise(metric::PreMetric, t::Any)
+    # TODO: avoid permuting using https://github.com/JuliaData/Tables.jl/pull/66
+    a = permutedims(Tables.matrix(t))
+    pairwise(metric, a, dims=2)
 end
