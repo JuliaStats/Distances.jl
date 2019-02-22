@@ -187,10 +187,19 @@ const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        @simd for I in 1:length(a)
-            ai = a[I]
-            bi = b[I]
-            s = eval_reduce(d, s, p === nothing ? eval_op(d, ai, bi) : eval_op(d, ai, bi, p[I]))
+        if p === nothing
+            @simd for I in eachindex(a, b)
+                ai = a[I]
+                bi = b[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            end
+        else
+            @simd for I in eachindex(a, b, p)
+                ai = a[I]
+                bi = b[I]
+                pami = p[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, pami))
+            end
         end
         return eval_end(d, s)
     end
@@ -210,10 +219,19 @@ end
     @inbounds begin
         s = eval_start(d, a, b)
         if size(a) == size(b)
-            @simd for I in eachindex(a, b)
-                ai = a[I]
-                bi = b[I]
-                s = eval_reduce(d, s, p === nothing ? eval_op(d, ai, bi) : eval_op(d, ai, bi, p[I]))
+            if p === nothing
+                @simd for I in eachindex(a, b)
+                    ai = a[I]
+                    bi = b[I]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi))
+                end
+            else
+                @simd for I in eachindex(a, b, p)
+                    ai = a[I]
+                    bi = b[I]
+                    pami = p[I]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi, pami))
+                end
             end
         else
             if p === nothing
@@ -226,8 +244,8 @@ end
                 for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
                     ai = a[Ia]
                     bi = b[Ib]
-                    pi = p[Ip]
-                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+                    pami = p[Ip]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi, pami))
                 end
             end
         end
@@ -264,10 +282,10 @@ Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
 @inline function eval_start(d::PeriodicEuclidean, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))
 end
-@inline function eval_op(d::PeriodicEuclidean, ai, bi, pi)
+@inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
     s1 = abs(ai - bi)
-    s2 = mod(s1, pi)
-    s3 = min(s2, pi - s2)
+    s2 = mod(s1, p)
+    s3 = min(s2, p - s2)
     abs2(s3)
 end
 @inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
