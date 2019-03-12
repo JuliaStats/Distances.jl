@@ -279,9 +279,6 @@ euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 # PeriodicEuclidean
 Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
 @inline parameters(d::PeriodicEuclidean) = d.periods
-@inline function eval_start(d::PeriodicEuclidean, a::AbstractArray, b::AbstractArray)
-    zero(result_type(d, a, b))
-end
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
     s1 = abs(ai - bi)
     s2 = mod(s1, p)
