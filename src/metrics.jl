@@ -188,13 +188,13 @@ const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},
     @inbounds begin
         s = eval_start(d, a, b)
         if p === nothing
-            @simd for I in eachindex(a, b)
+            @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         else
-            @simd for I in eachindex(a, b, p)
+            @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
                 pami = p[I]
