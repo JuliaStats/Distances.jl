@@ -369,6 +369,7 @@ function test_colwise(dist, x, y, T)
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
+        @test all(colwise(dist, x[:,1], y[:,1]) .≈ [evaluate(dist, x[:,1], y[:,1])])
     end
 end
 

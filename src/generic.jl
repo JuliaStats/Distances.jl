@@ -60,6 +60,10 @@ function colwise!(r::AbstractArray, metric::SemiMetric, a::AbstractMatrix, b::Ab
     colwise!(r, metric, b, a)
 end
 
+function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractVector)
+    r[1] = evaluate(metric, a, b)
+end
+
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
@@ -75,6 +79,11 @@ end
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
+    colwise!(r, metric, a, b)
+end
+
+function colwise(metric::PreMetric, a::AbstractVector, b::AbstractVector)
+    r = Vector{result_type(metric, a, b)}(undef, 1)
     colwise!(r, metric, a, b)
 end
 
