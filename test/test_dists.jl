@@ -365,11 +365,14 @@ function test_colwise(dist, x, y, T)
             r2[j] = evaluate(dist, x[:, 1], y[:, j])
             r3[j] = evaluate(dist, x[:, j], y[:, 1])
         end
+        r4 = [evaluate(dist, x[:, 1], y[:, 1])]
+        r5 = zeros(T, 1)
+        colwise!(r5, dist, x[:, 1], y[:, 1]) # when n=1 `colwise` doesn't call `colwise!`
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
-        @test all(colwise(dist, x[:,1], y[:,1]) .≈ [evaluate(dist, x[:,1], y[:,1])])
+        @test all(colwise(dist, x[:,1], y[:,1]) .≈ r4 .≈ r5 )
     end
 end
 

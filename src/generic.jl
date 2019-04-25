@@ -61,7 +61,9 @@ function colwise!(r::AbstractArray, metric::SemiMetric, a::AbstractMatrix, b::Ab
 end
 
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractVector)
+    length(r) == 1 || throw(DimensionMismatch("Incorrect size of r."))
     r[1] = evaluate(metric, a, b)
+    r
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
@@ -82,7 +84,7 @@ function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     colwise!(r, metric, a, b)
 end
 
-colwise(metric::PreMetric, a::AbstractVector, b::AbstractVector) = [evaluate(metric, a, b )]
+colwise(metric::PreMetric, a::AbstractVector, b::AbstractVector) = [evaluate(metric, a, b)]
 
 
 # Generic pairwise evaluation
