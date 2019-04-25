@@ -82,10 +82,7 @@ function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     colwise!(r, metric, a, b)
 end
 
-function colwise(metric::PreMetric, a::AbstractVector, b::AbstractVector)
-    r = Vector{result_type(metric, a, b)}(undef, 1)
-    colwise!(r, metric, a, b)
-end
+colwise(metric::PreMetric, a::AbstractVector, b::AbstractVector) = [evaluate(metric, a, b )]
 
 
 # Generic pairwise evaluation
