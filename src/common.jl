@@ -6,33 +6,33 @@
 #
 ###########################################################
 
-function get_common_ncols(a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
+function get_common_ncols(a::AbstractMatrix, b::AbstractMatrix)
     na = size(a, 2)
     size(b, 2) == na || throw(DimensionMismatch("The number of columns in a and b must match."))
     return na
 end
 
-function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
+function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     size(a) == size(b) || throw(DimensionMismatch("The sizes of a and b must match."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
+function get_colwise_dims(r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
     length(a) == size(b, 1) ||
         throw(DimensionMismatch("The length of a must match the number of rows in b."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
 end
 
-function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
+function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
     size(a, 1) == length(b) ||
         throw(DimensionMismatch("The length of b must match the number of rows in a."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_pairwise_dims(r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
+function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     ma, na = size(a)
     mb, nb = size(b)
     ma == mb || throw(DimensionMismatch("The numbers of rows or columns in a and b must match."))
@@ -40,7 +40,7 @@ function get_pairwise_dims(r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Numb
     return (ma, na, nb)
 end
 
-function get_pairwise_dims(r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number})
+function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix)
     m, n = size(a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     return (m, n)
@@ -49,28 +49,28 @@ end
 
 # for metrics with fixed dimension (e.g. weighted metrics)
 
-function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
+function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     size(a, 1) == size(b, 1) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
+function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
     length(a) == size(b, 1) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
 end
 
-function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
+function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
     size(a, 1) == length(b) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_pairwise_dims(d::Int, r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
+function get_pairwise_dims(d::Int, r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     na = size(a, 2)
     nb = size(b, 2)
     size(a, 1) == size(b, 1) == d || throw(DimensionMismatch("Incorrect vector dimensions."))
@@ -78,7 +78,7 @@ function get_pairwise_dims(d::Int, r::AbstractMatrix{<:Number}, a::AbstractMatri
     return (d, na, nb)
 end
 
-function get_pairwise_dims(d::Int, r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number})
+function get_pairwise_dims(d::Int, r::AbstractMatrix, a::AbstractMatrix)
     n = size(a, 2)
     size(a, 1) == d || throw(DimensionMismatch("Incorrect vector dimensions."))
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
