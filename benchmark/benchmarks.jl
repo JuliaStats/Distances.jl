@@ -7,6 +7,7 @@ function create_distances(w, Q)
     dists = [
         SqEuclidean(),
         Euclidean(),
+        PeriodicEuclidean(w),
         Cityblock(),
         TotalVariation(),
         Chebyshev(),
@@ -144,7 +145,7 @@ function add_pairwise_benchmarks!(SUITE)
             Tdist = typeof(dist)
             SUITE["pairwise"][Tdist] = BenchmarkGroup()
             SUITE["pairwise"][Tdist]["loop"]        = @benchmarkable evaluate_pairwise($dist, $a, $b)
-            SUITE["pairwise"][Tdist]["specialized"] = @benchmarkable pairwise($dist, $a, $b)
+            SUITE["pairwise"][Tdist]["specialized"] = @benchmarkable pairwise($dist, $a, $b; dims=2)
         end
     end
 end
