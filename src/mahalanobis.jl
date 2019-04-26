@@ -8,8 +8,8 @@ struct SqMahalanobis{T} <: SemiMetric
     qmat::Matrix{T}
 end
 
-result_type(::Mahalanobis{T}, ::AbstractArray{<:Number}, ::AbstractArray{<:Number}) where {T} = T
-result_type(::SqMahalanobis{T}, ::AbstractArray{<:Number}, ::AbstractArray{<:Number}) where {T} = T
+result_type(::Mahalanobis{T}, ::AbstractArray, ::AbstractArray) where {T} = T
+result_type(::SqMahalanobis{T}, ::AbstractArray, ::AbstractArray) where {T} = T
 
 # SqMahalanobis
 

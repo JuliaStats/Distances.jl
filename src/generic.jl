@@ -24,7 +24,7 @@ abstract type Metric <: SemiMetric end
 
 # Generic functions
 
-result_type(::PreMetric, ::AbstractArray{<:Number}, ::AbstractArray{<:Number}) = Float64
+result_type(::PreMetric, ::AbstractArray, ::AbstractArray) = Float64
 
 
 # Generic column-wise evaluation
