@@ -22,7 +22,7 @@ end
 Bregman(F, ∇) =  Bregman(F, ∇, LinearAlgebra.dot)
 
 # Evaluation fuction 
-function evaluate(dist::Bregman, p::AbstractVector, q::AbstractVector)
+function evaluate(dist::Bregman, p::AbstractVector{<:Number}, q::AbstractVector{<:Number})
     # Create cache vals.
     FP_val = dist.F(p);
     FQ_val = dist.F(q); 

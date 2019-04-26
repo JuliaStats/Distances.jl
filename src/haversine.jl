@@ -10,7 +10,7 @@ struct Haversine{T<:Real} <: Metric
     radius::T
 end
 
-const VecOrLengthTwoTuple{T} = Union{AbstractVector{T}, NTuple{2, T}}
+const VecOrLengthTwoTuple{T<:Number} = Union{AbstractVector{T}, NTuple{2, T}}
 
 function evaluate(dist::Haversine, x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple)
     length(x) == length(y) == 2 || haversine_error()

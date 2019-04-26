@@ -6,33 +6,33 @@
 #
 ###########################################################
 
-function get_common_ncols(a::AbstractMatrix, b::AbstractMatrix)
+function get_common_ncols(a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     na = size(a, 2)
     size(b, 2) == na || throw(DimensionMismatch("The number of columns in a and b must match."))
     return na
 end
 
-function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
+function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     size(a) == size(b) || throw(DimensionMismatch("The sizes of a and b must match."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_colwise_dims(r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
+function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
     length(a) == size(b, 1) ||
         throw(DimensionMismatch("The length of a must match the number of rows in b."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
 end
 
-function get_colwise_dims(r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
+function get_colwise_dims(r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
     size(a, 1) == length(b) ||
         throw(DimensionMismatch("The length of b must match the number of rows in a."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
+function get_pairwise_dims(r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     ma, na = size(a)
     mb, nb = size(b)
     ma == mb || throw(DimensionMismatch("The numbers of rows or columns in a and b must match."))
@@ -40,7 +40,7 @@ function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatr
     return (ma, na, nb)
 end
 
-function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix)
+function get_pairwise_dims(r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number})
     m, n = size(a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     return (m, n)
@@ -49,28 +49,28 @@ end
 
 # for metrics with fixed dimension (e.g. weighted metrics)
 
-function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
+function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     size(a, 1) == size(b, 1) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
+function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
     length(a) == size(b, 1) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(b, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(b)
 end
 
-function get_colwise_dims(d::Int, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
+function get_colwise_dims(d::Int, r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
     size(a, 1) == length(b) == d ||
         throw(DimensionMismatch("Incorrect vector dimensions."))
     length(r) == size(a, 2) || throw(DimensionMismatch("Incorrect size of r."))
     return size(a)
 end
 
-function get_pairwise_dims(d::Int, r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
+function get_pairwise_dims(d::Int, r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     na = size(a, 2)
     nb = size(b, 2)
     size(a, 1) == size(b, 1) == d || throw(DimensionMismatch("Incorrect vector dimensions."))
@@ -78,7 +78,7 @@ function get_pairwise_dims(d::Int, r::AbstractMatrix, a::AbstractMatrix, b::Abst
     return (d, na, nb)
 end
 
-function get_pairwise_dims(d::Int, r::AbstractMatrix, a::AbstractMatrix)
+function get_pairwise_dims(d::Int, r::AbstractMatrix{<:Number}, a::AbstractMatrix{<:Number})
     n = size(a, 2)
     size(a, 1) == d || throw(DimensionMismatch("Incorrect vector dimensions."))
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
@@ -91,14 +91,14 @@ end
 #
 ###########################################################
 
-function sqrt!(a::AbstractArray)
+function sqrt!(a::AbstractArray{<:Number})
     @simd for i in eachindex(a)
         @inbounds a[i] = sqrt(a[i])
     end
     a
 end
 
-function sumsq_percol(a::AbstractMatrix{T}) where {T}
+function sumsq_percol(a::AbstractMatrix{T}) where {T<:Number}
     m = size(a, 1)
     n = size(a, 2)
     r = Vector{T}(undef, n)
@@ -109,7 +109,7 @@ function sumsq_percol(a::AbstractMatrix{T}) where {T}
     return r
 end
 
-function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1, T2}
+function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1<:Number, T2<:Number}
     m = size(a, 1)
     n = size(a, 2)
     T = typeof(one(T1) * one(T2))
@@ -125,7 +125,7 @@ function wsumsq_percol(w::AbstractArray{T1}, a::AbstractMatrix{T2}) where {T1, T
     return r
 end
 
-function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
+function dot_percol!(r::AbstractArray{<:Number}, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     m = size(a, 1)
     n = size(a, 2)
     size(b) == (m, n) && length(r) == n ||
@@ -138,4 +138,7 @@ function dot_percol!(r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     return r
 end
 
-dot_percol(a::AbstractMatrix, b::AbstractMatrix) = dot_percol!(Vector{Float64}(undef, size(a, 2)), a, b)
+function dot_percol(a::AbstractMatrix{T1}, b::AbstractMatrix{T2}) where {T1<:Number, T2<:Number}
+    T = promote_type(T1, T2) 
+    dot_percol!(Vector{T}(undef, size(a, 2)), a, b)
+end

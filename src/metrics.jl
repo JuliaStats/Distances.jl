@@ -146,10 +146,10 @@ SqEuclidean() = SqEuclidean(0)
 #
 ###########################################################
 
-const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
+const ArraySlice{T<:Number} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
 
 # Specialized for Arrays and avoids a branch on the size
-@inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
+@inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array{<:Number}, ArraySlice}, b::Union{Array{<:Number}, ArraySlice})
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -167,7 +167,7 @@ const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},
     end
 end
 
-@inline function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+@inline function evaluate(d::UnionMetrics, a::AbstractArray{<:Number}, b::AbstractArray{<:Number})
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -192,7 +192,7 @@ end
     end
     return eval_end(d, s)
 end
-result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
+result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1<:Number, T2<:Number} =
     typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
@@ -204,48 +204,48 @@ evaluate(dist::UnionMetrics, a::T, b::T) where {T <: Number} = eval_end(dist, ev
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
 @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
-sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
+sqeuclidean(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(SqEuclidean(), a, b)
 sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
 @inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
 eval_end(::Euclidean, s) = sqrt(s)
-euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
+euclidean(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
-cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
+cityblock(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(Cityblock(), a, b)
 cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
 eval_end(::TotalVariation, s) = s / 2
-totalvariation(a::AbstractArray, b::AbstractArray) = evaluate(TotalVariation(), a, b)
+totalvariation(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(TotalVariation(), a, b)
 totalvariation(a::T, b::T) where {T <: Number} = evaluate(TotalVariation(), a, b)
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-@inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
-chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
+@inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = abs(a[1] - b[1])
+chebyshev(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(Chebyshev(), a, b)
 chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
 @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
-minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
+minkowski(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski(a::T, b::T, p::Real) where {T <: Number} = evaluate(Minkowski(p), a, b)
 
 # Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
 @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
-hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
+hamming(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(Hamming(), a, b)
 hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
 
 # Cosine dist
@@ -262,30 +262,30 @@ function eval_end(::CosineDist, s)
     ab, a2, b2 = s
     max(1 - ab / (sqrt(a2) * sqrt(b2)), zero(eltype(ab)))
 end
-cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
+cosine_dist(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(CosineDist(), a, b)
 
 # Correlation Dist
-_centralize(x::AbstractArray) = x .- mean(x)
-evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
+_centralize(x::AbstractArray{<:Number}) = x .- mean(x)
+evaluate(::CorrDist, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = cosine_dist(_centralize(a), _centralize(b))
 # Ambiguity resolution
-evaluate(::CorrDist, a::Array, b::Array) = cosine_dist(_centralize(a), _centralize(b))
-corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
-result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
+evaluate(::CorrDist, a::Array{<:Number}, b::Array{<:Number}) = cosine_dist(_centralize(a), _centralize(b)) # CHECK if this is necessary
+corr_dist(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(CorrDist(), a, b)
+result_type(::CorrDist, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = result_type(CosineDist(), a, b)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
 @inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
-chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
+chisq_dist(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(ChiSqDist(), a, b)
 
 # KLDivergence
 @inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
-kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
+kl_divergence(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(KLDivergence(), a, b)
 
 # GenKLDivergence
 @inline eval_op(::GenKLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) - ai + bi : bi
 @inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
-gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
+gkl_divergence(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(GenKLDivergence(), a, b)
 
 # RenyiDivergence
 @inline Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
@@ -332,7 +332,7 @@ function eval_end(dist::RenyiDivergence, s::Tuple{T,T,T,T}) where {T <: Real}
     end
 end
 
-renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = evaluate(RenyiDivergence(q), a, b)
+renyi_divergence(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}, q::Real) = evaluate(RenyiDivergence(q), a, b)
 # Combine docs with RenyiDivergence. Fetching the docstring with @doc causes
 # problems during package compilation; see
 # https://github.com/JuliaLang/julia/issues/31640
@@ -349,10 +349,10 @@ end
     ta + tb - tu
 end
 @inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
-js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, b)
+js_divergence(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(JSDivergence(), a, b)
 
 # SpanNormDist
-@inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
+@inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray{<:Number}, b::AbstractArray{<:Number})
     a[1] - b[1], a[1] - b[1]
 end
 @inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
@@ -367,8 +367,8 @@ end
 end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
-spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
-function result_type(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
+spannorm_dist(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(SpanNormDist(), a, b)
+function result_type(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1<:Number, T2<:Number}
     typeof(eval_op(dist, one(T1), one(T2)))
 end
 
@@ -376,7 +376,7 @@ end
 # Jaccard
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T<:Number} = zero(T), zero(T)
 @inline function eval_op(::Jaccard, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -391,12 +391,12 @@ end
     @inbounds v = 1 - (a[1] / a[2])
     return v
 end
-jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
+jaccard(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(Jaccard(), a, b)
 
 # BrayCurtis
 
 @inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline eval_start(::BrayCurtis, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline eval_start(::BrayCurtis, a::AbstractArray{T}, b::AbstractArray{T}) where {T<:Number} = zero(T), zero(T)
 @inline function eval_op(::BrayCurtis, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -411,12 +411,12 @@ end
     @inbounds v = a[1] / a[2]
     return v
 end
-braycurtis(a::AbstractArray, b::AbstractArray) = evaluate(BrayCurtis(), a, b)
+braycurtis(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(BrayCurtis(), a, b)
 
 
 # Tanimoto
 
-@inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@inline eval_start(::RogersTanimoto, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
     tt = s1 && s2
     tf = s1 && !s2
@@ -465,8 +465,8 @@ nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
 ###########################################################
 
 # SqEuclidean
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::SqEuclidean,
+                    a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     mul!(r, a', b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
@@ -502,7 +502,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::SqEuclidean, a::AbstractMatrix{<:Number})
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -535,8 +535,8 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
 end
 
 # Euclidean
-function _pairwise!(r::AbstractMatrix, dist::Euclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::Euclidean,
+                    a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     sa2 = sumsq_percol(a)
@@ -563,7 +563,7 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::Euclidean, a::AbstractMatrix{<:Number})
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sumsq_percol(a)
@@ -591,8 +591,8 @@ end
 
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, dist::CosineDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::CosineDist,
+                    a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     ra = sqrt!(sumsq_percol(a))
@@ -604,7 +604,7 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist,
     end
     r
 end
-function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::CosineDist, a::AbstractMatrix{<:Number})
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = sqrt!(sumsq_percol(a))
@@ -621,18 +621,18 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
 end
 
 # CorrDist
-_centralize_colwise(x::AbstractVector) = x .- mean(x)
-_centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
+_centralize_colwise(x::AbstractVector{<:Number}) = x .- mean(x)
+_centralize_colwise(x::AbstractMatrix{<:Number}) = x .- mean(x, dims=1)
+function colwise!(r::AbstractVector{<:Number}, dist::CorrDist, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
+function colwise!(r::AbstractVector{<:Number}, dist::CorrDist, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::CorrDist,
+                    a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, dist::CorrDist, a::AbstractMatrix{<:Number})
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
 end

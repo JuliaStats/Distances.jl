@@ -24,12 +24,12 @@ abstract type Metric <: SemiMetric end
 
 # Generic functions
 
-result_type(::PreMetric, ::AbstractArray, ::AbstractArray) = Float64
+result_type(::PreMetric, ::AbstractArray{<:Number}, ::AbstractArray{<:Number}) = Float64
 
 
 # Generic column-wise evaluation
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+function colwise!(r::AbstractArray{<:Number}, metric::PreMetric, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -38,7 +38,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
+function colwise!(r::AbstractArray{<:Number}, metric::PreMetric, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -47,7 +47,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!(r::AbstractArray{<:Number}, metric::PreMetric, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -56,23 +56,23 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::SemiMetric, a::AbstractMatrix, b::AbstractVector)
+function colwise!(r::AbstractArray{<:Number}, metric::SemiMetric, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
     colwise!(r, metric, b, a)
 end
 
-function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+function colwise(metric::PreMetric, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number})
     n = get_common_ncols(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
-function colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+function colwise(metric::PreMetric, a::AbstractVector{<:Number}, b::AbstractMatrix{<:Number})
     n = size(b, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
-function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
+function colwise(metric::PreMetric, a::AbstractMatrix{<:Number}, b::AbstractVector{<:Number})
     n = size(a, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
@@ -81,8 +81,8 @@ end
 
 # Generic pairwise evaluation
 
-function _pairwise!(r::AbstractMatrix, metric::PreMetric,
-                    a::AbstractMatrix, b::AbstractMatrix=a)
+function _pairwise!(r::AbstractMatrix{<:Number}, metric::PreMetric,
+                    a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number}=a)
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -95,7 +95,7 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric,
     r
 end
 
-function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix{<:Number}, metric::SemiMetric, a::AbstractMatrix{<:Number})
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
@@ -133,8 +133,8 @@ If a single matrix `a` is provided, compute distances between its rows or column
 `a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
 `r` must be a square matrix with size `size(a, dims) == size(b, dims)`.
 """
-function pairwise!(r::AbstractMatrix, metric::PreMetric,
-                   a::AbstractMatrix, b::AbstractMatrix;
+function pairwise!(r::AbstractMatrix{<:Number}, metric::PreMetric,
+                   a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number};
                    dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
@@ -158,7 +158,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
     end
 end
 
-function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
+function pairwise!(r::AbstractMatrix{<:Number}, metric::PreMetric, a::AbstractMatrix{<:Number};
                    dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
@@ -185,7 +185,7 @@ compute distances between its rows or columns.
 
 `a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
 """
-function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
+function pairwise(metric::PreMetric, a::AbstractMatrix{<:Number}, b::AbstractMatrix{<:Number};
                   dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
@@ -195,7 +195,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     pairwise!(r, metric, a, b, dims=dims)
 end
 
-function pairwise(metric::PreMetric, a::AbstractMatrix;
+function pairwise(metric::PreMetric, a::AbstractMatrix{<:Number};
                   dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
