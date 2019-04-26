@@ -442,20 +442,20 @@ rogerstanimoto(a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Bool} = eva
 
 # Deviations
 
-evaluate(::MeanAbsDeviation, a, b) = cityblock(a, b) / length(a)
-meanad(a, b) = evaluate(MeanAbsDeviation(), a, b)
+evaluate(::MeanAbsDeviation, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = cityblock(a, b) / length(a)
+meanad(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(MeanAbsDeviation(), a, b)
 
-evaluate(::MeanSqDeviation, a, b) = sqeuclidean(a, b) / length(a)
-msd(a, b) = evaluate(MeanSqDeviation(), a, b)
+evaluate(::MeanSqDeviation, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = sqeuclidean(a, b) / length(a)
+msd(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(MeanSqDeviation(), a, b)
 
-evaluate(::RMSDeviation, a, b) = sqrt(evaluate(MeanSqDeviation(), a, b))
-rmsd(a, b) = evaluate(RMSDeviation(), a, b)
+evaluate(::RMSDeviation, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = sqrt(evaluate(MeanSqDeviation(), a, b))
+rmsd(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(RMSDeviation(), a, b)
 
-function evaluate(::NormRMSDeviation, a, b)
+function evaluate(::NormRMSDeviation, a::AbstractArray{<:Number}, b::AbstractArray{<:Number})
     amin, amax = extrema(a)
     return evaluate(RMSDeviation(), a, b) / (amax - amin)
 end
-nrmsd(a, b) = evaluate(NormRMSDeviation(), a, b)
+nrmsd(a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = evaluate(NormRMSDeviation(), a, b)
 
 
 ###########################################################
