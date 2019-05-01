@@ -97,7 +97,7 @@ struct SpanNormDist <: SemiMetric end
 struct MeanAbsDeviation <: Metric end
 struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
-struct NormRMSDeviation <: Metric end
+struct NormRMSDeviation <: PreMetric end
 
 
 const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
