@@ -97,7 +97,7 @@ struct SpanNormDist <: SemiMetric end
 struct MeanAbsDeviation <: Metric end
 struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
-struct NormRMSDeviation <: Metric end
+struct NormRMSDeviation <: PreMetric end
 
 struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
     periods::W
