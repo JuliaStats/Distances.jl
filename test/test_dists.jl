@@ -439,7 +439,6 @@ function test_pairwise(dist, x, y, T)
         ny = size(y, 2)
         rxy = zeros(T, nx, ny)
         rxx = zeros(T, nx, nx)
-        rss = fill(evaluate(dist, x[:, 1], y[:, 1]), (1,1))
         for j = 1:ny, i = 1:nx
             rxy[i, j] = evaluate(dist, x[:, i], y[:, j])
         end
@@ -447,14 +446,19 @@ function test_pairwise(dist, x, y, T)
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
         # As earlier, we have small rounding errors in accumulations
-        @test pairwise(dist, x, y; dims=2) ≈ rxy
-        @test pairwise(dist, x; dims=2) ≈ rxx
+        @test pairwise(dist, x, y) ≈ rxy
+        @test pairwise(dist, x) ≈ rxx
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
-        @test pairwise(dist, x[:,1], y[:,1]; dims=2) ≈ rss
-        @test pairwise(dist, transpose(x[:,1]), transpose(y[:,1]); dims=1) ≈ rss
+
+        rxy_v = fill(evaluate(dist, x[:, 1], y[:, 1]), (1,1))
+        rxx_v = fill(evaluate(dist, x[:, 1], x[:, 1]), (1,1))
+        @test pairwise(dist, x[:,1], y[:,1]; dims=2) ≈ rxy_v
+        @test pairwise(dist, x[:,1], x[:,1]; dims=2) ≈ rxx_v
+        @test pairwise(dist, transpose(x[:,1]), transpose(y[:,1]); dims=1) ≈ rxy_v
+        @test pairwise(dist, transpose(x[:,1]); dims=1) ≈ rxx_v
     end
 end
 
