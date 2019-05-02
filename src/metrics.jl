@@ -442,20 +442,20 @@ rogerstanimoto(a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Bool} = eva
 
 # Deviations
 
-evaluate(::MeanAbsDeviation, a::AbstractArray, b::AbstractArray) = cityblock(a, b) / length(a)
-meanad(a::AbstractArray, b::AbstractArray) = evaluate(MeanAbsDeviation(), a, b)
+evaluate(::MeanAbsDeviation, a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = cityblock(a, b) / length(a)
+meanad(a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = evaluate(MeanAbsDeviation(), a, b)
 
-evaluate(::MeanSqDeviation, a::AbstractArray, b::AbstractArray) = sqeuclidean(a, b) / length(a)
-msd(a::AbstractArray, b::AbstractArray) = evaluate(MeanSqDeviation(), a, b)
+evaluate(::MeanSqDeviation, a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = sqeuclidean(a, b) / length(a)
+msd(a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = evaluate(MeanSqDeviation(), a, b)
 
-evaluate(::RMSDeviation, a::AbstractArray, b::AbstractArray) = sqrt(evaluate(MeanSqDeviation(), a, b))
-rmsd(a::AbstractArray, b::AbstractArray) = evaluate(RMSDeviation(), a, b)
+evaluate(::RMSDeviation, a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = sqrt(evaluate(MeanSqDeviation(), a, b))
+rmsd(a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = evaluate(RMSDeviation(), a, b)
 
-function evaluate(::NormRMSDeviation, a::AbstractArray, b::AbstractArray)
+function evaluate(::NormRMSDeviation, a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number})
     amin, amax = extrema(a)
     return evaluate(RMSDeviation(), a, b) / (amax - amin)
 end
-nrmsd(a::AbstractArray, b::AbstractArray) = evaluate(NormRMSDeviation(), a, b)
+nrmsd(a::Union{AbstractArray, Number}, b::Union{AbstractArray, Number}) = evaluate(NormRMSDeviation(), a, b)
 
 
 ###########################################################
