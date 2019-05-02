@@ -119,6 +119,12 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     r
 end
 
+function _pairwise!(r::AbstractMatrix, metric::PreMetric,
+                    a::AbstractVector, b::AbstractVector)
+    r[1,1] = evaluate(metric, a, b)
+    r
+end
+
 function deprecated_dims(dims::Union{Nothing,Integer})
     if dims === nothing
         Base.depwarn("implicit `dims=2` argument now has to be passed explicitly " *
@@ -184,6 +190,27 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
     end
 end
 
+function pairwise!(r::AbstractMatrix, metric::PreMetric,
+                   a::AbstractVector, b::AbstractVector;
+                   dims::Union{Nothing,Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    if dims == 1
+        r_sz = (length(a), length(b))
+    else
+        r_sz = (1, 1)
+    end
+    size(r) == r_sz || throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $(r_sz)."))
+
+    if dims == 1
+        _pairwise!(r, metric, transpose(a), transpose(b))
+    else
+        r[1,1] = evaluate(metric, a, b)
+    end
+
+    r
+end
+
 """
     pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
 
@@ -210,4 +237,17 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
+end
+
+function pairwise(metric::PreMetric, a::AbstractVector, b::AbstractVector;
+                  dims::Union{Nothing, Integer}=nothing)
+    dims = deprecated_dims(dims)
+    dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
+    if dims == 1
+        m, n = (length(a), length(b))
+    else
+        m, n = (1, 1)
+    end
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    pairwise!(r, metric, a, b, dims=dims)
 end

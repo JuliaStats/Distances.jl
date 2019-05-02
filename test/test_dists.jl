@@ -367,7 +367,7 @@ function test_colwise(dist, x, y, T)
         end
         r4 = [evaluate(dist, x[:, 1], y[:, 1])]
         r5 = zeros(T, 1)
-        colwise!(r5, dist, x[:, 1], y[:, 1]) # when n=1 `colwise` doesn't call `colwise!`
+        colwise!(r5, dist, x[:, 1], y[:, 1]) # In Vecotr case `colwise` doesn't call `colwise!`
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
@@ -439,6 +439,7 @@ function test_pairwise(dist, x, y, T)
         ny = size(y, 2)
         rxy = zeros(T, nx, ny)
         rxx = zeros(T, nx, nx)
+        rss = fill(evaluate(dist, x[:, 1], y[:, 1]), (1,1))
         for j = 1:ny, i = 1:nx
             rxy[i, j] = evaluate(dist, x[:, i], y[:, j])
         end
@@ -446,12 +447,14 @@ function test_pairwise(dist, x, y, T)
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
         # As earlier, we have small rounding errors in accumulations
-        @test pairwise(dist, x, y) ≈ rxy
-        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, x, y; dims=2) ≈ rxy
+        @test pairwise(dist, x; dims=2) ≈ rxx
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
+        @test pairwise(dist, x[:,1], y[:,1]; dims=2) ≈ rss
+        @test pairwise(dist, transpose(x[:,1]), transpose(y[:,1]); dims=1) ≈ rss
     end
 end
 
@@ -511,16 +514,16 @@ end
 
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X)
+    pd = pairwise(Euclidean(1e-12), X, X; dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(Euclidean(1e-12), X)
+    pd = pairwise(Euclidean(1e-12), X; dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X)
+    pd = pairwise(SqEuclidean(1e-12), X, X; dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X)
+    pd = pairwise(SqEuclidean(1e-12), X; dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
 end
