@@ -294,7 +294,6 @@ function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Real}
 end
 peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
     evaluate(PeriodicEuclidean(p), a, b)
-peuclidean(a::AbstractArray, b::AbstractArray) = euclidean(a, b)
 peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
 
 # Cityblock
