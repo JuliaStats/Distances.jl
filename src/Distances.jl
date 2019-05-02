@@ -22,6 +22,7 @@ export
     # distance classes
     Euclidean,
     SqEuclidean,
+    PeriodicEuclidean,
     Cityblock,
     TotalVariation,
     Chebyshev,
@@ -61,6 +62,7 @@ export
     # convenient functions
     euclidean,
     sqeuclidean,
+    peuclidean,
     cityblock,
     totalvariation,
     jaccard,

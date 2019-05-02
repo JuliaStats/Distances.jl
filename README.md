@@ -14,6 +14,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 
 * Euclidean distance
 * Squared Euclidean distance
+* Periodic Euclidean distance
 * Cityblock distance
 * Total variation distance
 * Jaccard distance
@@ -38,12 +39,12 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Root mean squared deviation
 * Normalized root mean squared deviation
 * Bray-Curtis dissimilarity
-* Bregman divergence 
+* Bregman divergence
 
 For ``Euclidean distance``, ``Squared Euclidean distance``, ``Cityblock distance``, ``Minkowski distance``, and ``Hamming distance``, a weighted version is also provided.
 
 
-## Basic Use
+## Basic use
 
 The library supports three ways of computation: *computing the distance between two vectors*, *column-wise computation*, and *pairwise computation*.
 
@@ -140,6 +141,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 | -------------------- | -------------------------- | --------------------|
 |  Euclidean           |  `euclidean(x, y)`         | `sqrt(sum((x - y) .^ 2))` |
 |  SqEuclidean         |  `sqeuclidean(x, y)`       | `sum((x - y).^2)` |
+|  PeriodicEuclidean   |  `peuclidean(x, y, p)`     | `sqrt(sum(min(mod(abs(x - y), p), p - mod(abs(x - y), p)).^2))`  |
 |  Cityblock           |  `cityblock(x, y)`         | `sum(abs(x - y))` |
 |  TotalVariation      |  `totalvariation(x, y)`    | `sum(abs(x - y)) / 2` |
 |  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
@@ -170,7 +172,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedCityblock   |  `wcityblock(x, y, w)`     | `sum(abs(x - y) .* w)`  |
 |  WeightedMinkowski   |  `wminkowski(x, y, w, p)`  | `sum(abs(x - y).^p .* w) ^ (1/p)` |
 |  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
-|  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` | 
+|  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` |
 
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way. The arguments `x` and `y` are arrays of real numbers; `k` and `l` are arrays of distinct elements of any kind; a and b are arrays of Bools; and finally, `p` and `q` are arrays forming a discrete probability distribution and are therefore both expected to sum to one.
 
@@ -207,7 +209,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite
 for a variety of distances, under column-wise and pairwise settings.
 
-Here are benchmarks obtained running Julia 0.6 on a computer with a quad-core Intel Core i5-2500K processor @ 3.3 GHz.
+Here are benchmarks obtained running Julia 1.0 on a computer with a dual-core Intel Core i5-2300K processor @ 2.3 GHz.
 The tables below can be replicated using the script in `benchmark/print_table.jl`.
 
 #### Column-wise benchmark
@@ -216,29 +218,31 @@ The table below compares the performance (measured in terms of average elapsed t
 
 |  distance  |  loop  |  colwise  |  gain  |
 |----------- | -------| ----------| -------|
-| SqEuclidean | 0.005460s |  0.001676s |  3.2582 |
-| Euclidean | 0.005513s |  0.001681s |  3.2792 |
-| Cityblock | 0.005409s |  0.001675s |  3.2292 |
-| Chebyshev | 0.008592s |  0.004575s |  1.8779 |
-| Minkowski | 0.056741s |  0.048808s |  1.1625 |
-| Hamming | 0.005320s |  0.001670s |  3.1847 |
-| CosineDist | 0.005663s |  0.001697s |  3.3378 |
-| CorrDist | 0.010000s |  0.013904s |  0.7192 |
-| ChiSqDist | 0.009626s |  0.004734s |  2.0333 |
-| KLDivergence | 0.046696s |  0.035091s |  1.3307 |
-| RenyiDivergence | 0.021123s |  0.012006s |  1.7594 |
-| RenyiDivergence | 0.080503s |  0.066987s |  1.2018 |
-| JSDivergence | 0.066404s |  0.059564s |  1.1148 |
-| BhattacharyyaDist | 0.013065s |  0.008807s |  1.4836 |
-| HellingerDist | 0.013013s |  0.008679s |  1.4993 |
-| WeightedSqEuclidean | 0.005534s |  0.001676s |  3.3028 |
-| WeightedEuclidean | 0.005601s |  0.001723s |  3.2513 |
-| WeightedCityblock | 0.005496s |  0.001675s |  3.2815 |
-| WeightedMinkowski | 0.057847s |  0.051389s |  1.1257 |
-| WeightedHamming | 0.005439s |  0.001673s |  3.2513 |
-| SqMahalanobis | 0.134717s |  0.019530s |  6.8980 |
-| Mahalanobis | 0.129455s |  0.020114s |  6.4361 |
-| BrayCurtis | 0.005666s |  0.001680s |  3.3736 |
+| SqEuclidean | 0.004432s |  0.001049s |  4.2270 |
+| Euclidean | 0.004537s |  0.001054s |  4.3031 |
+| PeriodicEuclidean | 0.012092s |  0.006714s |  1.8011 |
+| Cityblock | 0.004515s |  0.001060s |  4.2585 |
+| TotalVariation | 0.004496s |  0.001062s |  4.2337 |
+| Chebyshev | 0.009123s |  0.005034s |  1.8123 |
+| Minkowski | 0.047573s |  0.042508s |  1.1191 |
+| Hamming | 0.004355s |  0.001099s |  3.9638 |
+| CosineDist | 0.006432s |  0.002282s |  2.8185 |
+| CorrDist | 0.010273s |  0.012500s |  0.8219 |
+| ChiSqDist | 0.005291s |  0.001271s |  4.1635 |
+| KLDivergence | 0.031491s |  0.025643s |  1.2281 |
+| RenyiDivergence | 0.052420s |  0.048075s |  1.0904 |
+| RenyiDivergence | 0.017317s |  0.009023s |  1.9193 |
+| JSDivergence | 0.047905s |  0.044006s |  1.0886 |
+| BhattacharyyaDist | 0.007761s |  0.003796s |  2.0445 |
+| HellingerDist | 0.007636s |  0.003665s |  2.0836 |
+| WeightedSqEuclidean | 0.004550s |  0.001151s |  3.9541 |
+| WeightedEuclidean | 0.004687s |  0.001168s |  4.0125 |
+| WeightedCityblock | 0.004493s |  0.001157s |  3.8849 |
+| WeightedMinkowski | 0.049442s |  0.042145s |  1.1732 |
+| WeightedHamming | 0.004431s |  0.001153s |  3.8440 |
+| SqMahalanobis | 0.082493s |  0.019843s |  4.1574 |
+| Mahalanobis | 0.082180s |  0.019618s |  4.1891 |
+| BrayCurtis | 0.004464s |  0.001121s |  3.9809 |
 
 We can see that using ``colwise`` instead of a simple loop yields considerable gain (2x - 4x), especially when the internal computation of each distance is simple. Nonetheless, when the computation of a single distance is heavy enough (e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
 
@@ -248,28 +252,30 @@ The table below compares the performance (measured in terms of average elapsed t
 
 |  distance  |  loop  |  pairwise  |  gain  |
 |----------- | -------| ----------| -------|
-| SqEuclidean | 0.015116s |  0.000192s | **78.7747** |
-| Euclidean | 0.015565s |  0.000390s | 39.8829 |
-| Cityblock | 0.015048s |  0.001400s | 10.7469 |
-| Chebyshev | 0.023325s |  0.010921s |  2.1358 |
-| Minkowski | 0.143427s |  0.121050s |  1.1849 |
-| Hamming | 0.015191s |  0.001334s | 11.3856 |
-| CosineDist | 0.016688s |  0.000393s | **42.5158** |
-| CorrDist | 0.029024s |  0.000435s | **66.7043** |
-| ChiSqDist | 0.026035s |  0.012194s |  2.1351 |
-| KLDivergence | 0.115800s |  0.086968s |  1.3315 |
-| RenyiDivergence | 0.055551s |  0.029628s |  1.8749 |
-| RenyiDivergence | 0.205270s |  0.163031s |  1.2591 |
-| JSDivergence | 0.165078s |  0.148902s |  1.1086 |
-| BhattacharyyaDist | 0.035493s |  0.022429s |  1.5824 |
-| HellingerDist | 0.035028s |  0.021867s |  1.6019 |
-| WeightedSqEuclidean | 0.016330s |  0.000276s | **59.2117** |
-| WeightedEuclidean | 0.016600s |  0.000508s | **32.6478** |
-| WeightedCityblock | 0.015604s |  0.001816s |  8.5913 |
-| WeightedMinkowski | 0.159052s |  0.128427s |  1.2385 |
-| WeightedHamming | 0.015212s |  0.001634s |  9.3110 |
-| SqMahalanobis | 0.607881s |  0.000365s | **1665.3228** |
-| Mahalanobis | 0.623032s |  0.000604s | **1031.9581** |
-| BrayCurtis | 0.015843s |  0.002273s |  6.9695 |
+| SqEuclidean | 0.012498s |  0.000170s | **73.6596** |
+| Euclidean | 0.012583s |  0.000257s | 48.9628 |
+| PeriodicEuclidean | 0.030935s |  0.017572s |  1.7605 |
+| Cityblock | 0.012416s |  0.000910s | 13.6464 |
+| TotalVariation | 0.012763s |  0.000959s | 13.3080 |
+| Chebyshev | 0.023800s |  0.012042s |  1.9763 |
+| Minkowski | 0.121388s |  0.107333s |  1.1310 |
+| Hamming | 0.012171s |  0.000689s | 17.6538 |
+| CosineDist | 0.017474s |  0.000214s | **81.6546** |
+| CorrDist | 0.028195s |  0.000259s | **108.7360** |
+| ChiSqDist | 0.014372s |  0.003129s |  4.5932 |
+| KLDivergence | 0.079669s |  0.063491s |  1.2548 |
+| RenyiDivergence | 0.134093s |  0.117737s |  1.1389 |
+| RenyiDivergence | 0.047658s |  0.024960s |  1.9094 |
+| JSDivergence | 0.121999s |  0.110984s |  1.0993 |
+| BhattacharyyaDist | 0.021788s |  0.009414s |  2.3145 |
+| HellingerDist | 0.020735s |  0.008784s |  2.3606 |
+| WeightedSqEuclidean | 0.012671s |  0.000186s | **68.0345** |
+| WeightedEuclidean | 0.012867s |  0.000276s | **46.6634** |
+| WeightedCityblock | 0.012803s |  0.001539s |  8.3200 |
+| WeightedMinkowski | 0.127386s |  0.107257s |  1.1877 |
+| WeightedHamming | 0.012240s |  0.001462s |  8.3747 |
+| SqMahalanobis | 0.214285s |  0.000330s | **650.0722** |
+| Mahalanobis | 0.197294s |  0.000420s | **470.2354** |
+| BrayCurtis | 0.012872s |  0.001489s |  8.6456 |
 
 For distances of which a major part of the computation is a quadratic form (e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be drastically improved by restructuring the computation and delegating the core part to ``GEMM`` in *BLAS*. The use of this strategy can easily lead to 100x performance gain over simple loops (see the highlighted part of the table above).

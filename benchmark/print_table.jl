@@ -10,6 +10,7 @@ include("benchmarks.jl")
 order = [
     :SqEuclidean,
     :Euclidean,
+    :PeriodicEuclidean,
     :Cityblock,
     :TotalVariation,
     :Chebyshev,
@@ -66,7 +67,7 @@ function print_table(judgement)
             print(io, "| ", getname(dist), " |")
             print(io, @sprintf("%9.6fs | %9.6fs | %7.4f |\n", t_loop / 1e9, t_spec / 1e9, (t_loop / t_spec)))
         end
-        print(STDOUT, String(take!(io)))
+        print(stdout, String(take!(io)))
         println()
     end
 end

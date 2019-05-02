@@ -99,8 +99,11 @@ struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: Metric end
 
+struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
+    periods::W
+end
 
-const UnionMetrics = Union{Euclidean,SqEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
+const UnionMetrics = Union{Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,CorrDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence}
 
 """
     Euclidean([thresh])
@@ -140,6 +143,26 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
+"""
+	    PeriodicEuclidean(L)
+
+Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
+a cylinder). Periods per dimension are contained in the vector `L`:
+```math
+\\sqrt{\\sum_i(\\min\\mod(|x_i - y_i|, p), p - \\mod(|x_i - y_i|, p))^2}.
+```
+For dimensions without periodicity put `Inf` in the respective component.
+
+# Example
+```jldoctest
+julia> x, y, L = [0.0, 0.0], [0.75, 0.0], [0.5, Inf];
+
+julia> evaluate(PeriodicEuclidean(L), x, y)
+0.25
+```
+"""
+PeriodicEuclidean() = PeriodicEuclidean(Int[])
+
 ###########################################################
 #
 #  Define Evaluate
@@ -148,20 +171,35 @@ SqEuclidean() = SqEuclidean(0)
 
 const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
 
+@inline parameters(::UnionMetrics) = nothing
+
 # Specialized for Arrays and avoids a branch on the size
 @inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    p = parameters(d)
+    @boundscheck if p !== nothing
+        length(a) != length(p) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        @simd for I in 1:length(a)
-            ai = a[I]
-            bi = b[I]
-            s = eval_reduce(d, s, eval_op(d, ai, bi))
+        if p === nothing
+            @simd for I in 1:length(a)
+                ai = a[I]
+                bi = b[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            end
+        else
+            @simd for I in 1:length(a)
+                aI = a[I]
+                bI = b[I]
+                pI = p[I]
+                s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
+            end
         end
         return eval_end(d, s)
     end
@@ -171,29 +209,53 @@ end
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
+    p = parameters(d)
+    @boundscheck if p !== nothing
+        length(a) != length(p) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
+    end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
     @inbounds begin
         s = eval_start(d, a, b)
         if size(a) == size(b)
-            @simd for I in eachindex(a, b)
-                ai = a[I]
-                bi = b[I]
-                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            if p === nothing
+                @simd for I in eachindex(a, b)
+                    ai = a[I]
+                    bi = b[I]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi))
+                end
+            else
+                @simd for I in eachindex(a, b, p)
+                    aI = a[I]
+                    bI = b[I]
+                    pI = p[I]
+                    s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
+                end
             end
         else
-            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-                ai = a[Ia]
-                bi = b[Ib]
-                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            if p === nothing
+                for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+                    ai = a[Ia]
+                    bi = b[Ib]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi))
+                end
+            else
+                for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
+                    aI = a[Ia]
+                    bI = b[Ib]
+                    pI = p[Ip]
+                    s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
+                end
             end
         end
     end
     return eval_end(d, s)
 end
 result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
-    typeof(eval_end(dist, eval_op(dist, one(T1), one(T2))))
+    typeof(eval_end(dist, parameters(dist) === nothing ?
+                        eval_op(dist, one(T1), one(T2)) :
+                        eval_op(dist, one(T1), one(T2), one(eltype(dist)))))
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
@@ -213,6 +275,26 @@ sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
+
+# PeriodicEuclidean
+Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
+@inline parameters(d::PeriodicEuclidean) = d.periods
+@inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
+    s1 = abs(ai - bi)
+    s2 = mod(s1, p)
+    s3 = min(s2, p - s2)
+    abs2(s3)
+end
+@inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
+@inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
+function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Real}
+    p = first(dist.periods)
+    d = mod(abs(a - b), p)
+    min(d, p - d)
+end
+peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
+    evaluate(PeriodicEuclidean(p), a, b)
+peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
