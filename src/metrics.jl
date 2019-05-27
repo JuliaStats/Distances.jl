@@ -253,7 +253,7 @@ end
     return eval_end(d, s)
 end
 result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
-    Base.promote_op(evaluate, typeof(dist), eltype(a), eltype(b))
+    typeof(evaluate(dist, zero(eltype(a)), zero(eltype(b))))
 
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
@@ -287,7 +287,8 @@ end
 @inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
 function evaluate(dist::PeriodicEuclidean, a::Real, b::Real)
-    p = first(dist.periods)
+    periods = dist.periods
+    p = isempty(periods) ? one(eltype(periods)) : first(periods)
     d = mod(abs(a - b), p)
     min(d, p - d)
 end
@@ -450,7 +451,7 @@ end
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
 result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
-    Base.promote_op(eval_op, SpanNormDist, eltype(a), eltype(b))
+    typeof(eval_op(dist, zero(eltype(a)), zero(eltype(b))))
 
 
 # Jaccard

@@ -43,7 +43,7 @@ function evaluate(dist::UnionWeightedMetrics, a::Number, b::Number)
     eval_end(dist, eval_op(dist, a, b, one(eltype(dist))))
 end
 result_type(dist::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray) =
-    Base.promote_op(evaluate, typeof(dist), eltype(a), eltype(b))
+    typeof(evaluate(dist, zero(eltype(a)), zero(eltype(b))))
 
 @inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))

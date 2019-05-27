@@ -112,7 +112,7 @@ end
 function wsumsq_percol(w::AbstractArray, a::AbstractMatrix)
     m = size(a, 1)
     n = size(a, 2)
-    T = Base.promote_op((x, y) -> x * abs2(y), eltype(w), eltype(a))
+    T = typeof(zero(eltype(w)) * abs2(zero(eltype(a))))
     r = Vector{T}(undef, n)
     for j = 1:n
         aj = view(a, :, j)
