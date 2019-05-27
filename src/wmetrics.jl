@@ -39,12 +39,12 @@ Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 #
 ###########################################################
 
-function evaluate(dist::UnionWeightedMetrics, a::T, b::T) where {T <: Number}
+function evaluate(dist::UnionWeightedMetrics, a::Number, b::Number)
     eval_end(dist, eval_op(dist, a, b, one(eltype(dist))))
 end
-function result_type(dist::UnionWeightedMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
-    typeof(evaluate(dist, one(T1), one(T2)))
-end
+result_type(dist::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray) =
+    Base.promote_op(evaluate, typeof(dist), eltype(a), eltype(b))
+
 @inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))
 end

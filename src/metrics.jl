@@ -252,22 +252,21 @@ end
     end
     return eval_end(d, s)
 end
-result_type(dist::UnionMetrics, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2} =
-    typeof(eval_end(dist, parameters(dist) === nothing ?
-                        eval_op(dist, one(T1), one(T2)) :
-                        eval_op(dist, one(T1), one(T2), one(eltype(dist)))))
+result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
+    Base.promote_op(evaluate, typeof(dist), eltype(a), eltype(b))
+
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
 
-evaluate(dist::UnionMetrics, a::T, b::T) where {T <: Number} = eval_end(dist, eval_op(dist, a, b))
+evaluate(dist::UnionMetrics, a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b))
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
 @inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
 sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
-sqeuclidean(a::T, b::T) where {T <: Number} = evaluate(SqEuclidean(), a, b)
+sqeuclidean(a::Number, b::Number) = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
@@ -287,7 +286,7 @@ Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
 end
 @inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
-function evaluate(dist::PeriodicEuclidean, a::T, b::T) where {T <: Real}
+function evaluate(dist::PeriodicEuclidean, a::Real, b::Real)
     p = first(dist.periods)
     d = mod(abs(a - b), p)
     min(d, p - d)
@@ -300,14 +299,14 @@ peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, 
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
-cityblock(a::T, b::T) where {T <: Number} = evaluate(Cityblock(), a, b)
+cityblock(a::Number, b::Number) = evaluate(Cityblock(), a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
 eval_end(::TotalVariation, s) = s / 2
 totalvariation(a::AbstractArray, b::AbstractArray) = evaluate(TotalVariation(), a, b)
-totalvariation(a::T, b::T) where {T <: Number} = evaluate(TotalVariation(), a, b)
+totalvariation(a::Number, b::Number) = evaluate(TotalVariation(), a, b)
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
@@ -315,20 +314,20 @@ totalvariation(a::T, b::T) where {T <: Number} = evaluate(TotalVariation(), a, b
 # if only NaN, will output NaN
 @inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
 chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
-chebyshev(a::T, b::T) where {T <: Number} = evaluate(Chebyshev(), a, b)
+chebyshev(a::Number, b::Number) = evaluate(Chebyshev(), a, b)
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
 @inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
-minkowski(a::T, b::T, p::Real) where {T <: Number} = evaluate(Minkowski(p), a, b)
+minkowski(a::Number, b::Number, p::Real) = evaluate(Minkowski(p), a, b)
 
 # Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
 @inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
-hamming(a::T, b::T) where {T <: Number} = evaluate(Hamming(), a, b)
+hamming(a::Number, b::Number) = evaluate(Hamming(), a, b)
 
 # Cosine dist
 @inline function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
@@ -450,9 +449,8 @@ end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
-function result_type(dist::SpanNormDist, ::AbstractArray{T1}, ::AbstractArray{T2}) where {T1, T2}
-    typeof(eval_op(dist, one(T1), one(T2)))
-end
+result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
+    Base.promote_op(eval_op, SpanNormDist, eltype(a), eltype(b))
 
 
 # Jaccard
