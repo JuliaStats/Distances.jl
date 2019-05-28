@@ -299,6 +299,44 @@ end # testset
     @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
 end # testset
 
+@testset "Different input types" begin
+    for (x, y) in (([4, 5, 6, 7], [3.0, 9.0, 8.0, 1.0]),
+                   ([4, 5, 6, 7], [3//1 8; 9 1]))
+        @test (@inferred sqeuclidean(x, y)) == 57
+        @test (@inferred euclidean(x, y)) == sqrt(57)
+        @test (@inferred jaccard(x, y)) == convert(Base.promote_eltype(x, y), 13 // 28)
+        @test (@inferred cityblock(x, y)) == 13
+        @test (@inferred totalvariation(x, y)) == 6.5
+        @test (@inferred chebyshev(x, y)) == 6
+        @test (@inferred braycurtis(x, y)) == convert(Base.promote_eltype(x, y), 13 // 43)
+        @test (@inferred minkowski(x, y, 2)) == sqrt(57)
+        @test (@inferred peuclidean(x, y, fill(10, 4))) == sqrt(37)
+        @test (@inferred peuclidean(x - vec(y), zero(y), fill(10, 4))) == peuclidean(x, y, fill(10, 4))
+        @test (@inferred peuclidean(x, y, [10.0, 10.0, 10.0, Inf])) == sqrt(57)
+        @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
+        @test (@inferred cosine_dist(x, y)) ≈ (1 - 112 / sqrt(19530))
+        @test (@inferred corr_dist(x, y)) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
+        @test (@inferred chisq_dist(x, y)) == sum((x - vec(y)).^2 ./ (x + vec(y)))
+        @test (@inferred spannorm_dist(x, y)) == maximum(x - vec(y)) - minimum(x - vec(y))
+
+        @test (@inferred gkl_divergence(x, y)) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+
+        @test (@inferred meanad(x, y)) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
+        @test (@inferred msd(x, y)) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
+        @test (@inferred rmsd(x, y)) ≈ sqrt(msd(x, y))
+        @test (@inferred nrmsd(x, y)) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
+
+        w = ones(Int, 4)
+        @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
+
+        w = rand(1:length(x), size(x))
+        @test (@inferred wsqeuclidean(x, y, w)) ≈ dot((x - vec(y)).^2, w)
+        @test (@inferred weuclidean(x, y, w)) == sqrt(wsqeuclidean(x, y, w))
+        @test (@inferred wcityblock(x, y, w)) ≈ dot(abs.(x - vec(y)), w)
+        @test (@inferred wminkowski(x, y, w, 2)) ≈ weuclidean(x, y, w)
+    end
+end
+
 @testset "mahalanobis" begin
     for T in (Float64, F64)
         x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
