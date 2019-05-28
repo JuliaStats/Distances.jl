@@ -253,7 +253,7 @@ end
     return eval_end(d, s)
 end
 result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
-    typeof(evaluate(dist, zero(eltype(a)), zero(eltype(b))))
+    typeof(evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b))))
 
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
@@ -284,14 +284,13 @@ Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
     s3 = min(s2, p - s2)
     abs2(s3)
 end
+@inline function eval_op(d::PeriodicEuclidean, ai, bi)
+    periods = d.periods
+    p = isempty(periods) ? oneunit(eltype(periods)) : first(periods)
+    eval_op(d, ai, bi, p)
+end
 @inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
-function evaluate(dist::PeriodicEuclidean, a::Real, b::Real)
-    periods = dist.periods
-    p = isempty(periods) ? one(eltype(periods)) : first(periods)
-    d = mod(abs(a - b), p)
-    min(d, p - d)
-end
 peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
     evaluate(PeriodicEuclidean(p), a, b)
 peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
@@ -331,7 +330,8 @@ hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming(a::Number, b::Number) = evaluate(Hamming(), a, b)
 
 # Cosine dist
-@inline function eval_start(::CosineDist, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+@inline function eval_start(dist::CosineDist, a::AbstractArray, b::AbstractArray)
+    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
@@ -360,12 +360,14 @@ result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(Cosine
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
 # KLDivergence
-@inline eval_op(::KLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) : zero(ai)
+@inline eval_op(dist::KLDivergence, ai, bi) =
+    ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
 @inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # GenKLDivergence
-@inline eval_op(::GenKLDivergence, ai, bi) = ai > 0 ? ai * log(ai / bi) - ai + bi : bi
+@inline eval_op(dist::GenKLDivergence, ai, bi) =
+    ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
 @inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
 gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
 
@@ -451,13 +453,16 @@ end
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
 result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
-    typeof(eval_op(dist, zero(eltype(a)), zero(eltype(b))))
+    typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
 
 
 # Jaccard
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline eval_start(::Jaccard, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline function eval_start(dist::Jaccard, a::AbstractArray, b::AbstractArray)
+    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    zero(T), zero(T)
+end
 @inline function eval_op(::Jaccard, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -477,7 +482,10 @@ jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
 # BrayCurtis
 
 @inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline eval_start(::BrayCurtis, a::AbstractArray{T}, b::AbstractArray{T}) where {T} = zero(T), zero(T)
+@inline function eval_start(dist::BrayCurtis, a::AbstractArray, b::AbstractArray)
+    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    zero(T), zero(T)
+end
 @inline function eval_op(::BrayCurtis, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
