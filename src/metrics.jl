@@ -257,20 +257,19 @@ result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
 
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
-eval_end(d::UnionMetrics, s) = s
+@inline eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
+@inline eval_end(d::UnionMetrics, s) = s
 
 evaluate(dist::UnionMetrics, a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b))
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
-@inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
 
 sqeuclidean(a::AbstractArray, b::AbstractArray) = evaluate(SqEuclidean(), a, b)
 sqeuclidean(a::Number, b::Number) = evaluate(SqEuclidean(), a, b)
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
-@inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
@@ -289,7 +288,6 @@ end
     p = isempty(periods) ? oneunit(eltype(periods)) : first(periods)
     eval_op(d, ai, bi, p)
 end
-@inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
 peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
     evaluate(PeriodicEuclidean(p), a, b)
@@ -297,13 +295,11 @@ peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, 
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
-@inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = evaluate(Cityblock(), a, b)
 cityblock(a::Number, b::Number) = evaluate(Cityblock(), a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
-@inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
 eval_end(::TotalVariation, s) = s / 2
 totalvariation(a::AbstractArray, b::AbstractArray) = evaluate(TotalVariation(), a, b)
 totalvariation(a::Number, b::Number) = evaluate(TotalVariation(), a, b)
@@ -318,14 +314,12 @@ chebyshev(a::Number, b::Number) = evaluate(Chebyshev(), a, b)
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
-@inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
 eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski(a::Number, b::Number, p::Real) = evaluate(Minkowski(p), a, b)
 
 # Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
-@inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming(a::Number, b::Number) = evaluate(Hamming(), a, b)
 
@@ -356,19 +350,16 @@ result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(Cosine
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
-@inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = evaluate(ChiSqDist(), a, b)
 
 # KLDivergence
 @inline eval_op(dist::KLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
-@inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(KLDivergence(), a, b)
 
 # GenKLDivergence
 @inline eval_op(dist::GenKLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
-@inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
 gkl_divergence(a::AbstractArray, b::AbstractArray) = evaluate(GenKLDivergence(), a, b)
 
 # RenyiDivergence
@@ -432,7 +423,6 @@ end
     tu = u > 0 ? u * log(u) : zero(log(one(T)))
     ta + tb - tu
 end
-@inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
 js_divergence(a::AbstractArray, b::AbstractArray) = evaluate(JSDivergence(), a, b)
 
 # SpanNormDist
