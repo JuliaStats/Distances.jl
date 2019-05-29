@@ -497,8 +497,8 @@ function test_pairwise(dist, x, y, T)
             rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
         end
         # As earlier, we have small rounding errors in accumulations
-        @test pairwise(dist, x, y) ≈ rxy
-        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, x, y, dims=2) ≈ rxy
+        @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
@@ -563,16 +563,16 @@ end
 
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X)
+    pd = pairwise(Euclidean(1e-12), X, X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(Euclidean(1e-12), X)
+    pd = pairwise(Euclidean(1e-12), X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X)
+    pd = pairwise(SqEuclidean(1e-12), X, X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X)
+    pd = pairwise(SqEuclidean(1e-12), X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
 end
