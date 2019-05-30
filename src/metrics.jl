@@ -69,10 +69,6 @@ struct SqEuclidean <: SemiMetric
     thresh::Float64
 end
 
-struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
-    weights::W
-end
-
 """
     SqEuclidean([thresh])
 
@@ -80,6 +76,10 @@ Create a squared-euclidean semi-metric. For the meaning of `thresh`,
 see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
+
+struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+    weights::W
+end
 
 struct Cityblock <: Metric end
 
@@ -203,7 +203,6 @@ result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing) =
 result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, p) =
     typeof(evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b)), oneunit(eltype(p))))
 
-# Specialized for Arrays and avoids a branch on the size
 @inline Base.@propagate_inbounds function evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     evaluate(d, a, b, parameters(d))
 end
@@ -300,6 +299,12 @@ eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = evaluate(Euclidean(), a, b)
 euclidean(a::Number, b::Number) = evaluate(Euclidean(), a, b)
 
+# Weighted Euclidean
+@inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
+@inline eval_end(::WeightedEuclidean, s) = sqrt(s)
+weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedEuclidean(w), a, b)
+weuclidean(a::Number, b::Number, w::Real) = evaluate(WeightedEuclidean([w]), a, b)
+
 # PeriodicEuclidean
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
     s1 = abs(ai - bi)
@@ -311,12 +316,6 @@ end
 peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
     evaluate(PeriodicEuclidean(p), a, b)
 peuclidean(a::Number, b::Number, p::Real) = evaluate(PeriodicEuclidean([p]), a, b)
-
-# Weighted Euclidean
-@inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
-@inline eval_end(::WeightedEuclidean, s) = sqrt(s)
-weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedEuclidean(w), a, b)
-weuclidean(a::Number, b::Number, w::Real) = evaluate(WeightedEuclidean([w]), a, b)
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
