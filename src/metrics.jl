@@ -489,18 +489,14 @@ end
     end
     return min_d, max_d
 end
-
 eval_end(::SpanNormDist, s) = s[2] - s[1]
+evaluate(::SpanNormDist, a::Number, b::Number) = zero(promote_type(typeof(a), typeof(b)))
 spannorm_dist(a::AbstractArray, b::AbstractArray) = evaluate(SpanNormDist(), a, b)
-result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
-    typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-
+spannorm_dist(a::Number, b::Number) = evaluate(SpanNormDist(), a, b)
 
 # Jaccard
-
-@inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline function eval_start(dist::Jaccard, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T)
 end
 @inline function eval_op(::Jaccard, s1, s2)
@@ -518,12 +514,11 @@ end
     return v
 end
 jaccard(a::AbstractArray, b::AbstractArray) = evaluate(Jaccard(), a, b)
+jaccard(a::Number, b::Number) = evaluate(Jaccard(), a, b)
 
 # BrayCurtis
-
-@inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline function eval_start(dist::BrayCurtis, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T)
 end
 @inline function eval_op(::BrayCurtis, s1, s2)
@@ -541,6 +536,7 @@ end
     return v
 end
 braycurtis(a::AbstractArray, b::AbstractArray) = evaluate(BrayCurtis(), a, b)
+braycurtis(a::Number, b::Number) = evaluate(BrayCurtis(), a, b)
 
 
 # Tanimoto
