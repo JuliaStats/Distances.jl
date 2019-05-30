@@ -352,14 +352,14 @@ chebyshev(a::AbstractArray, b::AbstractArray) = evaluate(Chebyshev(), a, b)
 chebyshev(a::Number, b::Number) = evaluate(Chebyshev(), a, b)
 
 # Minkowski
-@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
-eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
+@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi)^dist.p
+eval_end(dist::Minkowski, s) = s^(1 / dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = evaluate(Minkowski(p), a, b)
 minkowski(a::Number, b::Number, p::Real) = evaluate(Minkowski(p), a, b)
 
 # WeightedMinkowski
-@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi).^dist.p * wi
-eval_end(dist::WeightedMinkowski, s) = s.^(1 / dist.p)
+@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi)^dist.p * wi
+eval_end(dist::WeightedMinkowski, s) = s^(1 / dist.p)
 wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
 wminkowski(a::Number, b::Number, w::Real, p::Real) = evaluate(WeightedMinkowski([w], p), a, b)
 
@@ -369,13 +369,13 @@ hamming(a::AbstractArray, b::AbstractArray) = evaluate(Hamming(), a, b)
 hamming(a::Number, b::Number) = evaluate(Hamming(), a, b)
 
 # WeightedHamming
-@inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
+@inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(wi)
 whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedHamming(w), a, b)
 whamming(a::Number, b::Number, w::Real) = evaluate(WeightedHamming([w]), a, b)
 
-# Cosine dist
+# CosineDist
 @inline function eval_start(dist::CosineDist, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
@@ -386,17 +386,17 @@ end
 end
 function eval_end(::CosineDist, s)
     ab, a2, b2 = s
-    max(1 - ab / (sqrt(a2) * sqrt(b2)), zero(eltype(ab)))
+    max(1 - ab / (sqrt(a2) * sqrt(b2)), 0)
 end
 cosine_dist(a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), a, b)
+cosine_dist(a::Number, b::Number) = evaluate(CosineDist(), a, b)
 
-# Correlation Dist
+# CorrDist
 _centralize(x::AbstractArray) = x .- mean(x)
-evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = cosine_dist(_centralize(a), _centralize(b))
-# Ambiguity resolution
-evaluate(::CorrDist, a::Array, b::Array) = cosine_dist(_centralize(a), _centralize(b))
+evaluate(::CorrDist, a::AbstractArray, b::AbstractArray) = evaluate(CosineDist(), _centralize(a), _centralize(b))
+evaluate(::CorrDist, a::Number, b::Number) = evaluate(CosineDist(), zero(mean(a)), zero(mean(b)))
 corr_dist(a::AbstractArray, b::AbstractArray) = evaluate(CorrDist(), a, b)
-result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
+corr_dist(a::Number, b::Number) = evaluate(CorrDist(), a, b)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))

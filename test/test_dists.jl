@@ -129,6 +129,8 @@ end
     @test hamming(a, b) == 1
     @test peuclidean(a, b, 0.5) === 0.0
     @test peuclidean(a, b, 2) === 1.0
+    @test cosine_dist(a, b) === 0.0
+    @test isnan(corr_dist(a, b))
 
     bt = [true, false, true]
     bf = [false, true, true]
