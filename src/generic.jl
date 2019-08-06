@@ -34,7 +34,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::Abs
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
-        r[j] = evaluate(metric, a, view(b, :, j))
+        r[j] = metric(a, view(b, :, j))
     end
     r
 end
@@ -43,7 +43,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
-        r[j] = evaluate(metric, view(a, :, j), b)
+        r[j] = metric(view(a, :, j), b)
     end
     r
 end
@@ -52,7 +52,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
-        r[j] = evaluate(metric, view(a, :, j), view(b, :, j))
+        r[j] = metric(view(a, :, j), view(b, :, j))
     end
     r
 end
@@ -90,7 +90,7 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric,
     @inbounds for j = 1:size(b, 2)
         bj = view(b, :, j)
         for i = 1:size(a, 2)
-            r[i, j] = evaluate(metric, view(a, :, i), bj)
+            r[i, j] = metric(view(a, :, i), bj)
         end
     end
     r
@@ -102,7 +102,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     @inbounds for j = 1:n
         aj = view(a, :, j)
         for i = (j + 1):n
-            r[i, j] = evaluate(metric, view(a, :, i), aj)
+            r[i, j] = metric(view(a, :, i), aj)
         end
         r[j, j] = 0
         for i = 1:(j - 1)
