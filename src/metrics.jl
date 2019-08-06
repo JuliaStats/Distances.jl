@@ -712,20 +712,3 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     end
     r
 end
-
-# CorrDist
-_centralize_colwise(x::AbstractVector) = x .- mean(x)
-_centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
-    _pairwise!(r, CosineDist(), _centralize_colwise(a))
-end
