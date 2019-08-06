@@ -6,7 +6,6 @@ struct BhattacharyyaDist <: SemiMetric end
 
 struct HellingerDist <: Metric end
 
-
 # Bhattacharyya coefficient
 
 function bhattacharyya_coeff(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number}
@@ -37,13 +36,11 @@ bhattacharyya_coeff(a::T, b::T) where {T <: Number} = throw("Bhattacharyya coeff
 
 
 # Bhattacharyya distance
-evaluate(dist::BhattacharyyaDist, a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = -log(bhattacharyya_coeff(a, b))
-bhattacharyya(a::AbstractVector, b::AbstractVector) = evaluate(BhattacharyyaDist(), a, b)
-evaluate(dist::BhattacharyyaDist, a::T, b::T) where {T <: Number} = throw("Bhattacharyya distance cannot be calculated for scalars")
-bhattacharyya(a::T, b::T) where {T <: Number} = evaluate(BhattacharyyaDist(), a, b)
+(::BhattacharyyaDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = -log(bhattacharyya_coeff(a, b))
+(::BhattacharyyaDist)(a::T, b::T) where {T <: Number} = throw("Bhattacharyya distance cannot be calculated for scalars")
+bhattacharyya(a, b) = BhattacharyyaDist()(a, b)
 
 # Hellinger distance
-evaluate(dist::HellingerDist, a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = sqrt(1 - bhattacharyya_coeff(a, b))
-hellinger(a::AbstractVector, b::AbstractVector) = evaluate(HellingerDist(), a, b)
-evaluate(dist::HellingerDist, a::T, b::T) where {T <: Number} = throw("Hellinger distance cannot be calculated for scalars")
-hellinger(a::T, b::T) where {T <: Number} = evaluate(HellingerDist(), a, b)
+(::HellingerDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = sqrt(1 - bhattacharyya_coeff(a, b))
+(::HellingerDist)(a::T, b::T) where {T <: Number} = throw("Hellinger distance cannot be calculated for scalars")
+hellinger(a, b) = HellingerDist()(a, b)
