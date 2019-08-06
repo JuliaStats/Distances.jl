@@ -30,20 +30,17 @@ struct WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-
-const UnionWeightedMetrics{W} = Union{WeightedEuclidean{W},WeightedSqEuclidean{W},WeightedCityblock{W},WeightedMinkowski{W},WeightedHamming{W}}
+const weightedmetrics_list = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
+const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics_list)...}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
-# Evaluate
+# Implementations
 #
 ###########################################################
 
-function evaluate(dist::UnionWeightedMetrics, a::Number, b::Number)
-    eval_end(dist, eval_op(dist, a, b, oneunit(eltype(dist))))
-end
 result_type(dist::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray) =
-    typeof(evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b))))
+    typeof(dist(oneunit(eltype(a)), oneunit(eltype(b))))
 
 @inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))
@@ -52,7 +49,7 @@ eval_end(d::UnionWeightedMetrics, s) = s
 
 
 
-@inline function evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+@inline function _evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -83,32 +80,37 @@ eval_end(d::UnionWeightedMetrics, s) = s
     return eval_end(d, s)
 end
 
+for M in weightedmetrics_list
+    @eval (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b)
+    @eval (dist::$M)(a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b, oneunit(eltype(dist))))
+end
+
 # Squared Euclidean
 @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
 @inline eval_reduce(::WeightedSqEuclidean, s1, s2) = s1 + s2
-wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedSqEuclidean(w), a, b)
+wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedSqEuclidean(w)(a, b)
 
 # Weighted Euclidean
 @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
 @inline eval_reduce(::WeightedEuclidean, s1, s2) = s1 + s2
 @inline eval_end(::WeightedEuclidean, s) = sqrt(s)
-weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedEuclidean(w), a, b)
+weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedEuclidean(w)(a, b)
 
 # City Block
 @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
 @inline eval_reduce(::WeightedCityblock, s1, s2) = s1 + s2
-wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedCityblock(w), a, b)
+wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedCityblock(w)(a, b)
 
 # Minkowski
 @inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi).^dist.p * wi
 @inline eval_reduce(::WeightedMinkowski, s1, s2) = s1 + s2
 eval_end(dist::WeightedMinkowski, s) = s.^(1 / dist.p)
-wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = evaluate(WeightedMinkowski(w, p), a, b)
+wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = WeightedMinkowski(w, p)(a, b)
 
 # WeightedHamming
 @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
 @inline eval_reduce(::WeightedHamming, s1, s2) = s1 + s2
-whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = evaluate(WeightedHamming(w), a, b)
+whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedHamming(w)(a, b)
 
 ###########################################################
 #
