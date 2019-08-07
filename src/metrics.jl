@@ -104,8 +104,8 @@ struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
     periods::W
 end
 
-const metric_list = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
-const UnionMetrics = Union{metric_list...}
+const metrics = (Euclidean, SqEuclidean, PeriodicEuclidean, Chebyshev, Cityblock, TotalVariation, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, ChiSqDist, KLDivergence, RenyiDivergence, BrayCurtis, JSDivergence, SpanNormDist, GenKLDivergence)
+const UnionMetrics = Union{metrics...}
 
 """
     Euclidean([thresh])
@@ -262,7 +262,7 @@ eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
 
-for M in metric_list
+for M in metrics
     @eval @inline (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b)
     @eval @inline (dist::$M)(a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b))
 end

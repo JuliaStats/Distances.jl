@@ -30,8 +30,8 @@ struct WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-const weightedmetrics_list = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics_list)...}
+const weightedmetrics = (WeightedEuclidean, WeightedSqEuclidean, WeightedCityblock, WeightedMinkowski, WeightedHamming)
+const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics)...}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
 #
@@ -80,7 +80,7 @@ eval_end(d::UnionWeightedMetrics, s) = s
     return eval_end(d, s)
 end
 
-for M in weightedmetrics_list
+for M in weightedmetrics
     @eval (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b)
     @eval (dist::$M)(a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b, oneunit(eltype(dist))))
 end
