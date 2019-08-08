@@ -42,8 +42,8 @@ Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 function evaluate(dist::UnionWeightedMetrics, a::Number, b::Number)
     eval_end(dist, eval_op(dist, a, b, oneunit(eltype(dist))))
 end
-result_type(dist::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray) =
-    typeof(evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b))))
+result_type(dist::UnionWeightedMetrics, Ta::Type, Tb::Type) =
+    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
 
 @inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
     zero(result_type(d, a, b))
