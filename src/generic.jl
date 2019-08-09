@@ -25,18 +25,18 @@ abstract type Metric <: SemiMetric end
 # Generic functions
 
 """
-    result_type(::PreMetric, ::Type, ::Type) -> T
-    result_type(::PreMetric, ::AbstractArray, ::AbstractArray) -> T
+    result_type(dist::PreMetric, Ta::Type, Tb::Type) -> T
+    result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) -> T
 
-The result type `T` is used to pre-allocate the memory of result array.
+Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
+data `a` and `b`.
 
-```julia-repl
-julia> T = result_type(Euclidean(), Float32, Float64)
-Float64
-julia> r = zeros(T, 2, 2)
-2×2 Array{Float64,2}:
- 0.0  0.0
- 0.0  0.0
+We can use `T` to pre-allocate the memory of result array:
+
+```julia
+T = result_type(dist, a, b)
+r = Matrix{T}(undef, m, n)
+pairwise!(r, dist, a, b, dims=2)
 ```
 """
 result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback
