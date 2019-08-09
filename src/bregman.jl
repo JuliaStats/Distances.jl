@@ -12,7 +12,7 @@ of good automatic differentiation packages.
 
 function evaluate(dist::Bregman, p::AbstractVector, q::AbstractVector)
 """
-struct Bregman{T1 <: Function,T2 <: Function,T3 <: Function} <: PreMetric
+struct Bregman{T1 <: Function, T2 <: Function, T3 <: Function} <: PreMetric
     F::T1
     ∇::T2
     inner::T3
@@ -41,7 +41,7 @@ function (dist::Bregman)(p::AbstractVector, q::AbstractVector)
         throw(DimensionMismatch("The gradient result is not the same size as p and q"))
     end
     # Return the Bregman divergence.
-    return FP_val - FQ_val - dist.inner(DQ_val, p - q);
+    return FP_val - FQ_val - dist.inner(DQ_val, p-q);
 end
 
 # Convenience function.
