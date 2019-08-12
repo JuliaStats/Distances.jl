@@ -30,14 +30,6 @@ abstract type Metric <: SemiMetric end
 
 Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
-
-We can use `T` to pre-allocate the memory of result array:
-
-```julia
-T = result_type(dist, a, b)
-r = Matrix{T}(undef, m, n)
-pairwise!(r, dist, a, b, dims=2)
-```
 """
 result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback
 result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
