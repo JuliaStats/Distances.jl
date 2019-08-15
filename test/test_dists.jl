@@ -2,36 +2,38 @@
 
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
-        dxy = evaluate(dist, x, y)
-        dxz = evaluate(dist, x, z)
-        dyz = evaluate(dist, y, z)
+        @test dist(x, y) == evaluate(dist, x, y)
+
+        dxy = dist(x, y)
+        dxz = dist(x, z)
+        dyz = dist(y, z)
         if isa(dist, PreMetric)
             # Unfortunately small non-zero numbers (~10^-16) are appearing
             # in our tests due to accumulating floating point rounding errors.
             # We either need to allow small errors in our tests or change the
             # way we do accumulations...
-            @test evaluate(dist, x, x) + one(eltype(x)) ≈ one(eltype(x))
-            @test evaluate(dist, y, y) + one(eltype(y)) ≈ one(eltype(y))
-            @test evaluate(dist, z, z) + one(eltype(z)) ≈ one(eltype(z))
+            @test dist(x, x) + one(eltype(x)) ≈ one(eltype(x))
+            @test dist(y, y) + one(eltype(y)) ≈ one(eltype(y))
+            @test dist(z, z) + one(eltype(z)) ≈ one(eltype(z))
             @test dxy ≥ zero(eltype(x))
             @test dxz ≥ zero(eltype(x))
             @test dyz ≥ zero(eltype(x))
         end
         if isa(dist, SemiMetric)
-            @test dxy ≈ evaluate(dist, y, x)
-            @test dxz ≈ evaluate(dist, z, x)
-            @test dyz ≈ evaluate(dist, y, z)
+            @test dxy ≈ dist(y, x)
+            @test dxz ≈ dist(z, x)
+            @test dyz ≈ dist(y, z)
         else # Not symmetric, so more PreMetric tests
-            @test evaluate(dist, y, x) ≥ zero(eltype(x))
-            @test evaluate(dist, z, x) ≥ zero(eltype(x))
-            @test evaluate(dist, z, y) ≥ zero(eltype(x))
+            @test dist(y, x) ≥ zero(eltype(x))
+            @test dist(z, x) ≥ zero(eltype(x))
+            @test dist(z, y) ≥ zero(eltype(x))
         end
         if isa(dist, Metric)
             # Again we have small rounding errors in accumulations
             @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
-            dyx = evaluate(dist, y, x)
+            dyx = dist(y, x)
             @test dyz ≤ dyx + dxz || dyz ≈ dyx + dxz
-            dzy = evaluate(dist, z, y)
+            dzy = dist(z, y)
             @test dxy ≤ dxz + dzy || dxy ≈ dxz + dzy
         end
     end
@@ -189,9 +191,9 @@ end
         @test whamming(a, b, w) === sum((a .!= b) .* w)
 
         # Minimal test of Jaccard - test return type stability.
-        @inferred evaluate(Jaccard(), rand(T, 3), rand(T, 3))
-        @inferred evaluate(Jaccard(), [1, 2, 3], [1, 2, 3])
-        @inferred evaluate(Jaccard(), [true, false, true], [false, true, true])
+        @inferred Jaccard()(rand(T, 3), rand(T, 3))
+        @inferred Jaccard()([1, 2, 3], [1, 2, 3])
+        @inferred Jaccard()([true, false, true], [false, true, true])
 
         # Test Bray-Curtis. Should be 1 if no elements are shared, 0 if all are the same
         @test braycurtis([1,0,3],[0,1,0]) == 1.0
@@ -295,8 +297,8 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
     @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
-    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), [1, 2, 3], [1, 2])
-    @test_throws DimensionMismatch evaluate(Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2]), [1, 2, 3], [1, 2, 3])
+    @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
+    @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
 end # testset
 
 @testset "Different input types" begin
@@ -409,9 +411,9 @@ function test_colwise(dist, x, y, T)
         r2 = zeros(T, n)
         r3 = zeros(T, n)
         for j = 1:n
-            r1[j] = evaluate(dist, x[:, j], y[:, j])
-            r2[j] = evaluate(dist, x[:, 1], y[:, j])
-            r3[j] = evaluate(dist, x[:, j], y[:, 1])
+            r1[j] = dist(x[:, j], y[:, j])
+            r2[j] = dist(x[:, 1], y[:, j])
+            r3[j] = dist(x[:, j], y[:, 1])
         end
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
@@ -485,10 +487,10 @@ function test_pairwise(dist, x, y, T)
         rxy = zeros(T, nx, ny)
         rxx = zeros(T, nx, nx)
         for j = 1:ny, i = 1:nx
-            rxy[i, j] = evaluate(dist, x[:, i], y[:, j])
+            rxy[i, j] = dist(x[:, i], y[:, j])
         end
         for j = 1:nx, i = 1:nx
-            rxx[i, j] = evaluate(dist, x[:, i], x[:, j])
+            rxx[i, j] = dist(x[:, i], x[:, j])
         end
         # As earlier, we have small rounding errors in accumulations
         @test pairwise(dist, x, y) ≈ rxy
@@ -582,7 +584,7 @@ end
     q = rand(4)
     p = p/sum(p);
     q = q/sum(q);
-    @test evaluate(testDist, p, q) ≈ gkl_divergence(p, q)
+    @test testDist(p, q) ≈ gkl_divergence(p, q)
     # Test if Bregman() correctly implements the squared euclidean dist. between them.
     @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
     # Test if Bregman() correctly implements the IS distance.

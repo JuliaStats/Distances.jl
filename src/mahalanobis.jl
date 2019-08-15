@@ -13,7 +13,7 @@ result_type(::SqMahalanobis{T}, ::Type, ::Type) where {T} = T
 
 # SqMahalanobis
 
-function evaluate(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector) where {T <: Real}
+function (dist::SqMahalanobis{T})(a::AbstractVector, b::AbstractVector) where {T <: Real}
     if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -23,7 +23,7 @@ function evaluate(dist::SqMahalanobis{T}, a::AbstractVector, b::AbstractVector) 
     return dot(z, Q * z)
 end
 
-sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(SqMahalanobis(Q), a, b)
+sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix) where {T <: Real}
     Q = dist.qmat
@@ -83,11 +83,11 @@ end
 
 # Mahalanobis
 
-function evaluate(dist::Mahalanobis{T}, a::AbstractVector, b::AbstractVector) where {T <: Real}
-    sqrt(evaluate(SqMahalanobis(dist.qmat), a, b))
+function (dist::Mahalanobis{T})(a::AbstractVector, b::AbstractVector) where {T <: Real}
+    sqrt(SqMahalanobis(dist.qmat)(a, b))
 end
 
-mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = evaluate(Mahalanobis(Q), a, b)
+mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis{T}, a::AbstractMatrix, b::AbstractMatrix) where {T <: Real}
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))

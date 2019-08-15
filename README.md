@@ -54,12 +54,14 @@ Each distance corresponds to a *distance type*. You can always compute a certain
 
 ```julia
 r = evaluate(dist, x, y)
+r = dist(x, y)
 ```
 
 Here, dist is an instance of a distance type. For example, the type for Euclidean distance is ``Euclidean`` (more distance types will be introduced in the next section), then you can compute the Euclidean distance between ``x`` and ``y`` as
 
 ```julia
 r = evaluate(Euclidean(), x, y)
+r = Euclidean()(x, y)
 ```
 
 Common distances also come with convenient functions for distance evaluation. For example, you may also compute Euclidean distance between two vectors as below
