@@ -104,7 +104,7 @@ struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
     periods::W
 end
 
-const metrics = (Euclidean, SqEuclidean, PeriodicEuclidean, Chebyshev, Cityblock, TotalVariation, Minkowski, Hamming, Jaccard, RogersTanimoto, CosineDist, ChiSqDist, KLDivergence, RenyiDivergence, BrayCurtis, JSDivergence, SpanNormDist, GenKLDivergence)
+const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const UnionMetrics = Union{metrics...}
 
 """

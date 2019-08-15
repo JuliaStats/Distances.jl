@@ -6,6 +6,7 @@ struct BhattacharyyaDist <: SemiMetric end
 
 struct HellingerDist <: Metric end
 
+
 # Bhattacharyya coefficient
 
 function bhattacharyya_coeff(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number}

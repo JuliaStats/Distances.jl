@@ -30,7 +30,7 @@ struct WeightedHamming{W <: RealAbstractArray} <: Metric
     weights::W
 end
 
-const weightedmetrics = (WeightedEuclidean, WeightedSqEuclidean, WeightedCityblock, WeightedMinkowski, WeightedHamming)
+const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
 const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics)...}
 Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
 ###########################################################
