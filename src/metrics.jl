@@ -256,8 +256,8 @@ end
     end
     return eval_end(d, s)
 end
-result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
-    typeof(dist(oneunit(eltype(a)), oneunit(eltype(b))))
+result_type(dist::UnionMetrics, Ta::Type, Tb::Type) =
+    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
 eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     zero(result_type(d, a, b))
 eval_end(d::UnionMetrics, s) = s
@@ -356,7 +356,7 @@ cosine_dist(a::AbstractArray, b::AbstractArray) = CosineDist()(a, b)
 _centralize(x::AbstractArray) = x .- mean(x)
 (dist::CorrDist)(a::AbstractArray, b::AbstractArray) = CosineDist()(_centralize(a), _centralize(b))
 corr_dist(a::AbstractArray, b::AbstractArray) = CorrDist()(a, b)
-result_type(::CorrDist, a::AbstractArray, b::AbstractArray) = result_type(CosineDist(), a, b)
+result_type(::CorrDist, Ta::Type, Tb::Type) = result_type(CosineDist(), Ta, Tb)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
@@ -456,9 +456,8 @@ end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 spannorm_dist(a::AbstractArray, b::AbstractArray) = SpanNormDist()(a, b)
-result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
-    typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-
+result_type(dist::SpanNormDist, Ta::Type, Tb::Type) =
+    typeof(eval_op(dist, oneunit(Ta), oneunit(Tb)))
 
 # Jaccard
 
