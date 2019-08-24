@@ -713,6 +713,10 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
 end
 
 # CorrDist
+# This part of codes is accelerated because:
+# 1. It calls the accelerated `_pairwise` specilization for CosineDist
+# 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
+#    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
 function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
