@@ -120,20 +120,9 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     r
 end
 
-function deprecated_dims(dims::Union{Nothing,Integer})
-    if dims === nothing
-        Base.depwarn("implicit `dims=2` argument now has to be passed explicitly " *
-                     "to specify that distances between columns should be computed",
-                     :pairwise!)
-        return 2
-    else
-        return dims
-    end
-end
-
 """
     pairwise!(r::AbstractMatrix, metric::PreMetric,
-              a::AbstractMatrix, b::AbstractMatrix=a; dims)
+              a::AbstractMatrix, b::AbstractMatrix=a; dims=2)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
 in `a` and `b` according to distance `metric`, and store the result in `r`.
@@ -144,8 +133,7 @@ If a single matrix `a` is provided, compute distances between its rows or column
 """
 function pairwise!(r::AbstractMatrix, metric::PreMetric,
                    a::AbstractMatrix, b::AbstractMatrix;
-                   dims::Union{Nothing,Integer}=nothing)
-    dims = deprecated_dims(dims)
+                   dims::Integer=2)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     if dims == 1
         na, ma = size(a)
@@ -168,8 +156,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
 end
 
 function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
-                   dims::Union{Nothing,Integer}=nothing)
-    dims = deprecated_dims(dims)
+                   dims::Integer=2)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     if dims == 1
         n, m = size(a)
@@ -186,7 +173,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
 end
 
 """
-    pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
+    pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims=2)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
 in `a` and `b` according to distance `metric`. If a single matrix `a` is provided,
@@ -195,8 +182,7 @@ compute distances between its rows or columns.
 `a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
 """
 function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
-                  dims::Union{Nothing,Integer}=nothing)
-    dims = deprecated_dims(dims)
+                  dims::Integer=2)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     m = size(a, dims)
     n = size(b, dims)
@@ -205,8 +191,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
 end
 
 function pairwise(metric::PreMetric, a::AbstractMatrix;
-                  dims::Union{Nothing,Integer}=nothing)
-    dims = deprecated_dims(dims)
+                  dims::Integer=2)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
