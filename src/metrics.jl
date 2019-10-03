@@ -10,9 +10,79 @@ const RealAbstractArray{T <: Real} =  AbstractArray{T}
 struct Euclidean <: Metric
     thresh::Float64
 end
+
+"""
+    Euclidean([thresh])
+
+Create a euclidean metric.
+
+When computing distances among large numbers of points, it can be much
+more efficient to exploit the formula
+
+    (x-y)^2 = x^2 - 2xy + y^2
+
+However, this can introduce roundoff error. `thresh` (which defaults
+to 0) specifies the relative square-distance tolerance on `2xy`
+compared to `x^2 + y^2` to force recalculation of the distance using
+the more precise direct (elementwise-subtraction) formula.
+
+# Example:
+```julia
+julia> x = reshape([0.1, 0.3, -0.1], 3, 1);
+
+julia> pairwise(Euclidean(), x, x)
+1×1 Array{Float64,2}:
+ 7.45058e-9
+
+julia> pairwise(Euclidean(1e-12), x, x)
+1×1 Array{Float64,2}:
+ 0.0
+```
+"""
+Euclidean() = Euclidean(0)
+
+struct WeightedEuclidean{W <: RealAbstractArray} <: Metric
+    weights::W
+end
+
+"""
+    PeriodicEuclidean(L)
+
+Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
+a cylinder). Periods per dimension are contained in the vector `L`:
+```math
+\\sqrt{\\sum_i(\\min\\mod(|x_i - y_i|, p), p - \\mod(|x_i - y_i|, p))^2}.
+```
+For dimensions without periodicity put `Inf` in the respective component.
+
+# Example
+```jldoctest
+julia> x, y, L = [0.0, 0.0], [0.75, 0.0], [0.5, Inf];
+
+julia> evaluate(PeriodicEuclidean(L), x, y)
+0.25
+```
+"""
+struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
+    periods::W
+end
+
 struct SqEuclidean <: SemiMetric
     thresh::Float64
 end
+
+"""
+    SqEuclidean([thresh])
+
+Create a squared-euclidean semi-metric. For the meaning of `thresh`,
+see [`Euclidean`](@ref).
+"""
+SqEuclidean() = SqEuclidean(0)
+
+struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+    weights::W
+end
+
 struct Chebyshev <: Metric end
 
 struct Cityblock <: Metric end
@@ -113,76 +183,7 @@ struct MeanSqDeviation <: SemiMetric end
 struct RMSDeviation <: Metric end
 struct NormRMSDeviation <: PreMetric end
 
-struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
-    periods::W
-end
-
-"""
-    Euclidean([thresh])
-
-Create a euclidean metric.
-
-When computing distances among large numbers of points, it can be much
-more efficient to exploit the formula
-
-    (x-y)^2 = x^2 - 2xy + y^2
-
-However, this can introduce roundoff error. `thresh` (which defaults
-to 0) specifies the relative square-distance tolerance on `2xy`
-compared to `x^2 + y^2` to force recalculation of the distance using
-the more precise direct (elementwise-subtraction) formula.
-
-# Example:
-```julia
-julia> x = reshape([0.1, 0.3, -0.1], 3, 1);
-
-julia> pairwise(Euclidean(), x, x)
-1×1 Array{Float64,2}:
- 7.45058e-9
-
-julia> pairwise(Euclidean(1e-12), x, x)
-1×1 Array{Float64,2}:
- 0.0
-```
-"""
-Euclidean() = Euclidean(0)
-
-struct WeightedEuclidean{W <: RealAbstractArray} <: Metric
-    weights::W
-end
-
-"""
-    SqEuclidean([thresh])
-
-Create a squared-euclidean semi-metric. For the meaning of `thresh`,
-see [`Euclidean`](@ref).
-"""
-SqEuclidean() = SqEuclidean(0)
-
-struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
-    weights::W
-end
-
-"""
-	    PeriodicEuclidean(L)
-
-Create a Euclidean metric on a rectangular periodic domain (i.e., a torus or
-a cylinder). Periods per dimension are contained in the vector `L`:
-```math
-\\sqrt{\\sum_i(\\min\\mod(|x_i - y_i|, p), p - \\mod(|x_i - y_i|, p))^2}.
-```
-For dimensions without periodicity put `Inf` in the respective component.
-
-# Example
-```jldoctest
-julia> x, y, L = [0.0, 0.0], [0.75, 0.0], [0.5, Inf];
-
-julia> evaluate(PeriodicEuclidean(L), x, y)
-0.25
-```
-"""
-PeriodicEuclidean() = PeriodicEuclidean(Int[])
-
+# Union types
 const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
 const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics)...}
