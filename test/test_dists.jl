@@ -122,21 +122,32 @@ end
 @testset "individual metrics" begin
     a = 1
     b = 2
-    @test sqeuclidean(a, b) == 1.0
-
-    @test euclidean(a, b) == 1.0
-    @test cityblock(a, b) == 1.0
-    @test totalvariation(a, b) == 0.5
+    @test sqeuclidean(a, b) === 1
+    @test euclidean(a, b) === 1.0
+    @test jaccard(a, b) === 0.5
+    @test cityblock(a, b) === 1
+    @test totalvariation(a, b) === 0.5
     @test chebyshev(a, b) == 1.0
+    @test braycurtis(a, b) === 1/3
     @test minkowski(a, b, 2) == 1.0
     @test hamming(a, b) == 1
-    @test peuclidean(a, b, 0.5) == 0
-    @test peuclidean(a, b, 2) == 1.0
+    @test peuclidean(a, b, 0.5) === 0.0
+    @test peuclidean(a, b, 2) === 1.0
+    @test cosine_dist(a, b) === 0.0
+    @test isnan(corr_dist(a, b))
+    @test spannorm_dist(a, b) === 0
 
     bt = [true, false, true]
     bf = [false, true, true]
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
     @test braycurtis(bt, bf) == 0.5
+
+    w = 2
+    @test wsqeuclidean(a, b, w) === 2
+    @test weuclidean(a, b, w) === sqrt(2)
+    @test wcityblock(a, b, w) === 2
+    @test wminkowski(a, b, w, 2) === sqrt(2)
+    @test whamming(a, b, w) === 2
 
     for T in (Float64, F64)
 

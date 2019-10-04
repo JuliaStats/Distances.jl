@@ -186,8 +186,8 @@ struct NormRMSDeviation <: PreMetric end
 # Union types
 const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionWeightedMetrics{W} = Union{map(M->M{W}, weightedmetrics)...}
-const UnionMetrics = Union{metrics...}
+const UnionWeightedMetrics = Union{weightedmetrics...}
+const UnionMetrics = Union{metrics...,weightedmetrics...}
 
 ###########################################################
 #
@@ -195,205 +195,162 @@ const UnionMetrics = Union{metrics...}
 #
 ###########################################################
 
-const ArraySlice{T} = SubArray{T,1,Array{T,2},Tuple{Base.Slice{Base.OneTo{Int}},Int},true}
+parameters(::UnionMetrics) = nothing
+parameters(d::PeriodicEuclidean) = d.periods
+parameters(d::UnionWeightedMetrics) = d.weights
 
-@inline parameters(::UnionMetrics) = nothing
+result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
+    result_type(dist, a, b, parameters(dist))
+result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing) =
+    typeof(_evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b))))
+result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, p) =
+    typeof(_evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b)), oneunit(eltype(p))))
 
-Base.eltype(x::UnionWeightedMetrics) = eltype(x.weights)
+@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+    _evaluate(d, a, b, parameters(d))
+end
+_evaluate(dist::UnionMetrics, a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
 
 # Specialized for Arrays and avoids a branch on the size
-@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::Union{Array, ArraySlice}, b::Union{Array, ArraySlice})
+@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-    p = parameters(d)
-    @boundscheck if p !== nothing
-        length(a) != length(p) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if p === nothing
+        if IndexStyle(a, b) === IndexLinear()
             @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         else
-            @simd for I in 1:length(a)
-                aI = a[I]
-                bI = b[I]
-                pI = p[I]
-                s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
-            end
-        end
-        return eval_end(d, s)
-    end
-end
-
-@inline function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
-    @boundscheck if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-    p = parameters(d)
-    @boundscheck if p !== nothing
-        length(a) != length(p) && throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
-    end
-    if length(a) == 0
-        return zero(result_type(d, a, b))
-    end
-    @inbounds begin
-        s = eval_start(d, a, b)
-        if size(a) == size(b)
-            if p === nothing
+            if size(a) == size(b)
                 @simd for I in eachindex(a, b)
                     ai = a[I]
                     bi = b[I]
                     s = eval_reduce(d, s, eval_op(d, ai, bi))
                 end
             else
-                @simd for I in eachindex(a, b, p)
-                    aI = a[I]
-                    bI = b[I]
-                    pI = p[I]
-                    s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
-                end
-            end
-        else
-            if p === nothing
                 for (Ia, Ib) in zip(eachindex(a), eachindex(b))
                     ai = a[Ia]
                     bi = b[Ib]
                     s = eval_reduce(d, s, eval_op(d, ai, bi))
                 end
-            else
-                for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
-                    aI = a[Ia]
-                    bI = b[Ib]
-                    pI = p[Ip]
-                    s = eval_reduce(d, s, eval_op(d, aI, bI, pI))
-                end
             end
         end
+        return eval_end(d, s)
     end
-    return eval_end(d, s)
 end
 
-@inline function _evaluate(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
+@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
-    @boundscheck if length(a) != length(d.weights)
-        throw(DimensionMismatch("arrays have length $(length(a)) but weights have length $(length(d.weights))."))
+    @boundscheck if length(a) != length(p)
+        throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
     end
     if length(a) == 0
-        return zero(result_type(d, a, b))
+        return zero(result_type(d, a, b, p))
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if size(a) == size(b)
-            @simd for I in eachindex(a, b, d.weights)
+        if IndexStyle(a, b, p) === IndexLinear()
+            @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
-                wi = d.weights[I]
-                s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+                pi = p[I]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         else
-            for (Ia, Ib, Iw) in zip(eachindex(a), eachindex(b), eachindex(d.weights))
-                ai = a[Ia]
-                bi = b[Ib]
-                wi = d.weights[Iw]
-                s = eval_reduce(d, s, eval_op(d, ai, bi, wi))
+            if size(a) == size(b)
+                @simd for I in eachindex(a, b, p)
+                    ai = a[I]
+                    bi = b[I]
+                    pi = p[I]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+                end
+            else
+                for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
+                    ai = a[Ia]
+                    bi = b[Ib]
+                    pi = p[Ip]
+                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+                end
             end
         end
+        return eval_end(d, s)
     end
-    return eval_end(d, s)
 end
 
-result_type(dist::UnionMetrics, Ta::Type, Tb::Type) =
-    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
-eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) =
-    zero(result_type(d, a, b))
+_evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
+function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
+    length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
+    eval_end(dist, eval_op(dist, a, b, first(p)))
+end
+
+eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) = zero(result_type(d, a, b))
+eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
 eval_end(d::UnionMetrics, s) = s
-result_type(dist::UnionWeightedMetrics, Ta::Type, Tb::Type) =
-    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
-@inline function eval_start(d::UnionWeightedMetrics, a::AbstractArray, b::AbstractArray)
-    zero(result_type(d, a, b))
+
+for M in (metrics..., weightedmetrics...)
+    @eval @inline (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b, parameters(dist))
+    if M != SpanNormDist
+        @eval @inline (dist::$M)(a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
+    end
 end
-eval_end(d::UnionWeightedMetrics, s) = s
-
-for M in metrics
-    @eval @inline (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b)
-    @eval @inline (dist::$M)(a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b))
-end
-for M in weightedmetrics
-    @eval (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b)
-    @eval (dist::$M)(a::Number, b::Number) = eval_end(dist, eval_op(dist, a, b, oneunit(eltype(dist))))
-end
-
-# SqEuclidean
-@inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
-@inline eval_reduce(::SqEuclidean, s1, s2) = s1 + s2
-
-sqeuclidean(a::AbstractArray, b::AbstractArray) = SqEuclidean()(a, b)
-sqeuclidean(a::Number, b::Number) = SqEuclidean()(a, b)
-
-# Weighted Squared Euclidean
-@inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
-@inline eval_reduce(::WeightedSqEuclidean, s1, s2) = s1 + s2
-wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedSqEuclidean(w)(a, b)
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
-@inline eval_reduce(::Euclidean, s1, s2) = s1 + s2
 eval_end(::Euclidean, s) = sqrt(s)
 euclidean(a::AbstractArray, b::AbstractArray) = Euclidean()(a, b)
 euclidean(a::Number, b::Number) = Euclidean()(a, b)
 
 # Weighted Euclidean
 @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
-@inline eval_reduce(::WeightedEuclidean, s1, s2) = s1 + s2
-@inline eval_end(::WeightedEuclidean, s) = sqrt(s)
+eval_end(::WeightedEuclidean, s) = sqrt(s)
 weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedEuclidean(w)(a, b)
+weuclidean(a::Number, b::Number, w::Real) = WeightedEuclidean([w])(a, b)
 
 # PeriodicEuclidean
-Base.eltype(d::PeriodicEuclidean) = eltype(d.periods)
-@inline parameters(d::PeriodicEuclidean) = d.periods
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
     s1 = abs(ai - bi)
     s2 = mod(s1, p)
     s3 = min(s2, p - s2)
     abs2(s3)
 end
-@inline function eval_op(d::PeriodicEuclidean, ai, bi)
-    periods = d.periods
-    p = isempty(periods) ? oneunit(eltype(periods)) : first(periods)
-    eval_op(d, ai, bi, p)
-end
-@inline eval_reduce(::PeriodicEuclidean, s1, s2) = s1 + s2
-@inline eval_end(::PeriodicEuclidean, s) = sqrt(s)
+eval_end(::PeriodicEuclidean, s) = sqrt(s)
 peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
     PeriodicEuclidean(p)(a, b)
 peuclidean(a::Number, b::Number, p::Real) = PeriodicEuclidean([p])(a, b)
 
+# SqEuclidean
+@inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
+sqeuclidean(a::AbstractArray, b::AbstractArray) = SqEuclidean()(a, b)
+sqeuclidean(a::Number, b::Number) = SqEuclidean()(a, b)
+
+# Weighted Squared Euclidean
+@inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
+wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedSqEuclidean(w)(a, b)
+wsqeuclidean(a::Number, b::Number, w::Real) = WeightedSqEuclidean([w])(a, b)
+
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
-@inline eval_reduce(::Cityblock, s1, s2) = s1 + s2
 cityblock(a::AbstractArray, b::AbstractArray) = Cityblock()(a, b)
 cityblock(a::Number, b::Number) = Cityblock()(a, b)
 
-# City Block
+# Weighted City Block
 @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
-@inline eval_reduce(::WeightedCityblock, s1, s2) = s1 + s2
 wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedCityblock(w)(a, b)
+wcityblock(a::Number, b::Number, w::Real) = WeightedCityblock([w])(a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
-@inline eval_reduce(::TotalVariation, s1, s2) = s1 + s2
 eval_end(::TotalVariation, s) = s / 2
 totalvariation(a::AbstractArray, b::AbstractArray) = TotalVariation()(a, b)
 totalvariation(a::Number, b::Number) = TotalVariation()(a, b)
@@ -407,32 +364,30 @@ chebyshev(a::AbstractArray, b::AbstractArray) = Chebyshev()(a, b)
 chebyshev(a::Number, b::Number) = Chebyshev()(a, b)
 
 # Minkowski
-@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi).^dist.p
-@inline eval_reduce(::Minkowski, s1, s2) = s1 + s2
-eval_end(dist::Minkowski, s) = s.^(1 / dist.p)
+@inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi)^dist.p
+@inline eval_end(dist::Minkowski, s) = s^(1 / dist.p)
 minkowski(a::AbstractArray, b::AbstractArray, p::Real) = Minkowski(p)(a, b)
 minkowski(a::Number, b::Number, p::Real) = Minkowski(p)(a, b)
 
 # Weighted Minkowski
-@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi).^dist.p * wi
-@inline eval_reduce(::WeightedMinkowski, s1, s2) = s1 + s2
-eval_end(dist::WeightedMinkowski, s) = s.^(1 / dist.p)
+@inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi)^dist.p * wi
+@inline eval_end(dist::WeightedMinkowski, s) = s^(1 / dist.p)
 wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = WeightedMinkowski(w, p)(a, b)
+wminkowski(a::Number, b::Number, w::Real, p::Real) = WeightedMinkowski([w], p)(a, b)
 
 # Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
-@inline eval_reduce(::Hamming, s1, s2) = s1 + s2
 hamming(a::AbstractArray, b::AbstractArray) = Hamming()(a, b)
 hamming(a::Number, b::Number) = Hamming()(a, b)
 
 # WeightedHamming
 @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
-@inline eval_reduce(::WeightedHamming, s1, s2) = s1 + s2
 whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedHamming(w)(a, b)
+whamming(a::Number, b::Number, w::Real) = WeightedHamming([w])(a, b)
 
 # Cosine dist
 @inline function eval_start(dist::CosineDist, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T), zero(T)
 end
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
@@ -443,31 +398,31 @@ end
 end
 function eval_end(::CosineDist, s)
     ab, a2, b2 = s
-    max(1 - ab / (sqrt(a2) * sqrt(b2)), zero(eltype(ab)))
+    max(1 - ab / (sqrt(a2) * sqrt(b2)), 0)
 end
 cosine_dist(a::AbstractArray, b::AbstractArray) = CosineDist()(a, b)
+cosine_dist(a::Number, b::Number) = CosineDist()(a, b)
 
-# Correlation Dist
+# CorrDist
 _centralize(x::AbstractArray) = x .- mean(x)
 (dist::CorrDist)(a::AbstractArray, b::AbstractArray) = CosineDist()(_centralize(a), _centralize(b))
+(dist::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
 corr_dist(a::AbstractArray, b::AbstractArray) = CorrDist()(a, b)
-result_type(::CorrDist, Ta::Type, Tb::Type) = result_type(CosineDist(), Ta, Tb)
+corr_dist(a::Number, b::Number) = CorrDist()(a, b)
+# result_type(::CorrDist, Ta::Type, Tb::Type) = result_type(CosineDist(), Ta, Tb)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
-@inline eval_reduce(::ChiSqDist, s1, s2) = s1 + s2
 chisq_dist(a::AbstractArray, b::AbstractArray) = ChiSqDist()(a, b)
 
 # KLDivergence
 @inline eval_op(dist::KLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
-@inline eval_reduce(::KLDivergence, s1, s2) = s1 + s2
 kl_divergence(a::AbstractArray, b::AbstractArray) = KLDivergence()(a, b)
 
 # GenKLDivergence
 @inline eval_op(dist::GenKLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
-@inline eval_reduce(::GenKLDivergence, s1, s2) = s1 + s2
 gkl_divergence(a::AbstractArray, b::AbstractArray) = GenKLDivergence()(a, b)
 
 # RenyiDivergence
@@ -524,6 +479,7 @@ let docstring = Base.Docs.getdoc(RenyiDivergence)
 end
 
 # JSDivergence
+
 @inline function eval_op(::JSDivergence, ai::T, bi::T) where {T}
     u = (ai + bi) / 2
     ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
@@ -531,14 +487,16 @@ end
     tu = u > 0 ? u * log(u) : zero(log(one(T)))
     ta + tb - tu
 end
-@inline eval_reduce(::JSDivergence, s1, s2) = s1 + s2
 js_divergence(a::AbstractArray, b::AbstractArray) = JSDivergence()(a, b)
 
 # SpanNormDist
+
+result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
+     typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
 @inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
-@inline eval_op(::SpanNormDist, ai, bi)  = ai - bi
+eval_op(::SpanNormDist, ai, bi)  = ai - bi
 @inline function eval_reduce(::SpanNormDist, s1, s2)
     min_d, max_d = s1
     if s2 > max_d
@@ -550,15 +508,15 @@ end
 end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
+(::SpanNormDist)(a::Number, b::Number) = zero(promote_type(typeof(a), typeof(b)))
 spannorm_dist(a::AbstractArray, b::AbstractArray) = SpanNormDist()(a, b)
-result_type(dist::SpanNormDist, Ta::Type, Tb::Type) =
-    typeof(eval_op(dist, oneunit(Ta), oneunit(Tb)))
+spannorm_dist(a::Number, b::Number) = SpanNormDist()(a, b)
 
 # Jaccard
 
 @inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline function eval_start(dist::Jaccard, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T)
 end
 @inline function eval_op(::Jaccard, s1, s2)
@@ -576,12 +534,12 @@ end
     return v
 end
 jaccard(a::AbstractArray, b::AbstractArray) = Jaccard()(a, b)
+jaccard(a::Number, b::Number) = Jaccard()(a, b)
 
 # BrayCurtis
 
-@inline eval_start(::BrayCurtis, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
 @inline function eval_start(dist::BrayCurtis, a::AbstractArray, b::AbstractArray)
-    T = Base.promote_typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b)))...)
+    T = result_type(dist, a, b)
     zero(T), zero(T)
 end
 @inline function eval_op(::BrayCurtis, s1, s2)
@@ -599,7 +557,7 @@ end
     return v
 end
 braycurtis(a::AbstractArray, b::AbstractArray) = BrayCurtis()(a, b)
-
+braycurtis(a::Number, b::Number) = BrayCurtis()(a, b)
 
 # Tanimoto
 
