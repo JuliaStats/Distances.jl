@@ -5,7 +5,6 @@
 #   Metric types
 #
 ###########################################################
-const RealAbstractArray{T <: Real} =  AbstractArray{T}
 
 struct Euclidean <: Metric
     thresh::Float64
@@ -41,7 +40,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W <: RealAbstractArray} <: Metric
+struct WeightedEuclidean{W <: AbstractArray{<:Real}} <: Metric
     weights::W
 end
 
@@ -79,14 +78,14 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
-struct WeightedSqEuclidean{W <: RealAbstractArray} <: SemiMetric
+struct WeightedSqEuclidean{W <: AbstractArray{<:Real}} <: SemiMetric
     weights::W
 end
 
 struct Chebyshev <: Metric end
 
 struct Cityblock <: Metric end
-struct WeightedCityblock{W <: RealAbstractArray} <: Metric
+struct WeightedCityblock{W <: AbstractArray{<:Real}} <: Metric
     weights::W
 end
 
@@ -97,13 +96,13 @@ struct RogersTanimoto <: Metric end
 struct Minkowski{T <: Real} <: Metric
     p::T
 end
-struct WeightedMinkowski{W <: RealAbstractArray,T <: Real} <: Metric
+struct WeightedMinkowski{W <: AbstractArray{<:Real},T <: Real} <: Metric
     weights::W
     p::T
 end
 
 struct Hamming <: Metric end
-struct WeightedHamming{W <: RealAbstractArray} <: Metric
+struct WeightedHamming{W <: AbstractArray{<:Real}} <: Metric
     weights::W
 end
 
