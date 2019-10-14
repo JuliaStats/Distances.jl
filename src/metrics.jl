@@ -205,15 +205,14 @@ result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing) =
 result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, p) =
     typeof(_evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b)), oneunit(eltype(p))))
 
-@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     _evaluate(d, a, b, parameters(d))
 end
 _evaluate(dist::UnionMetrics, a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
 
-# Specialized for Arrays and avoids a branch on the size
-@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -222,32 +221,24 @@ _evaluate(dist::UnionMetrics, a::Number, b::Number) = _evaluate(dist, a, b, para
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b) === IndexLinear()
+        if IndexStyle(a, b) === IndexLinear() || size(a) == size(b)
             @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         else
-            if size(a) == size(b)
-                @simd for I in eachindex(a, b)
-                    ai = a[I]
-                    bi = b[I]
-                    s = eval_reduce(d, s, eval_op(d, ai, bi))
-                end
-            else
-                for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-                    ai = a[Ia]
-                    bi = b[Ib]
-                    s = eval_reduce(d, s, eval_op(d, ai, bi))
-                end
+            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+                ai = a[Ia]
+                bi = b[Ib]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         end
         return eval_end(d, s)
     end
 end
 
-@inline Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -259,7 +250,7 @@ end
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b, p) === IndexLinear()
+        if IndexStyle(a, b, p) === IndexLinear() || size(a) == size(b)
             @simd for I in 1:length(a)
                 ai = a[I]
                 bi = b[I]
@@ -267,20 +258,11 @@ end
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         else
-            if size(a) == size(b)
-                @simd for I in eachindex(a, b, p)
-                    ai = a[I]
-                    bi = b[I]
-                    pi = p[I]
-                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
-                end
-            else
-                for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
-                    ai = a[Ia]
-                    bi = b[Ib]
-                    pi = p[Ip]
-                    s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
-                end
+            for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
+                ai = a[Ia]
+                bi = b[Ib]
+                pi = p[Ip]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         end
         return eval_end(d, s)
@@ -358,7 +340,7 @@ totalvariation(a::Number, b::Number) = TotalVariation()(a, b)
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-@inline Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
 chebyshev(a::AbstractArray, b::AbstractArray) = Chebyshev()(a, b)
 chebyshev(a::Number, b::Number) = Chebyshev()(a, b)
 
@@ -408,7 +390,6 @@ _centralize(x::AbstractArray) = x .- mean(x)
 (dist::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
 corr_dist(a::AbstractArray, b::AbstractArray) = CorrDist()(a, b)
 corr_dist(a::Number, b::Number) = CorrDist()(a, b)
-# result_type(::CorrDist, Ta::Type, Tb::Type) = result_type(CosineDist(), Ta, Tb)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
@@ -425,7 +406,7 @@ kl_divergence(a::AbstractArray, b::AbstractArray) = KLDivergence()(a, b)
 gkl_divergence(a::AbstractArray, b::AbstractArray) = GenKLDivergence()(a, b)
 
 # RenyiDivergence
-@inline Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
@@ -492,7 +473,7 @@ js_divergence(a::AbstractArray, b::AbstractArray) = JSDivergence()(a, b)
 
 result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
      typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-@inline Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
+Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
 end
 eval_op(::SpanNormDist, ai, bi)  = ai - bi
