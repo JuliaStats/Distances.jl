@@ -222,7 +222,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     @inbounds begin
         s = eval_start(d, a, b)
         if IndexStyle(a, b) === IndexLinear() || size(a) == size(b)
-            @simd for I in 1:length(a)
+            @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
@@ -251,7 +251,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     @inbounds begin
         s = eval_start(d, a, b)
         if IndexStyle(a, b, p) === IndexLinear() || size(a) == size(b)
-            @simd for I in 1:length(a)
+            @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
                 pi = p[I]
