@@ -480,6 +480,14 @@ end
     test_colwise(Mahalanobis(Q), X, Y, T)
 end
 
+@testset "pairwise Tables.jl interface" begin
+    t = [(a=1, b=2), (a=2, b=3), (a=0, b=5)]
+    a = [1 2; 2 3; 0 5]
+    @test pairwise(Euclidean(), t) == pairwise(Euclidean(), a, dims=1)
+
+    @test_throws ArgumentError pairwise(Euclidean(), [1])
+end
+
 function test_pairwise(dist, x, y, T)
     @testset "Pairwise test for $(typeof(dist))" begin
         nx = size(x, 2)

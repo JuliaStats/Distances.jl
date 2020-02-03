@@ -103,6 +103,15 @@ For performance reasons, it is recommended to use matrices with observations in 
 the `Array` type in Julia is column-major, making it more efficient to access memory column by column. However,
 matrices with observations stored in rows are also supported via the argument `dims=1`.
 
+A convenience method is provided to compute pairwise distances between observations stored as rows in
+any type of tabular data structure supported by the [Tables.jl](https://github.com/JuliaData/Tables.jl)
+interface. Here is an example using a [`DataFrame`](https://github.com/JuliaData/DataFrames.jl):
+```julia
+using DataFrames
+df = DataFrame(x = [1, 2, 3], y = [2, 5, 3])
+pairwise(Euclidean(), df)
+```
+
 #### Computing column-wise and pairwise distances inplace
 
 If the vector/matrix to store the results are pre-allocated, you may use the storage (without creating a new array) using the following syntax (`i` being either `1` or `2`):

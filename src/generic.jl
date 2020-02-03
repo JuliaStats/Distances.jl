@@ -212,3 +212,16 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
 end
+
+"""
+    pairwise(metric::PreMetric, t)
+
+Compute distances between each pair of observations (i.e. rows) in table `t`
+according to distance `metric`. `t` can be any type of table supported by
+the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface.
+"""
+function pairwise(metric::PreMetric, t::Any)
+    # TODO: avoid permuting using https://github.com/JuliaData/Tables.jl/pull/66
+    a = permutedims(Tables.matrix(t))
+    pairwise(metric, a, dims=2)
+end

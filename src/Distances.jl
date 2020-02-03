@@ -4,6 +4,7 @@ module Distances
 
 using LinearAlgebra
 using Statistics
+using Tables
 
 export
     # generic types/functions
