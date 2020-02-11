@@ -139,7 +139,7 @@ perform computation for half of the pairs, and derive the values immediately for
 `Metric` do not completely follow the definition in mathematics as they do not require the "distance" to be able
 to distinguish between points: for these types `x != y` does not imply
 that `d(x, y) != 0` in general compared to the mathematical
-definition of semi-metric and metric, as this property do not change
+definition of semi-metric and metric, as this property does not change
 computations in practice.
 
 Each distance corresponds to a distance type. The type name and the corresponding mathematical definitions of the distances are listed in the following table.
