@@ -1,5 +1,12 @@
 # Unit tests for Distances
 
+"Mapx `x` to the probability simplex"
+function positive_and_normed(x)
+    abs_x = abs.(x)
+    M = sum(abs_x)
+    abs_x./M
+end
+
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         @test dist(x, y) == evaluate(dist, x, y)
@@ -117,6 +124,11 @@ end
     test_metricity(RenyiDivergence(2), p, q, r)
     test_metricity(RenyiDivergence(10), p, q, r)
     test_metricity(JSDivergence(), p, q, r)
+
+    let x′, y′, z′
+        x′, y′, z′ = positive_and_normed.([x, y, z])
+        test_metricity(Wasserstein(), x′, y′, z′)
+    end
 end
 
 @testset "individual metrics" begin
@@ -177,6 +189,13 @@ end
             @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
             @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
             @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+
+            let x′, y′ = positive_and_normed.[x, y]
+                @test wasserstein(x′, y′) == 88.0
+                @test wasserstein(x′, y′, 2) == 89.0
+            end
+            @test_throws AssertionError wasserstein(x, y)
+            @test_throws AssertionError Wasserstein(0.5)
         end
 
         # Test ChiSq doesn't give NaN at zero
@@ -267,6 +286,7 @@ end #testset
         @test isa(renyi_divergence(a, b, 2.0), T)
         @test braycurtis(a, b) == 0.0
         @test isa(braycurtis(a, b), T)
+        @test isa(wasserstein(a, b), T)
 
         w = T[]
         @test isa(whamming(a, b, w), T)
@@ -478,6 +498,7 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
+    test_colwise(Wasserstein(), X, Y, T)
 end
 
 function test_pairwise(dist, x, y, T)
@@ -555,6 +576,7 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
+    test_pairwise(Wasserstein, X, Y, T)
 end
 
 @testset "Euclidean precision" begin
