@@ -595,20 +595,3 @@ end
     end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
 end
-
-#=
-@testset "zero allocation colwise!" begin
-    d = Euclidean()
-    a = rand(2, 41)
-    b = rand(2, 41)
-    z = zeros(41)
-    colwise!(z, d, a, b)
-    # This fails when bounds checking is enforced
-    bounds = Base.JLOptions().check_bounds
-    if bounds == 0
-        @test (@allocated colwise!(z, d, a, b)) == 0
-    else
-        @test_broken (@allocated colwise!(z, d, a, b)) == 0
-    end
-end
-=#
