@@ -190,8 +190,10 @@ end
             @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
             @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
 
-            let x′, y′ = positive_and_normed.[x, y]
+            let x′, y′
+                x′, y′ = positive_and_normed.([x, y])
                 @test wasserstein(x′, y′) == 88.0
+                @test wasserstein(x′, y′) !=  wasserstein(x′, y′, 2)
                 @test wasserstein(x′, y′, 2) == 89.0
             end
             @test_throws AssertionError wasserstein(x, y)
