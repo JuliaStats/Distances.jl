@@ -17,10 +17,13 @@ end
 
 Wasserstein() = Wasserstein(1.0)
 
-function (dist::Wasserstein)(a::AbstractVector, b::AbstractVector)
+function (dist::Wasserstein)(a::AbstractArray{T}, b::AbstractArray{T}) where {T}
     @assert length(a) == length(b)
-    @assert sum(a) ≈ 1.0 atol=1e-6
-    @assert sum(b) ≈ 1.0 atol=1e-6
+
+    isempty(a) && return zero(T)
+
+    @assert isapprox(sum(a), 1.0, atol=1e-6) "sum(a) needs to be ~1 but is $(sum(a))"
+    @assert isapprox(sum(b), 1.0, atol=1e-6) "sum(b) needs to be ~1 but is $(sum(b))"
 
     model = make_wasserstein_model(a, b, dist.p)
     optimize!(model)
@@ -34,7 +37,7 @@ Create JuMP `Model` for linear program to calculate the p-Wasserstein distance
 of two discrete vectors from the same probability simplex. See also formula 
 (2.5) in [Optimal Transport on Discrete Domains](https://arxiv.org/abs/1801.07745).
 """
-function make_wasserstein_model(a::AbstractVector, b::AbstractVector, p::Float64) :: Model
+function make_wasserstein_model(a::AbstractArray, b::AbstractArray, p::Float64) :: Model
     model = Model(with_optimizer(Cbc.Optimizer, logLevel=0))
 
     N = length(a)
@@ -67,4 +70,4 @@ function make_wasserstein_model(a::AbstractVector, b::AbstractVector, p::Float64
     model
 end
 
-wasserstein(a::AbstractVector, b::AbstractVector, p::Float64=1.0) = Wasserstein(p)(a, b)
+wasserstein(a::AbstractArray, b::AbstractArray, p::Float64=1.0) = Wasserstein(p)(a, b)

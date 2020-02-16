@@ -192,9 +192,9 @@ end
 
             let x′, y′
                 x′, y′ = positive_and_normed.([x, y])
-                @test wasserstein(x′, y′) == 88.0
-                @test wasserstein(x′, y′) !=  wasserstein(x′, y′, 2)
-                @test wasserstein(x′, y′, 2) == 89.0
+                @test wasserstein(x′, y′) ≈ 0.471861471 atol=1e-6
+                @test wasserstein(x′, y′) != wasserstein(x′, y′, 2.0)
+                @test wasserstein(x′, y′, 2.0) ≈ 0.68692173634 atol=1e-6
             end
             @test_throws AssertionError wasserstein(x, y)
             @test_throws AssertionError Wasserstein(0.5)
@@ -444,6 +444,19 @@ function test_colwise(dist, x, y, T)
     end
 end
 
+function positive_and_normed_colwise(x, T)
+    rows, cols = size(x)
+    X = zeros(T, rows, cols)
+    @assert size(x) == size(X)
+    for i in 1:cols
+        normed_col = positive_and_normed(x[:, i])
+        for j in 1:rows
+            X[j, i] = normed_col[j]
+        end
+    end
+    X
+end
+
 @testset "column-wise metrics on $T" for T in (Float64, F64)
     m = 5
     n = 8
@@ -500,7 +513,11 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
-    test_colwise(Wasserstein(), X, Y, T)
+    let X′, Y′
+        X′ = positive_and_normed_colwise(X, T)
+        Y′ = positive_and_normed_colwise(Y, T)
+        test_colwise(Wasserstein(), X′, Y′, T)
+    end
 end
 
 function test_pairwise(dist, x, y, T)
@@ -578,7 +595,11 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
-    test_pairwise(Wasserstein, X, Y, T)
+    let X′, Y′
+        X′ = positive_and_normed_colwise(X, T)
+        Y′ = positive_and_normed_colwise(Y, T)
+        test_pairwise(Wasserstein(), X′, Y′, T)
+    end
 end
 
 @testset "Euclidean precision" begin
