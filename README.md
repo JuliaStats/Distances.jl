@@ -38,6 +38,7 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Normalized root mean squared deviation
 * Bray-Curtis dissimilarity
 * Bregman divergence
+* Wasserstein distance
 
 For `Euclidean distance`, `Squared Euclidean distance`, `Cityblock distance`, `Minkowski distance`, and `Hamming distance`, a weighted version is also provided.
 
@@ -173,6 +174,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedMinkowski   |  `wminkowski(x, y, w, p)`  | `sum(abs(x - y).^p .* w) ^ (1/p)` |
 |  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
 |  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` |
+| p-Wasserstein | `wasserstein(a, b, p)` | See (2,5) [here](https://arxiv.org/abs/1801.07745) | 
 
 **Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way. The arguments `x` and `y` are arrays of real numbers; `k` and `l` are arrays of distinct elements of any kind; a and b are arrays of Bools; and finally, `p` and `q` are arrays forming a discrete probability distribution and are therefore both expected to sum to one.
 
@@ -203,6 +205,11 @@ julia> pairwise(Euclidean(1e-12), x, x)
  0.0
 ```
 
+## Notes on Wasserstein distance
+
+The p-Wasserstein distances can only be calculated for values of the same probability simplex (i.e. non-negative real values with sum 1)
+
+The calculation of the p-Wasserstein distance contains the solution of a linear program in `N^2` variables. This metric is quite expensive to calculate.
 
 ## Benchmarks
 
