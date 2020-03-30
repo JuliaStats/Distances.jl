@@ -636,20 +636,26 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:nb
         sb = sb2[j]
-        for i = 1:na
-            selfterms = sa2[i] + sb
-            v = max(selfterms - 2 * r[i, j], 0)
-            if v < threshT * selfterms
-                # The distance is likely to be inaccurate, recalculate directly
-                # This reflects the following:
-                #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
-                #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
-                v = zero(v)
-                for k = 1:m
-                    v += (a[k, i] - b[k, j])^2
-                end
+        if threshT <= 0
+            @simd for i = 1:na
+                r[i, j] = sqrt(max(sa2[i] + sb - 2 * r[i, j], 0))
             end
-            r[i, j] = sqrt(v)
+        else
+            for i = 1:na
+                selfterms = sa2[i] + sb
+                v = max(selfterms - 2 * r[i, j], 0)
+                if v < threshT * selfterms
+                    # The distance is likely to be inaccurate, recalculate directly
+                    # This reflects the following:
+                    #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
+                    #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
+                    v = zero(v)
+                    for k = 1:m
+                        v += (a[k, i] - b[k, j])^2
+                    end
+                end
+                r[i, j] = sqrt(v)
+            end
         end
     end
     r
@@ -666,16 +672,22 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
         end
         r[j, j] = 0
         sa2j = sa2[j]
-        for i = (j + 1):n
-            selfterms = sa2[i] + sa2j
-            v = max(selfterms - 2 * r[i, j], 0)
-            if v < threshT * selfterms
-                v = zero(v)
-                for k = 1:m
-                    v += (a[k, i] - a[k, j])^2
-                end
+        if threshT <= 0
+            @simd for i = (j + 1):n
+                r[i, j] = sqrt(max(sa2[i] + sa2j - 2 * r[i, j], 0))
             end
-            r[i, j] = sqrt(v)
+        else
+            for i = (j + 1):n
+                selfterms = sa2[i] + sa2j
+                v = max(selfterms - 2 * r[i, j], 0)
+                if v < threshT * selfterms
+                    v = zero(v)
+                    for k = 1:m
+                        v += (a[k, i] - a[k, j])^2
+                    end
+                end
+                r[i, j] = sqrt(v)
+            end
         end
     end
     r
