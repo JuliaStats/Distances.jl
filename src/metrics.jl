@@ -2,11 +2,23 @@
 
 ###########################################################
 #
+#   Abstract metric types
+#
+###########################################################
+
+abstract type UnionPreMetric <: PreMetric end
+
+abstract type UnionSemiMetric <: SemiMetric end
+
+abstract type UnionMetric <: Metric end
+
+###########################################################
+#
 #   Metric types
 #
 ###########################################################
 
-struct Euclidean <: Metric
+struct Euclidean <: UnionMetric
     thresh::Float64
 end
 
@@ -40,7 +52,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W <: AbstractArray{<:Real}} <: Metric
+struct WeightedEuclidean{W <: AbstractArray{<:Real}} <: UnionMetric
     weights::W
 end
 
@@ -62,11 +74,11 @@ julia> evaluate(PeriodicEuclidean(L), x, y)
 0.25
 ```
 """
-struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: Metric
+struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: UnionMetric
     periods::W
 end
 
-struct SqEuclidean <: SemiMetric
+struct SqEuclidean <: UnionSemiMetric
     thresh::Float64
 end
 
@@ -78,42 +90,42 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
-struct WeightedSqEuclidean{W <: AbstractArray{<:Real}} <: SemiMetric
+struct WeightedSqEuclidean{W <: AbstractArray{<:Real}} <: UnionSemiMetric
     weights::W
 end
 
-struct Chebyshev <: Metric end
+struct Chebyshev <: UnionMetric end
 
-struct Cityblock <: Metric end
-struct WeightedCityblock{W <: AbstractArray{<:Real}} <: Metric
+struct Cityblock <: UnionMetric end
+struct WeightedCityblock{W <: AbstractArray{<:Real}} <: UnionMetric
     weights::W
 end
 
-struct TotalVariation <: Metric end
-struct Jaccard <: Metric end
-struct RogersTanimoto <: Metric end
+struct TotalVariation <: UnionMetric end
+struct Jaccard <: UnionMetric end
+struct RogersTanimoto <: UnionMetric end
 
-struct Minkowski{T <: Real} <: Metric
+struct Minkowski{T <: Real} <: UnionMetric
     p::T
 end
-struct WeightedMinkowski{W <: AbstractArray{<:Real},T <: Real} <: Metric
+struct WeightedMinkowski{W <: AbstractArray{<:Real},T <: Real} <: UnionMetric
     weights::W
     p::T
 end
 
-struct Hamming <: Metric end
-struct WeightedHamming{W <: AbstractArray{<:Real}} <: Metric
+struct Hamming <: UnionMetric end
+struct WeightedHamming{W <: AbstractArray{<:Real}} <: UnionMetric
     weights::W
 end
 
-struct CosineDist <: SemiMetric end
+struct CosineDist <: UnionSemiMetric end
 # CorrDist is excluded from `UnionMetrics`
 struct CorrDist <: SemiMetric end
-struct BrayCurtis <: SemiMetric end
+struct BrayCurtis <: UnionSemiMetric end
 
-struct ChiSqDist <: SemiMetric end
-struct KLDivergence <: PreMetric end
-struct GenKLDivergence <: PreMetric end
+struct ChiSqDist <: UnionSemiMetric end
+struct KLDivergence <: UnionPreMetric end
+struct GenKLDivergence <: UnionPreMetric end
 
 """
     RenyiDivergence(α::Real)
@@ -149,7 +161,7 @@ julia> pairwise(Euclidean(2), x, x)
  0.655407  0.0
 ```
 """
-struct RenyiDivergence{T <: Real} <: PreMetric
+struct RenyiDivergence{T <: Real} <: UnionPreMetric
     p::T # order of power mean (order of divergence - 1)
     is_normal::Bool
     is_zero::Bool
@@ -171,9 +183,9 @@ struct RenyiDivergence{T <: Real} <: PreMetric
 end
 RenyiDivergence(q::T) where {T} = RenyiDivergence{T}(q)
 
-struct JSDivergence <: SemiMetric end
+struct JSDivergence <: UnionSemiMetric end
 
-struct SpanNormDist <: SemiMetric end
+struct SpanNormDist <: UnionSemiMetric end
 
 # Deviations are handled separately from the other distances/divergences and
 # are excluded from `UnionMetrics`
@@ -185,8 +197,7 @@ struct NormRMSDeviation <: PreMetric end
 # Union types
 const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionWeightedMetrics = Union{weightedmetrics...}
-const UnionMetrics = Union{metrics...,weightedmetrics...}
+const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
 
 ###########################################################
 #
@@ -194,9 +205,13 @@ const UnionMetrics = Union{metrics...,weightedmetrics...}
 #
 ###########################################################
 
-parameters(::UnionMetrics) = nothing
+parameters(::UnionPreMetric) = nothing
+parameters(::UnionSemiMetric) = nothing
+parameters(::UnionMetric) = nothing
 parameters(d::PeriodicEuclidean) = d.periods
-parameters(d::UnionWeightedMetrics) = d.weights
+for dist in weightedmetrics
+    @eval parameters(d::$dist) = d.weights
+end
 
 result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
     result_type(dist, a, b, parameters(dist))
