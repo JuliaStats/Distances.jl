@@ -133,13 +133,13 @@ At the top of this hierarchy is an abstract class **PreMetric**, which is define
 
 	d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
 
-This type system has practical significance. For example, when computing pairwise distances between a set of vectors, you may only
-perform computation for half of the pairs, and derive the values immediately for the remaining halve by leveraging the symmetry of
-*semi-metrics*. Note that the types of `SemiMetric` and
-`Metric` do not completely follow the definition in mathematics as they do not require the "distance" to be able
-to distinguish between points: for these types `x != y` does not imply
-that `d(x, y) != 0` in general compared to the mathematical
-definition of semi-metric and metric, as this property does not change
+This type system has practical significance. For example, when computing pairwise distances
+between a set of vectors, you may only perform computation for half of the pairs, derive the
+values immediately for the remaining half by leveraging the symmetry of *semi-metrics*. Note
+that the types of `SemiMetric` and `Metric` do not completely follow the definition in
+mathematics as they do not require the "distance" to be able to distinguish between points:
+for these types `x != y` does not imply that `d(x, y) != 0` in general compared to the
+mathematical definition of semi-metric and metric, as this property does not change
 computations in practice.
 
 Each distance corresponds to a distance type. The type name and the corresponding mathematical definitions of the distances are listed in the following table.
