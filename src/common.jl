@@ -91,6 +91,9 @@ end
 #
 ###########################################################
 
+_sqrt(a::AbstractArray{<:Integer}) = sqrt.(a)
+_sqrt(a) = sqrt!(a)
+
 function sqrt!(a::AbstractArray)
     @simd for i in eachindex(a)
         @inbounds a[i] = sqrt(a[i])
