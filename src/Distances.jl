@@ -1,5 +1,3 @@
-__precompile__()
-
 module Distances
 
 using LinearAlgebra
@@ -102,7 +100,6 @@ export
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
-include("wmetrics.jl")
 include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
