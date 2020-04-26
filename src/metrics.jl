@@ -786,8 +786,8 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
-    ra = _sqrt(sumsq_percol(a))
-    rb = _sqrt(sumsq_percol(b))
+    ra = norm_percol(a)
+    rb = norm_percol(b)
     for j = 1:nb
         @simd for i = 1:na
             @inbounds r[i, j] = max(1 - r[i, j] / (ra[i] * rb[j]), 0)
@@ -798,7 +798,7 @@ end
 function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
-    ra = _sqrt(sumsq_percol(a))
+    ra = norm_percol(a)
     @inbounds for j = 1:n
         @simd for i = j + 1:n
             r[i, j] = max(1 - r[i, j] / (ra[i] * ra[j]), 0)
