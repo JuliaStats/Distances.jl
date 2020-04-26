@@ -584,6 +584,17 @@ end
     @test pd[2, 2] == 0
 end
 
+@testset "Euclidean non-negativity" begin
+    X = [0.3 0.3 + eps()]
+
+    @test all(x -> x >= 0, pairwise(SqEuclidean(), X; dims = 2))
+    @test all(x -> x >= 0, pairwise(SqEuclidean(), X, X; dims = 2))
+    @test all(x -> x >= 0, pairwise(Euclidean(), X; dims = 2))
+    @test all(x -> x >= 0, pairwise(Euclidean(), X, X; dims = 2))
+    @test all(x -> x >= 0, pairwise(WeightedSqEuclidean([1.0]), X; dims = 2))
+    @test all(x -> x >= 0, pairwise(WeightedSqEuclidean([1.0]), X, X; dims = 2))
+end
+
 @testset "Bregman Divergence" begin
     # Some basic tests.
     @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
