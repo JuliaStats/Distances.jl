@@ -236,7 +236,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b) === IndexLinear() && eachindex(a) == eachindex(b)
+        if IndexStyle(a, b) === IndexLinear() && axes(a) == axes(b)
             @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
@@ -265,7 +265,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b, p) === IndexLinear() && eachindex(a) == eachindex(b) == eachindex(p)
+        if IndexStyle(a, b, p) === IndexLinear() && axes(a) == axes(b) == axes(p)
             @simd for I in eachindex(a, b, p)
                 ai = a[I]
                 bi = b[I]
