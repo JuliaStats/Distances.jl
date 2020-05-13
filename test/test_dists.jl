@@ -170,6 +170,7 @@ end
             x_int, y_int = Int64.(x), Int64.(y)
             @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
             @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
+            @test corr_dist(OffsetVector(x, -1:length(x)-2), y) == corr_dist(x, y)
             @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
             @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
@@ -536,6 +537,7 @@ end
     test_pairwise(Hamming(), A, B, T)
 
     test_pairwise(CosineDist(), X, Y, T)
+    test_pairwise(CosineDist(), A, B, T)
     test_pairwise(CorrDist(), X, Y, T)
 
     test_pairwise(ChiSqDist(), X, Y, T)
