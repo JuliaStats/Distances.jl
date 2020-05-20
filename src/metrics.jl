@@ -236,7 +236,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b) === IndexLinear() || size(a) == size(b)
+        if (IndexStyle(a, b) === IndexLinear() && eachindex(a) == eachindex(b)) || axes(a) == axes(b)
             @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
@@ -265,8 +265,9 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
     @inbounds begin
         s = eval_start(d, a, b)
-        if IndexStyle(a, b, p) === IndexLinear() || size(a) == size(b)
-            @simd for I in eachindex(a, b)
+        if (IndexStyle(a, b, p) === IndexLinear() && eachindex(a) == eachindex(b) == eachindex(p)) ||
+                axes(a) == axes(b) == axes(p)
+            @simd for I in eachindex(a, b, p)
                 ai = a[I]
                 bi = b[I]
                 pi = p[I]
@@ -801,8 +802,8 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
-    ra = sqrt!(sumsq_percol(a))
-    rb = sqrt!(sumsq_percol(b))
+    ra = norm_percol(a)
+    rb = norm_percol(b)
     for j = 1:nb
         @simd for i = 1:na
             @inbounds r[i, j] = max(1 - r[i, j] / (ra[i] * rb[j]), 0)
@@ -813,7 +814,7 @@ end
 function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
-    ra = sqrt!(sumsq_percol(a))
+    ra = norm_percol(a)
     @inbounds for j = 1:n
         @simd for i = j + 1:n
             r[i, j] = max(1 - r[i, j] / (ra[i] * ra[j]), 0)

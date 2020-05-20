@@ -2,6 +2,7 @@ using Distances
 
 using Test
 using LinearAlgebra
+using OffsetArrays
 using Random
 using Statistics
 

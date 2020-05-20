@@ -99,12 +99,22 @@ function sqrt!(a::AbstractArray)
 end
 
 function sumsq_percol(a::AbstractMatrix{T}) where {T}
-    m = size(a, 1)
     n = size(a, 2)
     r = Vector{T}(undef, n)
-    for j = 1:n
+    @simd for j in 1:n
         aj = view(a, :, j)
         r[j] = dot(aj, aj)
+    end
+    return r
+end
+
+function norm_percol(a::AbstractMatrix{T}) where {T}
+    n = size(a, 2)
+    √T = typeof(sqrt(oneunit(T)))
+    r = Vector{√T}(undef, n)
+    @simd for j in 1:n
+        aj = view(a, :, j)
+        r[j] = sqrt(dot(aj, aj))
     end
     return r
 end

@@ -170,6 +170,7 @@ end
             x_int, y_int = Int64.(x), Int64.(y)
             @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
             @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
+            @test corr_dist(OffsetVector(x, -1:length(x)-2), y) == corr_dist(x, y)
             @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
             @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
 
@@ -504,8 +505,8 @@ function test_pairwise(dist, x, y, T)
             rxx[i, j] = dist(x[:, i], x[:, j])
         end
         # As earlier, we have small rounding errors in accumulations
-        @test pairwise(dist, x, y) ≈ rxy
-        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, x, y, dims=2) ≈ rxy
+        @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
@@ -536,6 +537,7 @@ end
     test_pairwise(Hamming(), A, B, T)
 
     test_pairwise(CosineDist(), X, Y, T)
+    test_pairwise(CosineDist(), A, B, T)
     test_pairwise(CorrDist(), X, Y, T)
 
     test_pairwise(ChiSqDist(), X, Y, T)
@@ -570,16 +572,16 @@ end
 
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X)
+    pd = pairwise(Euclidean(1e-12), X, X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(Euclidean(1e-12), X)
+    pd = pairwise(Euclidean(1e-12), X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X)
+    pd = pairwise(SqEuclidean(1e-12), X, X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X)
+    pd = pairwise(SqEuclidean(1e-12), X, dims=2)
     @test pd[1, 1] == 0
     @test pd[2, 2] == 0
 end
