@@ -55,7 +55,7 @@ r = evaluate(dist, x, y)
 r = dist(x, y)
 ```
 
-Here, `dist` is an instance of a distance type. For example, if the type for Euclidean distance is `Euclidean` (more distance types will be introduced in the next section), then you can compute the Euclidean distance between `x` and `y` as
+Here, `dist` is an instance of a distance type: for example, the type for Euclidean distance is `Euclidean` (more distance types will be introduced in the next section). You can compute the Euclidean distance between `x` and `y` as
 
 ```julia
 r = evaluate(Euclidean(), x, y)
