@@ -9,6 +9,7 @@ The computed distance has the same units as that of the radius.
 struct Haversine{T<:Real} <: Metric
     radius::T
 end
+Haversine() = Haversine(6378137.0)
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)
