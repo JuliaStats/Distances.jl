@@ -586,7 +586,7 @@ end
     @test pd[2, 2] == 0
 end
 
-@testset "Euclidean non-negativity" begin
+@testset "non-negativity" begin
     X = [0.3 0.3 + eps()]
 
     @test all(x -> x >= 0, pairwise(SqEuclidean(), X; dims = 2))
@@ -595,6 +595,8 @@ end
     @test all(x -> x >= 0, pairwise(Euclidean(), X, X; dims = 2))
     @test all(x -> x >= 0, pairwise(WeightedSqEuclidean([1.0]), X; dims = 2))
     @test all(x -> x >= 0, pairwise(WeightedSqEuclidean([1.0]), X, X; dims = 2))
+    @test all(x -> x >= 0, pairwise(SqMahalanobis(ones(1, 1)), X; dims = 2))
+    @test all(x -> x >= 0, pairwise(SqMahalanobis(ones(1, 1)), X, X; dims = 2))
 end
 
 @testset "Bregman Divergence" begin
