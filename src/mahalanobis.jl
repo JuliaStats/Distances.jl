@@ -53,7 +53,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T},
 
     for j = 1:nb
         @simd for i = 1:na
-            @inbounds r[i, j] = sa2[i] + sb2[j] - 2 * r[i, j]
+            @inbounds r[i, j] = max(sa2[i] + sb2[j] - 2 * r[i, j], 0)
         end
     end
     r
@@ -74,7 +74,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis{T},
         end
         r[j, j] = 0
         for i = (j + 1):n
-            @inbounds r[i, j] = sa2[i] + sa2[j] - 2 * r[i, j]
+            @inbounds r[i, j] = max(sa2[i] + sa2[j] - 2 * r[i, j], 0)
         end
     end
     r
