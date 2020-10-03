@@ -1,11 +1,11 @@
 # Mahalanobis distances
 
 struct Mahalanobis{T} <: Metric
-    qmat::Matrix{T}
+    qmat::AbstractMatrix{T}
 end
 
 struct SqMahalanobis{T} <: SemiMetric
-    qmat::Matrix{T}
+    qmat::AbstractMatrix{T}
 end
 
 result_type(::Mahalanobis{T}, ::Type, ::Type) where {T} = T
