@@ -9,13 +9,13 @@ struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
 end
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
-    z = oneunit(T1) - oneunit(T2)
-    return typeof(z * oneunit(eltype(d.qmat)) * z)
+    z = zero(T1) - zero(T2)
+    return typeof(sqrt(z * zero(eltype(d.qmat)) * z))
 end
 
 function result_type(d::SqMahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
-    z = oneunit(T1) - oneunit(T2)
-    return typeof(z * oneunit(eltype(d.qmat)) * z)
+    z = zero(T1) - zero(T2)
+    return typeof(z * zero(eltype(d.qmat)) * z)
 end
 
 # SqMahalanobis
