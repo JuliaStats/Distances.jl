@@ -360,9 +360,10 @@ end
         Q = rand(T, length(x), length(x))
         Q = Q * Q'  # make sure Q is positive-definite
         @test sqmahalanobis(x, y, Q) ≈ dot(x - y, Q * (x - y))
-        @test eltype(sqmahalanobis(x, y, Q)) == promote_type(eltype(x), eltype(y), eltype(Q))
+        z = oneunit(eltype(Q))
+        @test eltype(sqmahalanobis(x, y, Q)) == typeof(z * (oneunit(eltype(x)) - oneunit(eltype(y))) * z)
         @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
-        @test eltype(mahalanobis(x, y, Q)) == promote_type(eltype(x), eltype(y), eltype(Q))
+        @test eltype(mahalanobis(x, y, Q)) == typeof(z * (oneunit(eltype(x)) - oneunit(eltype(y))) * z)
     end
 end #testset
 
