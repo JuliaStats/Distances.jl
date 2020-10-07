@@ -8,8 +8,8 @@ struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
 end
 
-result_type(d::Mahalanobis, ::AbstractVector{T1}, ::AbstractVector{T2}) where {T1,T2} = promote_type(eltype(d.qmat), T1, T2)
-result_type(d::SqMahalanobis, ::AbstractVector{T1}, ::AbstractVector{T2}) where {T1,T2} = promote_type(eltype(d.qmat), T1, T2)
+result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2} = promote_type(eltype(d.qmat), T1, T2)
+result_type(d::SqMahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2} = promote_type(eltype(d.qmat), T1, T2)
 
 # SqMahalanobis
 
