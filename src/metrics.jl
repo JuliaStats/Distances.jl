@@ -213,12 +213,12 @@ for dist in weightedmetrics
     @eval parameters(d::$dist) = d.weights
 end
 
-result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray) =
-    result_type(dist, a, b, parameters(dist))
-result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing) =
-    typeof(_evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-result_type(dist::UnionMetrics, a::AbstractArray, b::AbstractArray, p) =
-    typeof(_evaluate(dist, oneunit(eltype(a)), oneunit(eltype(b)), oneunit(eltype(p))))
+result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+    result_type(dist, Ta, Tb, parameters(dist))
+result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb)))
+result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(eltype(p))))
 
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
     _evaluate(d, a, b, parameters(d))
@@ -261,7 +261,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
         throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
     end
     if length(a) == 0
-        return zero(result_type(d, a, b, p))
+        return zero(result_type(d, a, b))
     end
     @inbounds begin
         s = eval_start(d, a, b)
