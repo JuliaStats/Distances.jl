@@ -352,17 +352,17 @@ end # testset
 end
 
 @testset "mahalanobis" begin
-    for T in (Float64, F64)
+    for T in (Float64, F64, ComplexF64)
         x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
-        a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
-        b = T.([1.0, 3.0, 0.0, 2.0, 2.0, 0.0])
 
         Q = rand(T, length(x), length(x))
         Q = Q * Q'  # make sure Q is positive-definite
-        @test sqmahalanobis(x, y, Q) ≈ dot(x - y, Q * (x - y))
-        @test eltype(sqmahalanobis(x, y, Q)) == T
-        @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
-        @test eltype(mahalanobis(x, y, Q)) == T
+        for Q in (Q, T <: Complex ? Hermitian(Q) : Symmetric(Q))
+            @test sqmahalanobis(x, y, Q) ≈ dot(x - y, Q * (x - y))
+            @test eltype(sqmahalanobis(x, y, Q)) == T
+            @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
+            @test eltype(mahalanobis(x, y, Q)) == T
+        end
     end
 end #testset
 
