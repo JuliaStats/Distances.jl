@@ -1,7 +1,8 @@
 # Unit tests for Distances
 
+struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
+
 @testset "result_type" begin
-    struct FooDist <: PreMetric end
     foodist(a, b) = a + b
     for (Ta, Tb) in [
         (Int, Int),
