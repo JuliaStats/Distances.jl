@@ -1,5 +1,12 @@
 # Unit tests for Distances
 
+"Mapx `x` to the probability simplex"
+function positive_and_normed(x)
+    abs_x = abs.(x)
+    M = sum(abs_x)
+    abs_x./M
+end
+
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         @test dist(x, y) == evaluate(dist, x, y)
@@ -117,6 +124,11 @@ end
     test_metricity(RenyiDivergence(2), p, q, r)
     test_metricity(RenyiDivergence(10), p, q, r)
     test_metricity(JSDivergence(), p, q, r)
+
+    let x′, y′, z′
+        x′, y′, z′ = positive_and_normed.([x, y, z])
+        test_metricity(Wasserstein(), x′, y′, z′)
+    end
 end
 
 @testset "individual metrics" begin
@@ -189,6 +201,15 @@ end
             @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
             @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
             @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+
+            let x′, y′
+                x′, y′ = positive_and_normed.([x, y])
+                @test wasserstein(x′, y′) ≈ 0.471861471 atol=1e-6
+                @test wasserstein(x′, y′) != wasserstein(x′, y′, 2.0)
+                @test wasserstein(x′, y′, 2.0) ≈ 0.68692173634 atol=1e-6
+            end
+            @test_throws AssertionError wasserstein(x, y)
+            @test_throws AssertionError Wasserstein(0.5)
         end
 
         # Test ChiSq doesn't give NaN at zero
@@ -279,6 +300,7 @@ end #testset
         @test isa(renyi_divergence(a, b, 2.0), T)
         @test braycurtis(a, b) == 0.0
         @test isa(braycurtis(a, b), T)
+        @test isa(wasserstein(a, b), T)
 
         w = T[]
         @test isa(whamming(a, b, w), T)
@@ -434,6 +456,19 @@ function test_colwise(dist, x, y, T)
     end
 end
 
+function positive_and_normed_colwise(x, T)
+    rows, cols = size(x)
+    X = zeros(T, rows, cols)
+    @assert size(x) == size(X)
+    for i in 1:cols
+        normed_col = positive_and_normed(x[:, i])
+        for j in 1:rows
+            X[j, i] = normed_col[j]
+        end
+    end
+    X
+end
+
 @testset "column-wise metrics on $T" for T in (Float64, F64)
     m = 5
     n = 8
@@ -490,6 +525,11 @@ end
 
     test_colwise(SqMahalanobis(Q), X, Y, T)
     test_colwise(Mahalanobis(Q), X, Y, T)
+    let X′, Y′
+        X′ = positive_and_normed_colwise(X, T)
+        Y′ = positive_and_normed_colwise(Y, T)
+        test_colwise(Wasserstein(), X′, Y′, T)
+    end
 end
 
 function test_pairwise(dist, x, y, T)
@@ -568,6 +608,11 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
+    let X′, Y′
+        X′ = positive_and_normed_colwise(X, T)
+        Y′ = positive_and_normed_colwise(Y, T)
+        test_pairwise(Wasserstein(), X′, Y′, T)
+    end
 end
 
 @testset "Euclidean precision" begin
@@ -621,20 +666,3 @@ end
     end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
 end
-
-#=
-@testset "zero allocation colwise!" begin
-    d = Euclidean()
-    a = rand(2, 41)
-    b = rand(2, 41)
-    z = zeros(41)
-    colwise!(z, d, a, b)
-    # This fails when bounds checking is enforced
-    bounds = Base.JLOptions().check_bounds
-    if bounds == 0
-        @test (@allocated colwise!(z, d, a, b)) == 0
-    else
-        @test_broken (@allocated colwise!(z, d, a, b)) == 0
-    end
-end
-=#
