@@ -33,8 +33,8 @@ Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
 result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback
-result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
-
+result_type(dist::PreMetric, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = result_type(dist, eltype(a), eltype(b))
+result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(first(a)), eltype(first(b)))
 
 # Generic column-wise evaluation
 
@@ -120,6 +120,35 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     r
 end
 
+function _pairwise!(r::AbstractMatrix, metric::PreMetric,
+                    a::AbstractVector, b::AbstractVector=a)
+    na = length(a)
+    nb = length(b)
+    size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
+    @inbounds for (j, bj) = enumerate(b)
+        for (i, ai) = enumerate(a)
+            r[i, j] = metric(ai, bj)
+        end
+    end
+    r
+end
+
+function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractVector)
+    n = length(a)
+    size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
+    @inbounds for j = 1:n
+        for i = (j + 1):n
+            r[i, j] = metric(a[i], a[j])
+        end
+        r[j, j] = 0
+        for i = 1:(j - 1)
+            r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
+        end
+    end
+    r
+end
+
+
 function deprecated_dims(dims::Union{Nothing,Integer})
     if dims === nothing
         Base.depwarn("implicit `dims=2` argument now has to be passed explicitly " *
@@ -185,8 +214,27 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
     end
 end
 
+function pairwise!(r::AbstractMatrix, metric::PreMetric,
+    a::AbstractVector, b::AbstractVector;
+    dims::Union{Nothing,Integer}=nothing)
+    na = length(a)
+    nb = length(b)
+    size(r) == (na, nb) ||
+        throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((na, nb)))."))
+    _pairwise!(r, metric, a, b)
+end
+
+function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractVector;
+    dims::Union{Nothing,Integer}=nothing)
+    n = length(a)
+    size(r) == (n, n) ||
+    throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((n, n)))."))
+    _pairwise!(r, metric, a)
+end
+
 """
     pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
+    pairwise(metric::PreMetric, a::AbstractVector, b::AbstractVector=a; dims)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
 in `a` and `b` according to distance `metric`. If a single matrix `a` is provided,
@@ -211,4 +259,19 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
+end
+
+
+function pairwise(metric::PreMetric, a::AbstractVector, b::AbstractVector)
+    m = length(a)
+    n = length(b)
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    pairwise!(r, metric, a, b)
+end
+
+
+function pairwise(metric::PreMetric, a::AbstractVector)
+    m = length(a)
+    r = Matrix{result_type(metric, a, a)}(undef, m, n)
+    pairwise!(r, metric, a, b)
 end
