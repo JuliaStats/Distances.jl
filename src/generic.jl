@@ -163,6 +163,8 @@ end
 """
     pairwise!(r::AbstractMatrix, metric::PreMetric,
               a::AbstractMatrix, b::AbstractMatrix=a; dims)
+    pairwise!(r::AbstractMatrix, metric::PreMetric,
+              a::AbstractVector, b::AbstractVector=a)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
 in `a` and `b` according to distance `metric`, and store the result in `r`.
@@ -271,7 +273,7 @@ end
 
 
 function pairwise(metric::PreMetric, a::AbstractVector)
-    m = length(a)
-    r = Matrix{result_type(metric, a, a)}(undef, m, n)
-    pairwise!(r, metric, a, b)
+    n = length(a)
+    r = Matrix{result_type(metric, a, a)}(undef, n, n)
+    pairwise!(r, metric, a)
 end
