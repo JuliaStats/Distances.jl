@@ -504,8 +504,8 @@ function test_pairwise(dist, x, y, T)
         for j = 1:nx, i = 1:nx
             rxx[i, j] = dist(x[:, i], x[:, j])
         end
-        vecx = collect(eachcol(x))
-        vecy = collect(eachcol(y))
+        vecx = collect(x[:, i] for i in 1:nx)
+        vecy = collect(y[:, i] for i in 1:ny)
         # As earlier, we have small rounding errors in accumulations
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
