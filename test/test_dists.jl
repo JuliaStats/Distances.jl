@@ -506,6 +506,8 @@ function test_pairwise(dist, x, y, T)
         end
         vecx = collect(x[:, i] for i in 1:nx)
         vecy = collect(y[:, i] for i in 1:ny)
+        vec1 = x[:, 1]
+        vec2 = y[:, 1]
         # As earlier, we have small rounding errors in accumulations
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
@@ -515,6 +517,8 @@ function test_pairwise(dist, x, y, T)
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
         @test pairwise(dist, vecx, vecy) ≈ rxy
         @test pairwise(dist, vecx) ≈ rxx
+        @test pairwise(dist, vec1) ≈ dist.(vec1, permutedims(vec1))
+        @test pairwise(dist, vec1, vec2) ≈ dist.(vec1, permutedims(vec2))
     end
 end
 
