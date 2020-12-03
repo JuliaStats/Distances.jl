@@ -122,6 +122,7 @@ end
 
 function _pairwise!(r::AbstractMatrix, metric::PreMetric,
                     a::AbstractVector, b::AbstractVector=a)
+    require_one_based_indexing(r)
     na = length(a)
     nb = length(b)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -134,14 +135,15 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric,
 end
 
 function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractVector)
+    require_one_based_indexing(a, r)
     n = length(a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
-        for i = (j + 1):n
+        for i = 1:(j - 1)
             r[i, j] = metric(a[i], a[j])
         end
         r[j, j] = 0
-        for i = 1:(j - 1)
+        for i = (j + 1):n
             r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
         end
     end
