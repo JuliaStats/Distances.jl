@@ -109,12 +109,12 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
         aj = view(a, :, j)
-        for i = (j + 1):n
-            r[i, j] = metric(view(a, :, i), aj)
-        end
-        r[j, j] = 0
         for i = 1:(j - 1)
             r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
+        end
+        r[j, j] = 0
+        for i = (j + 1):n
+            r[i, j] = metric(view(a, :, i), aj)
         end
     end
     r
