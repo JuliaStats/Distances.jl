@@ -28,6 +28,7 @@ evaluate(dist::PreMetric, a, b) = dist(a, b)
 """
     result_type(dist, Ta::Type, Tb::Type) -> T
     result_type(dist, a::AbstractArray, b::AbstractArray) -> T
+    result_type(dist, a::Number, b::Number) -> T
 
 Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
