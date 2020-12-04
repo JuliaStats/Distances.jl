@@ -1,5 +1,21 @@
 # Unit tests for Distances
 
+struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
+
+@testset "result_type" begin
+    foodist(a, b) = a + b
+    for (Ta, Tb) in [
+        (Int, Int),
+        (Int, Float64),
+        (Float32, Float32),
+        (Float32, Float64),
+    ]
+        A, B = rand(Ta, 2, 3), rand(Tb, 2, 3)
+        @test result_type(FooDist(), A, B) == result_type(FooDist(), Ta, Tb) == Float64
+        @test result_type(foodist, A, B) == result_type(foodist, Ta, Tb) == typeof(foodist(oneunit(Ta), oneunit(Tb)))
+    end
+end
+
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         @test dist(x, y) == evaluate(dist, x, y)
