@@ -33,10 +33,11 @@ Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
 result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
-# for outside extensibility to other packages
-result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b)))
-result_type(dist, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
+result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
+# Promote Arays and Numbers to types
+result_type(dist, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
+result_type(dist, a::Number, b::Number) = result_type(dist, typeof(a), typeof(b))
 
 # Generic column-wise evaluation
 

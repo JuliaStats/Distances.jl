@@ -13,6 +13,10 @@ struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be pu
         A, B = rand(Ta, 2, 3), rand(Tb, 2, 3)
         @test result_type(FooDist(), A, B) == result_type(FooDist(), Ta, Tb) == Float64
         @test result_type(foodist, A, B) == result_type(foodist, Ta, Tb) == typeof(foodist(oneunit(Ta), oneunit(Tb)))
+
+        a, b = rand(Ta), rand(Tb)
+        @test result_type(FooDist(), a, b) == result_type(FooDist(), Ta, Tb) == Float64
+        @test result_type(foodist, a, b) == result_type(foodist, Ta, Tb) == typeof(foodist(oneunit(Ta), oneunit(Tb)))
     end
 end
 
