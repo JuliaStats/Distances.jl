@@ -36,7 +36,7 @@ result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
 result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
 # Promote Arrays and Numbers to types
-result_type(dist, a, b) = result_type(dist, eltype(first(a)), eltype(first(b)))
+result_type(dist, a, b) = result_type(dist, typeof(first(a)), typeof(first(b)))
 result_type(dist, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
 result_type(dist, a::Number, b::Number) = result_type(dist, typeof(a), typeof(b))
 
