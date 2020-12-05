@@ -175,7 +175,7 @@ end
                 @test chisq_dist(x, y) == sum((xc - vec(yc)).^2 ./ (xc + vec(yc)))
                 @test spannorm_dist(x, y) == maximum(xc - vec(yc)) - minimum(xc - vec(yc))
 
-                @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+                @test gkl_divergence(x, y) ≈ sum(i -> xc[i] * log(xc[i] / yc[i]) - xc[i] + yc[i], 1:length(x))
 
                 @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in 1:length(x)])
                 @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in 1:length(x)])
