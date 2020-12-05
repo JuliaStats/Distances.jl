@@ -150,45 +150,47 @@ end
     @test whamming(a, b, w) === 2
 
     for T in (Float64, F64)
-
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
-            @test sqeuclidean(x, y) == 57.0
-            @test euclidean(x, y) == sqrt(57.0)
-            @test jaccard(x, y) == 13.0 / 28
-            @test cityblock(x, y) == 13.0
-            @test totalvariation(x, y) == 6.5
-            @test chebyshev(x, y) == 6.0
-            @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
-            @test minkowski(x, y, 2) == sqrt(57.0)
-            @test peuclidean(x, y, fill(10.0, 4)) == sqrt(37)
-            @test peuclidean(x - vec(y), zero(y), fill(10.0, 4)) == peuclidean(x, y, fill(10.0, 4))
-            @test peuclidean(x, y, [10.0, 10.0, 10.0, Inf]) == sqrt(57)
-            @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
-            @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
-            x_int, y_int = Int64.(x), Int64.(y)
-            @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
-            @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
-            @test corr_dist(OffsetVector(x, -1:length(x)-2), y) == corr_dist(x, y)
-            @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
-            @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
+            for (x, y) in ((x, y), ((x[i] for i in 1:4), (y[i] for i in 1:4)))
+                xc, yc = collect(x), collect(y)
+                @test sqeuclidean(x, y) == 57.0
+                @test euclidean(x, y) == sqrt(57.0)
+                @test jaccard(x, y) == 13.0 / 28
+                @test cityblock(x, y) == 13.0
+                @test totalvariation(x, y) == 6.5
+                @test chebyshev(x, y) == 6.0
+                @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
+                @test minkowski(x, y, 2) == sqrt(57.0)
+                @test peuclidean(x, y, fill(10.0, 4)) == sqrt(37)
+                @test peuclidean(xc - vec(yc), zero(yc), fill(10.0, 4)) == peuclidean(x, y, fill(10.0, 4))
+                @test peuclidean(x, y, [10.0, 10.0, 10.0, Inf]) == sqrt(57)
+                @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
+                @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
+                x_int, y_int = Int64.(x), Int64.(y)
+                @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
+                @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(yc) .- mean(y))
+                @test corr_dist(OffsetVector(xc, -1:length(xc)-2), yc) == corr_dist(x, y)
+                @test chisq_dist(x, y) == sum((xc - vec(yc)).^2 ./ (xc + vec(yc)))
+                @test spannorm_dist(x, y) == maximum(xc - vec(yc)) - minimum(xc - vec(yc))
 
-            @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+                @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
 
-            @test meanad(x, y) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
-            @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
-            @test rmsd(x, y) ≈ sqrt(msd(x, y))
-            @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
+                @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in 1:length(x)])
+                @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in 1:length(x)])
+                @test rmsd(x, y) ≈ sqrt(msd(x, y))
+                @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
 
-            w = ones(4)
-            @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
+                w = ones(4)
+                @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
-            w = rand(Float64, size(x))
-            @test wsqeuclidean(x, y, w) ≈ dot((x - vec(y)).^2, w)
-            @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
-            @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
-            @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+                w = rand(Float64, size(x))
+                @test wsqeuclidean(x, y, w) ≈ dot((xc - vec(yc)).^2, w)
+                @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
+                @test wcityblock(x, y, w) ≈ dot(abs.(xc - vec(yc)), w)
+                @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+            end
         end
 
         # Test ChiSq doesn't give NaN at zero

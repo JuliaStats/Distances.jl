@@ -26,15 +26,19 @@ evaluate(dist::PreMetric, a, b) = dist(a, b)
 # Generic functions
 
 """
-    result_type(dist::PreMetric, Ta::Type, Tb::Type) -> T
-    result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) -> T
+    result_type(dist, Ta::Type, Tb::Type) -> T
+    result_type(dist, a, b) -> T
 
 Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
-result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback
-result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
+result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
+result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
+# Promote Arrays and Numbers to types
+result_type(dist, a, b) = result_type(dist, eltype(first(a)), eltype(first(b)))
+result_type(dist, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
+result_type(dist, a::Number, b::Number) = result_type(dist, typeof(a), typeof(b))
 
 # Generic column-wise evaluation
 
