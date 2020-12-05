@@ -130,7 +130,10 @@ end
     @test chebyshev(a, b) == 1.0
     @test braycurtis(a, b) === 1/3
     @test minkowski(a, b, 2) == 1.0
-    @test hamming(a, b) == 1
+    @test hamming(a, b) === 1
+    @test hamming("martha", "marhta") === 2
+    @test hamming("es an ", " vs an") === 6
+    @test hamming("", "") === 0
     @test peuclidean(a, b, 0.5) === 0.0
     @test peuclidean(a, b, 2) === 1.0
     @test cosine_dist(a, b) === 0.0
