@@ -391,13 +391,13 @@ end #testset
 end
 
 @testset "bhattacharyya / hellinger" begin
-    for T in (Float64, F64)
-        x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
-        a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
-        b = T.([1.0, 3.0, 0.0, 2.0, 2.0, 0.0])
-        p = rand(T, 12)
-        p[p .< median(p)] .= 0.0
-        q = rand(T, 12)
+    for T in (Int, Float64, F64)
+        x, y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
+        a = T.([1, 2, 1, 3, 2, 1])
+        b = T.([1, 3, 0, 2, 2, 0])
+        p = T == Int ? rand(0:10, 12) : rand(T, 12)
+        p[p .< median(p)] .= 0
+        q = T == Int ? rand(0:10, 12) : rand(T, 12)
 
         # Bhattacharyya and Hellinger distances are defined for discrete
         # probability distributions so to calculate the expected values
@@ -405,9 +405,11 @@ end
         px = x ./ sum(x)
         py = y ./ sum(y)
         expected_bc_x_y = sum(sqrt.(px .* py))
-        @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
-        @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
-        @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
+            @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
+            @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
+            @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        end
 
         pa = a ./ sum(a)
         pb = b ./ sum(b)

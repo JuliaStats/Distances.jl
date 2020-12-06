@@ -15,7 +15,7 @@ function bhattacharyya_coeff(a::AbstractVector{T}, b::AbstractVector{T}) where {
     end
 
     n = length(a)
-    sqab = zero(T)
+    sqab = zero(typeof(sqrt(zero(T))))
     # We must normalize since we cannot assume that the vectors are normalized to probability vectors.
     asum = zero(T)
     bsum = zero(T)
@@ -30,18 +30,36 @@ function bhattacharyya_coeff(a::AbstractVector{T}, b::AbstractVector{T}) where {
 
     sqab / sqrt(asum * bsum)
 end
+function bhattacharyya_coeff(a, b)
+    T = typeof(sqrt(zero(promote_type(_eltype(a), _eltype(b)))))
+    n = length(a)
+    if n != length(b)
+        throw(DimensionMismatch("first argument has length $n which does not match the length of the second, $(length(b))."))
+    end
 
-bhattacharyya_coeff(a::T, b::T) where {T <: Number} = throw("Bhattacharyya coefficient cannot be calculated for scalars")
+    sqab = zero(T)
+    # We must normalize since we cannot assume that the vectors are normalized to probability vectors.
+    asum = zero(T)
+    bsum = zero(T)
+
+    for (ai, bi) in zip(a, b)
+        sqab += sqrt(ai * bi)
+        asum += ai
+        bsum += bi
+    end
+
+    return sqab / sqrt(asum * bsum)
+end
 
 # Faster pair- and column-wise versions TBD...
 
 
 # Bhattacharyya distance
-(::BhattacharyyaDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = -log(bhattacharyya_coeff(a, b))
-(::BhattacharyyaDist)(a::T, b::T) where {T <: Number} = throw("Bhattacharyya distance cannot be calculated for scalars")
+(::BhattacharyyaDist)(a, b) = -log(bhattacharyya_coeff(a, b))
+(::BhattacharyyaDist)(::Number, ::Number) = throw("Bhattacharyya distance cannot be calculated for scalars")
 bhattacharyya(a, b) = BhattacharyyaDist()(a, b)
 
 # Hellinger distance
-(::HellingerDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = sqrt(1 - bhattacharyya_coeff(a, b))
-(::HellingerDist)(a::T, b::T) where {T <: Number} = throw("Hellinger distance cannot be calculated for scalars")
+(::HellingerDist)(a, b) = sqrt(1 - bhattacharyya_coeff(a, b))
+(::HellingerDist)(::Number, ::Number) = throw("Hellinger distance cannot be calculated for scalars")
 hellinger(a, b) = HellingerDist()(a, b)
