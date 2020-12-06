@@ -156,7 +156,10 @@ end
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
-            for (x, y) in ((x, y), ((x[i] for i in 1:4), (y[i] for i in 1:4)))
+            for (x, y) in ((x, y),
+                          ((Iterators.take(x, 4), Iterators.take(y, 4))),# iterator
+                          (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))),# generator
+                          )
                 xc, yc = collect(x), collect(y)
                 @test sqeuclidean(x, y) == 57.0
                 @test euclidean(x, y) == sqrt(57.0)
@@ -188,7 +191,7 @@ end
                 w = ones(4)
                 @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
-                w = rand(Float64, size(x))
+                w = rand(Float64, length(x))
                 @test wsqeuclidean(x, y, w) ≈ dot((xc - vec(yc)).^2, w)
                 @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
                 @test wcityblock(x, y, w) ≈ dot(abs.(xc - vec(yc)), w)
@@ -233,22 +236,27 @@ end
                 klv += p[i] * log(p[i] / q[i])
             end
         end
-        @test kl_divergence(p, q) ≈ klv
-        @test typeof(kl_divergence(p, q)) == T
-
-
-        @test renyi_divergence(p, r, 0) ≈ -log(scale)
-        @test renyi_divergence(p, r, 1) ≈ -log(scale)
-        @test renyi_divergence(p, r, 10) ≈ -log(scale)
-        @test renyi_divergence(p, r, rand()) ≈ -log(scale)
-        @test renyi_divergence(p, r, Inf) ≈ -log(scale)
-        @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
-        @test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
-        @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
 
         pm = (p + q) / 2
-        jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
-        @test js_divergence(p, q) ≈ jsv
+        for (r, p, pm) in ((r, p, pm),
+                       (Iterators.take(r, length(r)), Iterators.take(p, length(p)), Iterators.take(pm, length(pm))),
+                       ((r[i] for i in 1:length(r)), (p[i] for i in 1:length(p)), (pm[i] for i in 1:length(pm)))
+                      )
+            @test kl_divergence(p, q) ≈ klv
+            @test typeof(kl_divergence(p, q)) == T
+
+            @test renyi_divergence(p, r, 0) ≈ -log(scale)
+            @test renyi_divergence(p, r, 1) ≈ -log(scale)
+            @test renyi_divergence(p, r, 10) ≈ -log(scale)
+            @test renyi_divergence(p, r, rand()) ≈ -log(scale)
+            @test renyi_divergence(p, r, Inf) ≈ -log(scale)
+            @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
+            @test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
+            @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
+
+            jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
+            @test js_divergence(p, q) ≈ jsv
+        end
     end
 end # testset
 
@@ -261,9 +269,7 @@ end # testset
 end #testset
 
 @testset "empty vector" begin
-    for T in (Float64, F64)
-        a = T[]
-        b = T[]
+    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)))
         @test sqeuclidean(a, b) == 0.0
         @test isa(sqeuclidean(a, b), T)
         @test euclidean(a, b) == 0.0
@@ -377,7 +383,9 @@ end #testset
         @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
         @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
-        @test haversine((1.,-15.625), (-179.,15.625), 6371.) ≈ 20015. atol=1e0
+        x, y = (1.,-15.625), (-179.,15.625)
+        @test haversine(x, y, 6371.) ≈ 20015. atol=1e0
+        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015. atol=1e0
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
     end
 end
@@ -613,11 +621,16 @@ end
     testDist = Bregman(F, ∇)
     p = rand(4)
     q = rand(4)
-    p = p/sum(p);
-    q = q/sum(q);
-    @test testDist(p, q) ≈ gkl_divergence(p, q)
-    # Test if Bregman() correctly implements the squared euclidean dist. between them.
-    @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
+    p = p/sum(p)
+    q = q/sum(q)
+    for (p, q) in ((p, q),
+                   (Iterators.take(p, 4), Iterators.take(q, 4)),
+                   ((p[i] for i in 1:4), (q[i] for i in 1:4)),
+                   )
+        @test testDist(p, q) ≈ gkl_divergence(p, q)
+        # Test if Bregman() correctly implements the squared euclidean dist. between them.
+        @test bregman(x -> norm(x)^2, x -> 2 .* x, p, q) ≈ sqeuclidean(p, q)
+    end
     # Test if Bregman() correctly implements the IS distance.
     F(p) = -1 * sum(log.(p))
     ∇(p) = map(x -> -1 * x^(-1), p)

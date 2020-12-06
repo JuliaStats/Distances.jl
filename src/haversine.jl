@@ -10,20 +10,17 @@ struct Haversine{T<:Real} <: Metric
     radius::T
 end
 
-const VecOrLengthTwoTuple{T} = Union{AbstractVector{T}, NTuple{2, T}}
-
-function (dist::Haversine)(x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple)
+function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error()
 
-    @inbounds begin
-        # longitudes
-        Δλ = deg2rad(y[1] - x[1])
+    x1, x2 = x
+    y1, y2 = y
+    # longitudes
+    Δλ = deg2rad(y1 - x1)
 
-        # latitudes
-        φ₁ = deg2rad(x[2])
-        φ₂ = deg2rad(y[2])
-    end
-
+    # latitudes
+    φ₁ = deg2rad(x2)
+    φ₂ = deg2rad(y2)
     Δφ = φ₂ - φ₁
 
     # haversine formula
@@ -33,6 +30,6 @@ function (dist::Haversine)(x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple)
     2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
-haversine(x::VecOrLengthTwoTuple, y::VecOrLengthTwoTuple, radius::Real) = Haversine(radius)(x, y)
+haversine(x, y, radius::Real) = Haversine(radius)(x, y)
 
 @noinline haversine_error() = throw(ArgumentError("expected both inputs to have length 2 in Haversine distance"))

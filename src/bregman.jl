@@ -22,26 +22,26 @@ end
 Bregman(F, ∇) =  Bregman(F, ∇, LinearAlgebra.dot)
 
 # Evaluation fuction 
-function (dist::Bregman)(p::AbstractVector, q::AbstractVector)
+function (dist::Bregman)(p, q)
     # Create cache vals.
-    FP_val = dist.F(p);
-    FQ_val = dist.F(q); 
-    DQ_val = dist.∇(q);
-    p_size = size(p);
+    FP_val = dist.F(p)
+    FQ_val = dist.F(q) 
+    DQ_val = dist.∇(q)
+    p_size = length(p)
     # Check F codomain. 
     if !(isa(FP_val, Real) && isa(FQ_val, Real))
         throw(ArgumentError("F Codomain Error: F doesn't map the vectors to real numbers"))
     end 
     # Check vector size. 
-    if !(p_size == size(q))
+    if p_size != length(q)
         throw(DimensionMismatch("The vector p ($(size(p))) and q ($(size(q))) are different sizes."))
     end
     # Check gradient size. 
-    if !(size(DQ_val) == p_size)
+    if length(DQ_val) != p_size
         throw(DimensionMismatch("The gradient result is not the same size as p and q"))
     end 
     # Return the Bregman divergence. 
-    return FP_val - FQ_val - dist.inner(DQ_val, p-q);
+    return FP_val - FQ_val - dist.inner(DQ_val, p .- q)
 end 
 
 # Convenience function. 

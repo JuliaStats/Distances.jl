@@ -381,7 +381,7 @@ totalvariation(a, b) = TotalVariation()(a, b)
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
+Base.@propagate_inbounds eval_start(::Chebyshev, a, b) = abs(first(a) - first(b))
 chebyshev(a, b) = Chebyshev()(a, b)
 
 # Minkowski
@@ -443,7 +443,8 @@ kl_divergence(a, b) = KLDivergence()(a, b)
 gkl_divergence(a, b) = GenKLDivergence()(a, b)
 
 # RenyiDivergence
-Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+Base.@propagate_inbounds function eval_start(::RenyiDivergence, a, b)
+    T = promote_type(_eltype(a), _eltype(b))
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
@@ -487,7 +488,7 @@ function eval_end(dist::RenyiDivergence, s::Tuple{T,T,T,T}) where {T <: Real}
     end
 end
 
-renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = RenyiDivergence(q)(a, b)
+renyi_divergence(a, b, q::Real) = RenyiDivergence(q)(a, b)
 # Combine docs with RenyiDivergence. Fetching the docstring with @doc causes
 # problems during package compilation; see
 # https://github.com/JuliaLang/julia/issues/31640
