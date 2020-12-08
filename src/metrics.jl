@@ -52,7 +52,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedEuclidean{W} <: UnionMetric
     weights::W
 end
 
@@ -74,7 +74,7 @@ julia> evaluate(PeriodicEuclidean(L), x, y)
 0.25
 ```
 """
-struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: UnionMetric
+struct PeriodicEuclidean{W} <: UnionMetric
     periods::W
 end
 
@@ -90,14 +90,14 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
-struct WeightedSqEuclidean{W <: AbstractArray{<:Real}} <: UnionSemiMetric
+struct WeightedSqEuclidean{W} <: UnionSemiMetric
     weights::W
 end
 
 struct Chebyshev <: UnionMetric end
 
 struct Cityblock <: UnionMetric end
-struct WeightedCityblock{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedCityblock{W} <: UnionMetric
     weights::W
 end
 
@@ -108,13 +108,13 @@ struct RogersTanimoto <: UnionMetric end
 struct Minkowski{T <: Real} <: UnionMetric
     p::T
 end
-struct WeightedMinkowski{W <: AbstractArray{<:Real},T <: Real} <: UnionMetric
+struct WeightedMinkowski{W,T <: Real} <: UnionMetric
     weights::W
     p::T
 end
 
 struct Hamming <: UnionMetric end
-struct WeightedHamming{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedHamming{W} <: UnionMetric
     weights::W
 end
 
@@ -339,8 +339,7 @@ euclidean(a, b) = Euclidean()(a, b)
 # Weighted Euclidean
 @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
 eval_end(::WeightedEuclidean, s) = sqrt(s)
-weuclidean(a, b, w::AbstractArray) = WeightedEuclidean(w)(a, b)
-weuclidean(a, b, w::Real) = WeightedEuclidean([w])(a, b)
+weuclidean(a, b, w) = WeightedEuclidean(w)(a, b)
 
 # PeriodicEuclidean
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
@@ -350,9 +349,7 @@ weuclidean(a, b, w::Real) = WeightedEuclidean([w])(a, b)
     abs2(s3)
 end
 eval_end(::PeriodicEuclidean, s) = sqrt(s)
-peuclidean(a, b, p::AbstractArray{<:Real}) =
-    PeriodicEuclidean(p)(a, b)
-peuclidean(a, b, p::Real) = PeriodicEuclidean([p])(a, b)
+peuclidean(a, b, p) = PeriodicEuclidean(p)(a, b)
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
@@ -360,8 +357,7 @@ sqeuclidean(a, b) = SqEuclidean()(a, b)
 
 # Weighted Squared Euclidean
 @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
-wsqeuclidean(a, b, w::AbstractArray) = WeightedSqEuclidean(w)(a, b)
-wsqeuclidean(a, b, w::Real) = WeightedSqEuclidean([w])(a, b)
+wsqeuclidean(a, b, w) = WeightedSqEuclidean(w)(a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
@@ -369,8 +365,7 @@ cityblock(a, b) = Cityblock()(a, b)
 
 # Weighted City Block
 @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
-wcityblock(a, b, w::AbstractArray) = WeightedCityblock(w)(a, b)
-wcityblock(a, b, w::Real) = WeightedCityblock([w])(a, b)
+wcityblock(a, b, w) = WeightedCityblock(w)(a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
@@ -392,8 +387,7 @@ minkowski(a, b, p::Real) = Minkowski(p)(a, b)
 # Weighted Minkowski
 @inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi)^dist.p * wi
 @inline eval_end(dist::WeightedMinkowski, s) = s^(1 / dist.p)
-wminkowski(a, b, w::AbstractArray, p::Real) = WeightedMinkowski(w, p)(a, b)
-wminkowski(a, b, w::Real, p::Real) = WeightedMinkowski([w], p)(a, b)
+wminkowski(a, b, w, p::Real) = WeightedMinkowski(w, p)(a, b)
 
 # Hamming
 result_type(::Hamming, ::Type, ::Type) = Int # fallback for Hamming
@@ -402,8 +396,7 @@ hamming(a, b) = Hamming()(a, b)
 
 # WeightedHamming
 @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
-whamming(a, b, w::AbstractArray) = WeightedHamming(w)(a, b)
-whamming(a, b, w::Real) = WeightedHamming([w])(a, b)
+whamming(a, b, w) = WeightedHamming(w)(a, b)
 
 # Cosine dist
 @inline function eval_start(dist::CosineDist, a, b)
