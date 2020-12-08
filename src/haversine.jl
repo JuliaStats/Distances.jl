@@ -13,8 +13,8 @@ end
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error()
 
-    x1, x2 = x
-    y1, y2 = y
+    @inbounds x1, x2 = x
+    @inbounds y1, y2 = y
     # longitudes
     Δλ = deg2rad(y1 - x1)
 

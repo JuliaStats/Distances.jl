@@ -86,14 +86,14 @@ end
     test_metricity(BrayCurtis(), a, b, c)
     test_metricity(Jaccard(), a, b, c)
 
-    w = rand(T, n)
-
-    test_metricity(PeriodicEuclidean(w), x, y, z)
-    test_metricity(WeightedSqEuclidean(w), x, y, z)
-    test_metricity(WeightedEuclidean(w), x, y, z)
-    test_metricity(WeightedCityblock(w), x, y, z)
-    test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
-    test_metricity(WeightedHamming(w), a, b, c)
+    for w in (rand(T, n), (rand(T, n)...,))
+        test_metricity(PeriodicEuclidean(w), x, y, z)
+        test_metricity(WeightedSqEuclidean(w), x, y, z)
+        test_metricity(WeightedEuclidean(w), x, y, z)
+        test_metricity(WeightedCityblock(w), x, y, z)
+        test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
+        test_metricity(WeightedHamming(w), a, b, c)
+    end
 
     Q = rand(T, n, n)
     Q = Q * Q'  # make sure Q is positive-definite
@@ -137,6 +137,8 @@ end
     @test peuclidean(a, b, 0.5) === 0.0
     @test peuclidean(a, b, 2) === 1.0
     @test cosine_dist(a, b) === 0.0
+    @test bhattacharyya(a, b) === bhattacharyya([a], [b]) === -0.0
+    @test bhattacharyya(a, b) === bhattacharyya((a,), (b,))
     @test isnan(corr_dist(a, b))
     @test spannorm_dist(a, b) === 0
 
@@ -145,12 +147,13 @@ end
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
     @test braycurtis(bt, bf) == 0.5
 
-    w = 2
-    @test wsqeuclidean(a, b, w) === 2
-    @test weuclidean(a, b, w) === sqrt(2)
-    @test wcityblock(a, b, w) === 2
-    @test wminkowski(a, b, w, 2) === sqrt(2)
-    @test whamming(a, b, w) === 2
+    for w in (2, (2,))
+        @test wsqeuclidean(a, b, w) === 2
+        @test weuclidean(a, b, w) === sqrt(2)
+        @test wcityblock(a, b, w) === 2
+        @test wminkowski(a, b, w, 2) === sqrt(2)
+        @test whamming(a, b, w) === 2
+    end
 
     for T in (Float64, F64)
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
@@ -239,9 +242,9 @@ end
 
         pm = (p + q) / 2
         for (r, p, pm) in ((r, p, pm),
-                       (Iterators.take(r, length(r)), Iterators.take(p, length(p)), Iterators.take(pm, length(pm))),
-                       ((r[i] for i in 1:length(r)), (p[i] for i in 1:length(p)), (pm[i] for i in 1:length(pm)))
-                      )
+                           (Iterators.take(r, length(r)), Iterators.take(p, length(p)), Iterators.take(pm, length(pm))),
+                           ((r[i] for i in 1:length(r)), (p[i] for i in 1:length(p)), (pm[i] for i in 1:length(pm))),
+                          )
             @test kl_divergence(p, q) ≈ klv
             @test typeof(kl_divergence(p, q)) == T
 

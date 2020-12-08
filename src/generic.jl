@@ -40,8 +40,6 @@ result_type(dist, a, b) = result_type(dist, _eltype(a), _eltype(b))
 _eltype(a) = __eltype(Base.IteratorEltype(a), a)
 __eltype(::Base.HasEltype, a) = eltype(a)
 __eltype(::Base.EltypeUnknown, a) = typeof(first(a))
-result_type(dist, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
-result_type(dist, a::Number, b::Number) = result_type(dist, typeof(a), typeof(b))
 
 # Generic column-wise evaluation
 
