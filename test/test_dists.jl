@@ -157,8 +157,8 @@ end
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
             for (x, y) in ((x, y),
-                          ((Iterators.take(x, 4), Iterators.take(y, 4))),# iterator
-                          (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))),# generator
+                           ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
+                           (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
                           )
                 xc, yc = collect(x), collect(y)
                 @test sqeuclidean(x, y) == 57.0
