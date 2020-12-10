@@ -219,8 +219,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
 end
 
 function pairwise!(r::AbstractMatrix, metric::PreMetric,
-    a::AbstractVector, b::AbstractVector;
-    dims::Union{Nothing,Integer}=nothing)
+                   a::AbstractVector, b::AbstractVector)
     na = length(a)
     nb = length(b)
     size(r) == (na, nb) ||
@@ -228,8 +227,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
     _pairwise!(r, metric, a, b)
 end
 
-function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractVector;
-    dims::Union{Nothing,Integer}=nothing)
+function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractVector)
     n = length(a)
     size(r) == (n, n) ||
     throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((n, n)))."))
