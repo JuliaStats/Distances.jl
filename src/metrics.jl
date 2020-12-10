@@ -487,7 +487,7 @@ js_divergence(a::AbstractArray, b::AbstractArray) = JSDivergence()(a, b)
 
 # SpanNormDist
 
-result_type(dist::SpanNormDist, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) =
+result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
      typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
 result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
      typeof(eval_op(dist, oneunit(eltype(first(a))), oneunit(eltype(first(b)))))
