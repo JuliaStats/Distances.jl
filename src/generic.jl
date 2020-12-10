@@ -33,8 +33,8 @@ Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
 result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback
-result_type(dist::PreMetric, a::AbstractArray{<:Number}, b::AbstractArray{<:Number}) = result_type(dist, eltype(a), eltype(b))
-result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(first(a)), eltype(first(b)))
+result_type(dist::PreMetric, a::AbstractArray, b::AbstractArray) = result_type(dist, eltype(a), eltype(b))
+result_type(dist::PreMetric, a::AbstractArray{<:AbstractArray}, b::AbstractArray{<:AbstractArray}) = result_type(dist, eltype(eltype(a)), eltype(eltype(b)))
 
 # Generic column-wise evaluation
 
