@@ -489,7 +489,7 @@ js_divergence(a::AbstractArray, b::AbstractArray) = JSDivergence()(a, b)
 
 result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
      typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
+result_type(dist::SpanNormDist, a::AbstractArray{<:AbstractArray}, b::AbstractArray{<:AbstractArray}) =
      typeof(eval_op(dist, oneunit(eltype(first(a))), oneunit(eltype(first(b)))))
 Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
     a[1] - b[1], a[1] - b[1]
