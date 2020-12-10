@@ -91,7 +91,7 @@ end
 # Generic pairwise evaluation
 
 function _pairwise!(r::AbstractMatrix, metric::PreMetric,
-                    a::AbstractMatrix, b::AbstractMatrix)
+                    a::AbstractMatrix, b::AbstractMatrix=a)
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -121,7 +121,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
 end
 
 function _pairwise!(r::AbstractMatrix, metric::PreMetric,
-                    a::AbstractVector, b::AbstractVector)
+                    a::AbstractVector, b::AbstractVector=a)
     require_one_based_indexing(r)
     na = length(a)
     nb = length(b)
