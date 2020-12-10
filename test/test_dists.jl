@@ -518,6 +518,50 @@ function test_pairwise(dist, x, y, T)
     end
 end
 
+function test_scalar_pairwise(dist, x, y, T)
+    @testset "Scalar pairwise test for $(typeof(dist))" begin
+        rxy = dist.(x, permutedims(y))
+        rxx = dist.(x, permutedims(x))
+        # As earlier, we have small rounding errors in accumulations
+        @test pairwise(dist, x, y) ≈ rxy
+        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, permutedims(x), permutedims(y), dims=2) ≈ rxy
+        @test pairwise(dist, permutedims(x), dims=2) ≈ rxx
+        @test_throws DimensionMismatch pairwise(dist, permutedims(x), permutedims(y), dims=1)
+    end
+end
+
+@testset "scalar pairwise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    nx = 6
+    ny = 8
+    x = rand(T, nx)
+    y = rand(T, ny)
+    a = rand(1:3, nx)
+    b = rand(1:3, ny)
+    test_scalar_pairwise(SqEuclidean(), x, y, T)
+    test_scalar_pairwise(Euclidean(), x, y, T)
+    test_scalar_pairwise(Cityblock(), x, y, T)
+    test_scalar_pairwise(TotalVariation(), x, y, T)
+    test_scalar_pairwise(Chebyshev(), x, y, T)
+    test_scalar_pairwise(Minkowski(2.5), x, y, T)
+    test_scalar_pairwise(Hamming(), a, b, T)
+    test_scalar_pairwise(CosineDist(), x, y, T)
+    test_scalar_pairwise(CosineDist(), a, b, T)
+    test_scalar_pairwise(ChiSqDist(), x, y, T)
+    test_scalar_pairwise(KLDivergence(), x, y, T)
+    test_scalar_pairwise(JSDivergence(), x, y, T)
+    test_scalar_pairwise(BrayCurtis(), x, y, T)
+    w = rand(1, 1)
+    test_scalar_pairwise(WeightedSqEuclidean(w), x, y, T)
+    test_scalar_pairwise(WeightedEuclidean(w), x, y, T)
+    test_scalar_pairwise(WeightedCityblock(w), x, y, T)
+    test_scalar_pairwise(WeightedMinkowski(w, 2.5), x, y, T)
+    test_scalar_pairwise(WeightedHamming(w), a, b, T)
+    test_scalar_pairwise(PeriodicEuclidean(w), x, y, T)
+end
+
 @testset "pairwise metrics on $T" for T in (Float64, F64)
     m = 5
     n = 8
