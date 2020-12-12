@@ -214,7 +214,7 @@ for dist in weightedmetrics
 end
 
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
-    result_type(dist, Ta, Tb, parameters(dist))
+    result_type(dist, _eltype(Ta), _eltype(Tb), parameters(dist))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =

@@ -32,39 +32,58 @@ evaluate(dist::PreMetric, a, b) = dist(a, b)
 Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
-result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
+# result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
 result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
-# Promote Arrays and Numbers to types
 result_type(dist, a, b) = result_type(dist, _eltype(a), _eltype(b))
+# description of approach:
+# (a) for generic iterators, rely on Base.IteratorEltype(a)
 _eltype(a) = __eltype(Base.IteratorEltype(a), a)
-__eltype(::Base.HasEltype, a) = eltype(a)
-__eltype(::Base.EltypeUnknown, a) = typeof(first(a))
+__eltype(::Base.HasEltype, a) = _eltype(eltype(a))
+__eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
+# (b) for arrays (of arrays), go down the eltype route, until you hit a non-array eltype and return that
+_eltype(a::AbstractArray) = _eltype(eltype(a))
+_eltype(::Type{T}) where {T<:AbstractArray} = _eltype(eltype(T))
+_eltype(T::Type) = T
 
 # Generic column-wise evaluation
 
+function colwise!(r::AbstractArray, metric::PreMetric, a, b)
+    require_one_based_indexing(r)
+    n = length(a)
+    length(b) == n || throw(DimensionMismatch("iterators have different lengths"))
+    length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
+    @inbounds for (j, ab) in enumerate(zip(a, b))
+        r[j] = metric(ab...)
+    end
+    r
+end
+
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+    require_one_based_indexing(r)
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    @inbounds for j = 1:n
-        r[j] = metric(a, view(b, :, j))
+    @inbounds for (rj, bj) in enumerate(axes(b, 2))
+        r[rj] = metric(a, view(b, :, bj))
     end
     r
 end
 
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
+    require_one_based_indexing(r)
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    @inbounds for j = 1:n
-        r[j] = metric(view(a, :, j), b)
+    @inbounds for (rj, aj) in enumerate(axes(a, 2))
+        r[rj] = metric(view(a, :, aj), b)
     end
     r
 end
 
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+    require_one_based_indexing(r, a, b)
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
-    @inbounds for j = 1:n
+    @inbounds for j in 1:n
         r[j] = metric(view(a, :, j), view(b, :, j))
     end
     r
@@ -72,6 +91,12 @@ end
 
 function colwise!(r::AbstractArray, metric::SemiMetric, a::AbstractMatrix, b::AbstractVector)
     colwise!(r, metric, b, a)
+end
+
+function colwise(metric::PreMetric, a, b)
+    n = get_common_length(a, b)
+    r = Vector{result_type(metric, a, b)}(undef, n)
+    colwise!(r, metric, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
@@ -95,8 +120,20 @@ end
 
 # Generic pairwise evaluation
 
+function _pairwise!(r::AbstractMatrix, metric::PreMetric, a, b=a)
+    require_one_based_indexing(r)
+    na = length(a)
+    nb = length(b)
+    size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
+    @inbounds for (j, bj) in enumerate(b), (i, ai) in enumerate(a)
+        r[i, j] = metric(ai, bj)
+    end
+    r
+end
+
 function _pairwise!(r::AbstractMatrix, metric::PreMetric,
                     a::AbstractMatrix, b::AbstractMatrix=a)
+    require_one_based_indexing(r, a, b)
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
@@ -109,17 +146,32 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric,
     r
 end
 
+function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
+    require_one_based_indexing(r)
+    n = length(a)
+    size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
+    itr = Iterators.product(enumerate(a), enumerate(a))
+    @inbounds for ((i, ai), (j, aj)) in itr
+        r[i, j] = i > j ? metric(ai, aj) : r[j,i]
+    end
+    for j = 1:n
+        r[j, j] = 0
+    end
+    r
+end
+
 function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
+    require_one_based_indexing(r)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     @inbounds for j = 1:n
+        for i = 1:(j - 1)
+            r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
+        end
+        r[j, j] = 0
         aj = view(a, :, j)
         for i = (j + 1):n
             r[i, j] = metric(view(a, :, i), aj)
-        end
-        r[j, j] = 0
-        for i = 1:(j - 1)
-            r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
         end
     end
     r
@@ -209,6 +261,13 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     pairwise!(r, metric, a, b, dims=dims)
 end
 
+function pairwise(metric::PreMetric, a, b)
+    m = length(a)
+    n = length(b)
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    _pairwise!(r, metric, a, b)
+end
+
 function pairwise(metric::PreMetric, a::AbstractMatrix;
                   dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
@@ -216,4 +275,10 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
+end
+
+function pairwise(metric::PreMetric, a)
+    n = length(a)
+    r = Matrix{result_type(metric, a, a)}(undef, n, n)
+    _pairwise!(r, metric, a)
 end
