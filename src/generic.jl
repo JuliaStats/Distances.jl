@@ -152,10 +152,11 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
     itr = Iterators.product(enumerate(a), enumerate(a))
     @inbounds for ((i, ai), (j, aj)) in itr
-        r[i, j] = i > j ? metric(ai, aj) : r[j,i]
-    end
-    for j = 1:n
-        r[j, j] = 0
+        r[i, j] = i > j ? 
+            metric(ai, aj) :
+            i == j ?
+                0 :
+                r[j,i]
     end
     r
 end
