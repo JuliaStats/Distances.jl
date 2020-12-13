@@ -216,22 +216,30 @@ end
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
     result_type(dist, _eltype(Ta), _eltype(Tb), parameters(dist))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
-    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb)))
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb)))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
-    typeof(evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(eltype(p))))
+
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b)
+    _evaluate(d, a, b, parameters(d))
+end
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
-Base.@propagate_inbounds evaluate(d::UnionMetrics, a, b) = evaluate(d, a, b, parameters(d))
-@inline function evaluate(d::UnionMetrics, a, b, ::Nothing)
+
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
-    return _evaluate(d, a, b, nothing)
+    s = eval_start(d, a, b)
+    for (ai, bi) in zip(a, b)
+        s = eval_reduce(d, s, eval_op(d, ai, bi))
+    end
+    return eval_end(d, s)
 end
-@inline function evaluate(d::UnionMetrics, a, b, p)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -241,64 +249,73 @@ end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
-    return _evaluate(d, a, b, p)
+    s = eval_start(d, a, b)
+    for (ai, bi, pi) in zip(a, b, p)
+        s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+    end
+    return eval_end(d, s)
 end
-@inline _evaluate(d, a, b, p) = _unsafe_evaluate(d, a, b, p)
-@inline function _evaluate(d, a::AbstractArray, b::AbstractArray, ::Nothing)
-    if (IndexStyle(a, b) === IndexLinear() && eachindex(a) == eachindex(b)) || axes(a) == axes(b)
-        @inbounds begin
-            s = eval_start(d, a, b)
+
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    @inbounds begin
+        s = eval_start(d, a, b)
+        if (IndexStyle(a, b) === IndexLinear() && eachindex(a) == eachindex(b)) || axes(a) == axes(b)
             @simd for I in eachindex(a, b)
                 ai = a[I]
                 bi = b[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
-            return eval_end(d, s)
+        else
+            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
+                ai = a[Ia]
+                bi = b[Ib]
+                s = eval_reduce(d, s, eval_op(d, ai, bi))
+            end
         end
-    else
-        return _unsafe_evaluate(d, a, b, nothing)   
+        return eval_end(d, s)
     end
 end
-@inline function _evaluate(d, a::AbstractArray, b::AbstractArray, p::AbstractArray)
-    if (IndexStyle(a, b, p) === IndexLinear() &&
-        eachindex(a) == eachindex(b) == eachindex(p)) ||
+
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if length(a) != length(p)
+        throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    @inbounds begin
+        s = eval_start(d, a, b)
+        if (IndexStyle(a, b, p) === IndexLinear() && eachindex(a) == eachindex(b) == eachindex(p)) ||
                 axes(a) == axes(b) == axes(p)
-        @inbounds begin
-            s = eval_start(d, a, b)
             @simd for I in eachindex(a, b, p)
                 ai = a[I]
                 bi = b[I]
                 pi = p[I]
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
-            return eval_end(d, s)
-        end
-    else
-        return _unsafe_evaluate(d, a, b, p)   
-    end
-end
-
-@inline function _unsafe_evaluate(d, a, b, ::Nothing)
-    @inbounds begin
-        s = eval_start(d, a, b)
-        for (ai, bi) in zip(a, b)
-            s = eval_reduce(d, s, eval_op(d, ai, bi))
-        end
-        return eval_end(d, s)
-    end
-end
-@inline function _unsafe_evaluate(d, a, b, p)
-    @inbounds begin
-        s = eval_start(d, a, b)
-        for (ai, bi, pi) in zip(a, b, p)
-            s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+        else
+            for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
+                ai = a[Ia]
+                bi = b[Ib]
+                pi = p[Ip]
+                s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+            end
         end
         return eval_end(d, s)
     end
 end
 
-evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
-function evaluate(dist::UnionMetrics, a::Number, b::Number, p)
+_evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
+function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
     length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end
@@ -308,7 +325,10 @@ eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
 eval_end(::UnionMetrics, s) = s
 
 for M in (metrics..., weightedmetrics...)
-    @eval @inline (dist::$M)(a, b) = evaluate(dist, a, b, parameters(dist))
+    @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b, parameters(dist))
+    # if M != SpanNormDist
+    #     @eval @inline (dist::$M)(a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
+    # end
 end
 
 # Euclidean
