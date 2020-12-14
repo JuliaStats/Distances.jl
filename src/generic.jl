@@ -32,10 +32,9 @@ evaluate(dist::PreMetric, a, b) = dist(a, b)
 Infer the result type of metric `dist` with input type `Ta` and `Tb`, or input
 data `a` and `b`.
 """
-# result_type(::PreMetric, ::Type, ::Type) = Float64 # fallback in Distances
+result_type(dist, a, b) = result_type(dist, _eltype(a), _eltype(b))
 result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
-result_type(dist, a, b) = result_type(dist, _eltype(a), _eltype(b))
 # description of approach:
 # (a) for generic iterators, rely on Base.IteratorEltype(a)
 _eltype(a) = __eltype(Base.IteratorEltype(a), a)
@@ -48,6 +47,15 @@ _eltype(T::Type) = T
 
 # Generic column-wise evaluation
 
+"""
+    colwise!(r::AbstractMatrix, metric::PreMetric, a, b)
+
+Compute distances between corresponding elements of the iterable collections
+`a` and `b` according to distance `metric`, and store the result in `r`.
+
+`a` and `b` must have the same number of elements, `r` must be a vector of length
+`length(a) == length(b)`.
+"""
 function colwise!(r::AbstractArray, metric::PreMetric, a, b)
     require_one_based_indexing(r)
     n = length(a)
@@ -79,6 +87,18 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     r
 end
 
+"""
+    colwise!(r::AbstractMatrix, metric::PreMetric,
+              a::AbstractMatrix, b::AbstractMatrix)
+
+Compute distances between each corresponding columns of `a` and `b` according
+to distance `metric`, and store the result in `r`. Exactly one of `a` or `b`
+can be a vector, in which case the distance between that vector and all columns
+of the other matrix are computed.
+
+`a` and `b` must have the same number of columns if neither of the two is a
+vector. `r` must be a vector of length `maximum(size(a, 2), size(b, 2))`.
+"""
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     n = get_common_ncols(a, b)
@@ -89,16 +109,32 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::SemiMetric, a::AbstractMatrix, b::AbstractVector)
-    colwise!(r, metric, b, a)
-end
+"""
+    colwise(r::AbstractMatrix, metric::PreMetric, a, b)
 
+Compute distances between corresponding elements of the iterable collections
+`a` and `b` according to distance `metric`.
+
+`a` and `b` must have the same number of elements, `r` must be a vector of length
+`length(a) == length(b)`.
+"""
 function colwise(metric::PreMetric, a, b)
     n = get_common_length(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
     colwise!(r, metric, a, b)
 end
 
+"""
+    colwise(r::AbstractMatrix, metric::PreMetric,
+              a::AbstractMatrix, b::AbstractMatrix)
+
+Compute distances between each corresponding columns of `a` and `b` according
+to distance `metric`. Exactly one of `a` or `b` can be a vector, in which case
+the distance between that vector and all columns of the other matrix are computed.
+
+`a` and `b` must have the same number of columns if neither of the two is a
+vector. `r` must be a vector of length `maximum(size(a, 2), size(b, 2))`.
+"""
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
@@ -200,7 +236,7 @@ in `a` and `b` according to distance `metric`, and store the result in `r`.
 If a single matrix `a` is provided, compute distances between its rows or columns.
 
 `a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
-`r` must be a square matrix with size `size(a, dims) == size(b, dims)`.
+`r` must be a matrix with size `size(a, dims) × size(b, dims)`.
 """
 function pairwise!(r::AbstractMatrix, metric::PreMetric,
                    a::AbstractMatrix, b::AbstractMatrix;
@@ -246,7 +282,21 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
 end
 
 """
+    pairwise!(r::AbstractMatrix, metric::PreMetric, a, b)
+    pairwise!(r::AbstractMatrix, metric::PreMetric, a)
+
+Compute distances between each element of collection `a` and each element of
+collection `b` according to distance `metric`, and store the result in `r`.
+If a single iterable `a` is provided, compute distances between its elements.
+
+`r` must be a matrix with size `length(a) × length(b)`.
+"""
+pairwise!(r::AbstractMatrix, metric::PreMetric, a, b) = _pairwise!(r, metric, a, b)
+pairwise!(r::AbstractMatrix, metric::PreMetric, a) = _pairwise!(r, metric, a)
+
+"""
     pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
+    pairwise(metric::PreMetric, a::AbstractMatrix; dims)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
 in `a` and `b` according to distance `metric`. If a single matrix `a` is provided,
@@ -264,13 +314,6 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     pairwise!(r, metric, a, b, dims=dims)
 end
 
-function pairwise(metric::PreMetric, a, b)
-    m = length(a)
-    n = length(b)
-    r = Matrix{result_type(metric, a, b)}(undef, m, n)
-    _pairwise!(r, metric, a, b)
-end
-
 function pairwise(metric::PreMetric, a::AbstractMatrix;
                   dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
@@ -278,6 +321,21 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
     pairwise!(r, metric, a, dims=dims)
+end
+
+"""
+    pairwise(metric::PreMetric, a, b)
+    pairwise(metric::PreMetric, a)
+
+Compute distances between each element of collection `a` and each element of
+collection `b` according to distance `metric`. If a single iterable `a` is
+provided, compute distances between its elements.
+"""
+function pairwise(metric::PreMetric, a, b)
+    m = length(a)
+    n = length(b)
+    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    _pairwise!(r, metric, a, b)
 end
 
 function pairwise(metric::PreMetric, a)
