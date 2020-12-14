@@ -228,34 +228,17 @@ end
 
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+        throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
     if length(a) == 0
         return zero(result_type(d, a, b))
     end
     s = eval_start(d, a, b)
-    for (ai, bi) in zip(a, b)
+    @inbounds for (ai, bi) in zip(a, b)
         s = eval_reduce(d, s, eval_op(d, ai, bi))
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
-    @boundscheck if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-    @boundscheck if length(a) != length(p)
-        throw(DimensionMismatch("arrays have length $(length(a)) but parameters have length $(length(p))."))
-    end
-    if length(a) == 0
-        return zero(result_type(d, a, b))
-    end
-    s = eval_start(d, a, b)
-    for (ai, bi, pi) in zip(a, b, p)
-        s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
-    end
-    return eval_end(d, s)
-end
-
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
@@ -272,9 +255,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         else
-            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-                ai = a[Ia]
-                bi = b[Ib]
+            for (ai, bi) in zip(a, b)
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         end
@@ -282,6 +263,22 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if length(a) != length(p)
+        throw(DimensionMismatch("data collections have length $(length(a)) but parameters have length $(length(p))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    @inbounds for (ai, bi, pi) in zip(a, b, p)
+        s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+    end
+    return eval_end(d, s)
+end
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
@@ -303,10 +300,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         else
-            for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
-                ai = a[Ia]
-                bi = b[Ib]
-                pi = p[Ip]
+            for (ai, bi, pi) in zip(a, b, p)
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         end
@@ -326,9 +320,6 @@ eval_end(::UnionMetrics, s) = s
 
 for M in (metrics..., weightedmetrics...)
     @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b, parameters(dist))
-    # if M != SpanNormDist
-    #     @eval @inline (dist::$M)(a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
-    # end
 end
 
 # Euclidean
