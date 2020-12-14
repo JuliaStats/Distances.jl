@@ -40,7 +40,7 @@ end
     asum = zero(Ta)
     bsum = zero(Tb)
 
-    @simd for i = 1:length(a)
+    @simd for i in eachindex(a, b)
         @inbounds ai = a[i]
         @inbounds bi = b[i]
         sqab += sqrt(ai * bi)
