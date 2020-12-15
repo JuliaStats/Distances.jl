@@ -258,7 +258,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
     size(r) == (na, nb) ||
         throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((na, nb)))."))
     if dims == 1
-        _pairwise!(r, metric, transpose(a), transpose(b))
+        _pairwise!(r, metric, permutedims(a), permutedims(b))
     else
         _pairwise!(r, metric, a, b)
     end
@@ -276,7 +276,7 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
     size(r) == (n, n) ||
         throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((n, n)))."))
     if dims == 1
-        _pairwise!(r, metric, transpose(a))
+        _pairwise!(r, metric, permutedims(a))
     else
         _pairwise!(r, metric, a)
     end
