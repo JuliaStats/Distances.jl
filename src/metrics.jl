@@ -218,7 +218,7 @@ result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb)))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
-    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(eltype(p))))
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
 
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b)
     _evaluate(d, a, b, parameters(d))
