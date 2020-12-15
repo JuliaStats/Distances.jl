@@ -35,15 +35,12 @@ of iterators `a` and `b`.
 result_type(dist, a, b) = result_type(dist, _eltype(a), _eltype(b))
 result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't require `PreMetric` subtyping
 
-# description of approach:
-# (a) for generic iterators, rely on Base.IteratorEltype(a)
+
 _eltype(a) = __eltype(Base.IteratorEltype(a), a)
+_eltype(::Type{T}) where {T} = eltype(T) === T ? T : _eltype(eltype(T))
+
 __eltype(::Base.HasEltype, a) = _eltype(eltype(a))
 __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
-# (b) for arrays (of arrays), go down the eltype route, until you hit a non-array eltype and return that
-_eltype(a::AbstractArray) = _eltype(eltype(a))
-_eltype(::Type{T}) where {T<:AbstractArray} = _eltype(eltype(T))
-_eltype(T::Type) = T
 
 # Generic column-wise evaluation
 
@@ -125,13 +122,19 @@ end
 
 """
     colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+    colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+    colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
 
-Compute distances between each corresponding columns of `a` and `b` according
-to distance `metric`. Exactly one of `a` or `b` can be a vector, in which case
-the distance between that vector and all columns of the other matrix are computed.
+Compute distances between corresponding columns of `a` and `b` according to
+distance `metric`. Exactly one of `a` or `b` can be a vector, in which case the
+distance between that vector and all columns of the other matrix are computed.
+
+!!! note
+    If both `a` and `b` are vectors, the generic, iterator-based method of
+    `colwise` applies.
 
 `a` and `b` must have the same number of columns if neither of the two is a
-vector. `r` must be a vector of length `maximum(size(a, 2), size(b, 2))`.
+vector.
 """
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
