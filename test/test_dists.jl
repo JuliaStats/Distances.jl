@@ -325,10 +325,15 @@ end # testset
 @testset "DimensionMismatch throwing" begin
     a = [1, 0]; b = [2]
     @test_throws DimensionMismatch sqeuclidean(a, b)
-    a = [1, 0]; b = [2.0] ; w = [3.0]
+    a = (1, 0); b = (2,)
+    @test_throws DimensionMismatch sqeuclidean(a, b)
+    a = (1, 0); b = (2.0,); w = (3.0,)
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
     @test_throws DimensionMismatch peuclidean(a, b, w)
     a = [1, 0]; b = [2.0, 4.0] ; w = [3.0]
+    @test_throws DimensionMismatch wsqeuclidean(a, b, w)
+    @test_throws DimensionMismatch peuclidean(a, b, w)
+    a = (1, 0); b = (2.0, 4.0) ; w = (3.0,)
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
     @test_throws DimensionMismatch peuclidean(a, b, w)
     p = [0.5, 0.5]; q = [0.3, 0.3, 0.4]
@@ -556,6 +561,8 @@ function test_pairwise(dist, x, y, T)
         for (vecx, vecy) in ((vecx, vecy), (collect(vecx), collect(vecy)))
             @test pairwise(dist, vecx, vecy) ≈ rxy
             @test pairwise(dist, vecx) ≈ rxx
+            @test pairwise!(similar(rxy), dist, vecx, vecy) ≈ rxy
+            @test pairwise!(similar(rxx), dist, vecx) ≈ rxx
         end
     end
 end
@@ -723,6 +730,7 @@ end
     inds2 = findall(isodd, A)
     @test sum(pairwise(SqEuclidean(), inds1, inds2)) == 52
     @test euclidean(inds1[1], inds1[1]) === 0.0
+    @test weuclidean(inds1[1], inds1[2], (1, 1)) ≈ sqrt(2)
 end
 
 #=
