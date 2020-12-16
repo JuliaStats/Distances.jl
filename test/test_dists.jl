@@ -724,15 +724,6 @@ end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
 end
 
-@testset "CartesianIndex" begin
-    A = reshape(collect(1:9), 3, 3)
-    inds1 = findall(iseven, A)
-    inds2 = findall(isodd, A)
-    @test sum(pairwise(SqEuclidean(), inds1, inds2)) == 52
-    @test euclidean(inds1[1], inds1[1]) === 0.0
-    @test weuclidean(inds1[1], inds1[2], (1, 1)) ≈ sqrt(2)
-end
-
 #=
 @testset "zero allocation colwise!" begin
     d = Euclidean()

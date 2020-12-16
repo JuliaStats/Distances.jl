@@ -226,11 +226,6 @@ end
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
 
-@inline _zip(a, b) = zip(a, b)
-@inline _zip(a::CartesianIndex, b::CartesianIndex) = zip(a.I, b.I)
-@inline _zip(a, b, p) = zip(a, b, p)
-@inline _zip(a::CartesianIndex, b::CartesianIndex, p) = zip(a.I, b.I, p)
-
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
@@ -239,7 +234,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
         return zero(result_type(d, a, b))
     end
     s = eval_start(d, a, b)
-    @inbounds for (ai, bi) in _zip(a, b)
+    @inbounds for (ai, bi) in zip(a, b)
         s = eval_reduce(d, s, eval_op(d, ai, bi))
     end
     return eval_end(d, s)
@@ -279,7 +274,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
         return zero(result_type(d, a, b))
     end
     s = eval_start(d, a, b)
-    @inbounds for (ai, bi, pi) in _zip(a, b, p)
+    @inbounds for (ai, bi, pi) in zip(a, b, p)
         s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
     end
     return eval_end(d, s)
