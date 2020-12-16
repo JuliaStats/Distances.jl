@@ -50,7 +50,7 @@ __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 Compute distances between corresponding elements of the iterable collections
 `a` and `b` according to distance `metric`, and store the result in `r`.
 
-`a` and `b` must have the same number of elements, `r` must be a vector of length
+`a` and `b` must have the same number of elements, `r` must be an array of length
 `length(a) == length(b)`.
 """
 function colwise!(r::AbstractArray, metric::PreMetric, a, b)
@@ -87,6 +87,10 @@ end
 """
     colwise!(r::AbstractArray, metric::PreMetric,
              a::AbstractMatrix, b::AbstractMatrix)
+    colwise!(r::AbstractArray, metric::PreMetric,
+             a::AbstractVector, b::AbstractMatrix)
+    colwise!(r::AbstractArray, metric::PreMetric,
+             a::AbstractMatrix, b::AbstractVector)
 
 Compute distances between each corresponding columns of `a` and `b` according
 to distance `metric`, and store the result in `r`. Exactly one of `a` or `b`
@@ -94,7 +98,11 @@ can be a vector, in which case the distance between that vector and all columns
 of the other matrix are computed.
 
 `a` and `b` must have the same number of columns if neither of the two is a
-vector. `r` must be a vector of length `maximum(size(a, 2), size(b, 2))`.
+vector. `r` must be an array of length `maximum(size(a, 2), size(b, 2))`.
+
+!!! note
+    If both `a` and `b` are vectors, the generic, iterator-based method of
+    `colwise` applies.
 """
 function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
@@ -129,12 +137,12 @@ Compute distances between corresponding columns of `a` and `b` according to
 distance `metric`. Exactly one of `a` or `b` can be a vector, in which case the
 distance between that vector and all columns of the other matrix are computed.
 
+`a` and `b` must have the same number of columns if neither of the two is a
+vector.
+
 !!! note
     If both `a` and `b` are vectors, the generic, iterator-based method of
     `colwise` applies.
-
-`a` and `b` must have the same number of columns if neither of the two is a
-vector.
 """
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
