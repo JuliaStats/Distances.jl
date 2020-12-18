@@ -1,5 +1,26 @@
 # Unit tests for Distances
 
+struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
+
+@testset "result_type" begin
+    foodist(a, b) = a + b
+    (::FooDist)(a, b) = foodist(a, b)
+    for (Ta, Tb) in [
+        (Int, Int),
+        (Int, Float64),
+        (Float32, Float32),
+        (Float32, Float64),
+    ]
+        A, B = rand(Ta, 2, 3), rand(Tb, 2, 3)
+        @test result_type(FooDist(), A, B) == result_type(FooDist(), Ta, Tb)
+        @test result_type(foodist, A, B) == result_type(foodist, Ta, Tb) == typeof(foodist(oneunit(Ta), oneunit(Tb)))
+
+        a, b = rand(Ta), rand(Tb)
+        @test result_type(FooDist(), a, b) == result_type(FooDist(), Ta, Tb)
+        @test result_type(foodist, a, b) == result_type(foodist, Ta, Tb) == typeof(foodist(oneunit(Ta), oneunit(Tb)))
+    end
+end
+
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
         @test dist(x, y) == evaluate(dist, x, y)
@@ -86,14 +107,14 @@ end
     test_metricity(BrayCurtis(), a, b, c)
     test_metricity(Jaccard(), a, b, c)
 
-    w = rand(T, n)
-
-    test_metricity(PeriodicEuclidean(w), x, y, z)
-    test_metricity(WeightedSqEuclidean(w), x, y, z)
-    test_metricity(WeightedEuclidean(w), x, y, z)
-    test_metricity(WeightedCityblock(w), x, y, z)
-    test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
-    test_metricity(WeightedHamming(w), a, b, c)
+    for w in (rand(T, n), (rand(T, n)...,))
+        test_metricity(PeriodicEuclidean(w), x, y, z)
+        test_metricity(WeightedSqEuclidean(w), x, y, z)
+        test_metricity(WeightedEuclidean(w), x, y, z)
+        test_metricity(WeightedCityblock(w), x, y, z)
+        test_metricity(WeightedMinkowski(w, 2.5), x, y, z)
+        test_metricity(WeightedHamming(w), a, b, c)
+    end
 
     Q = rand(T, n, n)
     Q = Q * Q'  # make sure Q is positive-definite
@@ -130,10 +151,15 @@ end
     @test chebyshev(a, b) == 1.0
     @test braycurtis(a, b) === 1/3
     @test minkowski(a, b, 2) == 1.0
-    @test hamming(a, b) == 1
+    @test hamming(a, b) === 1
+    @test hamming("martha", "marhta") === 2
+    @test hamming("es an ", " vs an") === 6
+    @test hamming("", "") === 0
     @test peuclidean(a, b, 0.5) === 0.0
     @test peuclidean(a, b, 2) === 1.0
     @test cosine_dist(a, b) === 0.0
+    @test bhattacharyya(a, b) === bhattacharyya([a], [b]) === -0.0
+    @test bhattacharyya(a, b) === bhattacharyya((a,), (b,))
     @test isnan(corr_dist(a, b))
     @test spannorm_dist(a, b) === 0
 
@@ -142,53 +168,59 @@ end
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
     @test braycurtis(bt, bf) == 0.5
 
-    w = 2
-    @test wsqeuclidean(a, b, w) === 2
-    @test weuclidean(a, b, w) === sqrt(2)
-    @test wcityblock(a, b, w) === 2
-    @test wminkowski(a, b, w, 2) === sqrt(2)
-    @test whamming(a, b, w) === 2
+    for w in (2, (2,))
+        @test wsqeuclidean(a, b, w) === 2
+        @test weuclidean(a, b, w) === sqrt(2)
+        @test wcityblock(a, b, w) === 2
+        @test wminkowski(a, b, w, 2) === sqrt(2)
+        @test whamming(a, b, w) === 2
+    end
 
     for T in (Float64, F64)
-
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
-            @test sqeuclidean(x, y) == 57.0
-            @test euclidean(x, y) == sqrt(57.0)
-            @test jaccard(x, y) == 13.0 / 28
-            @test cityblock(x, y) == 13.0
-            @test totalvariation(x, y) == 6.5
-            @test chebyshev(x, y) == 6.0
-            @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
-            @test minkowski(x, y, 2) == sqrt(57.0)
-            @test peuclidean(x, y, fill(10.0, 4)) == sqrt(37)
-            @test peuclidean(x - vec(y), zero(y), fill(10.0, 4)) == peuclidean(x, y, fill(10.0, 4))
-            @test peuclidean(x, y, [10.0, 10.0, 10.0, Inf]) == sqrt(57)
-            @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
-            @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
-            x_int, y_int = Int64.(x), Int64.(y)
-            @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
-            @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
-            @test corr_dist(OffsetVector(x, -1:length(x)-2), y) == corr_dist(x, y)
-            @test chisq_dist(x, y) == sum((x - vec(y)).^2 ./ (x + vec(y)))
-            @test spannorm_dist(x, y) == maximum(x - vec(y)) - minimum(x - vec(y))
+            for (x, y) in ((x, y),
+                           ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
+                           (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
+                          )
+                xc, yc = collect(x), collect(y)
+                @test sqeuclidean(x, y) == 57.0
+                @test euclidean(x, y) == sqrt(57.0)
+                @test jaccard(x, y) == 13.0 / 28
+                @test cityblock(x, y) == 13.0
+                @test totalvariation(x, y) == 6.5
+                @test chebyshev(x, y) == 6.0
+                @test braycurtis(x, y) == 1.0 - (30.0 / 43.0)
+                @test minkowski(x, y, 2) == sqrt(57.0)
+                @test peuclidean(x, y, fill(10.0, 4)) == sqrt(37)
+                @test peuclidean(xc - vec(yc), zero(yc), fill(10.0, 4)) == peuclidean(x, y, fill(10.0, 4))
+                @test peuclidean(x, y, [10.0, 10.0, 10.0, Inf]) == sqrt(57)
+                @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
+                @test cosine_dist(x, y) ≈ (1.0 - 112. / sqrt(19530.0))
+                x_int, y_int = Int64.(x), Int64.(y)
+                @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
+                @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(yc) .- mean(y))
+                @test corr_dist(OffsetVector(xc, -1:length(xc)-2), yc) == corr_dist(x, y)
+                @test chisq_dist(x, y) == sum((xc - vec(yc)).^2 ./ (xc + vec(yc)))
+                @test spannorm_dist(x, y) == maximum(xc - vec(yc)) - minimum(xc - vec(yc))
 
-            @test gkl_divergence(x, y) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
+                @test gkl_divergence(x, y) ≈ sum(i -> xc[i] * log(xc[i] / yc[i]) - xc[i] + yc[i], 1:length(x))
 
-            @test meanad(x, y) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
-            @test msd(x, y) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
-            @test rmsd(x, y) ≈ sqrt(msd(x, y))
-            @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
+                @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in 1:length(x)])
+                @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in 1:length(x)])
+                @test rmsd(x, y) ≈ sqrt(msd(x, y))
+                @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
 
-            w = ones(4)
-            @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
+                w = ones(4)
+                @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
-            w = rand(Float64, size(x))
-            @test wsqeuclidean(x, y, w) ≈ dot((x - vec(y)).^2, w)
-            @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
-            @test wcityblock(x, y, w) ≈ dot(abs.(x - vec(y)), w)
-            @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+                w = rand(Float64, length(x))
+                @test wsqeuclidean(x, y, w) ≈ dot((xc - vec(yc)).^2, w)
+                @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
+                @test wcityblock(x, y, w) ≈ dot(abs.(xc - vec(yc)), w)
+                @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
+            end
         end
 
         # Test ChiSq doesn't give NaN at zero
@@ -228,22 +260,27 @@ end
                 klv += p[i] * log(p[i] / q[i])
             end
         end
-        @test kl_divergence(p, q) ≈ klv
-        @test typeof(kl_divergence(p, q)) == T
-
-
-        @test renyi_divergence(p, r, 0) ≈ -log(scale)
-        @test renyi_divergence(p, r, 1) ≈ -log(scale)
-        @test renyi_divergence(p, r, 10) ≈ -log(scale)
-        @test renyi_divergence(p, r, rand()) ≈ -log(scale)
-        @test renyi_divergence(p, r, Inf) ≈ -log(scale)
-        @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
-        @test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
-        @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
 
         pm = (p + q) / 2
-        jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
-        @test js_divergence(p, q) ≈ jsv
+        for (r, p, pm) in ((r, p, pm),
+                           (Iterators.take(r, length(r)), Iterators.take(p, length(p)), Iterators.take(pm, length(pm))),
+                           ((r[i] for i in 1:length(r)), (p[i] for i in 1:length(p)), (pm[i] for i in 1:length(pm))),
+                          )
+            @test kl_divergence(p, q) ≈ klv
+            @test typeof(kl_divergence(p, q)) == T
+
+            @test renyi_divergence(p, r, 0) ≈ -log(scale)
+            @test renyi_divergence(p, r, 1) ≈ -log(scale)
+            @test renyi_divergence(p, r, 10) ≈ -log(scale)
+            @test renyi_divergence(p, r, rand()) ≈ -log(scale)
+            @test renyi_divergence(p, r, Inf) ≈ -log(scale)
+            @test isinf(renyi_divergence([0.0, 0.5, 0.5], [0.0, 1.0, 0.0], Inf))
+            @test renyi_divergence([0.0, 1.0, 0.0], [0.0, 0.5, 0.5], Inf) ≈ log(2.0)
+            @test renyi_divergence(p, q, 1) ≈ kl_divergence(p, q)
+
+            jsv = kl_divergence(p, pm) / 2 + kl_divergence(q, pm) / 2
+            @test js_divergence(p, q) ≈ jsv
+        end
     end
 end # testset
 
@@ -256,9 +293,7 @@ end # testset
 end #testset
 
 @testset "empty vector" begin
-    for T in (Float64, F64)
-        a = T[]
-        b = T[]
+    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)))
         @test sqeuclidean(a, b) == 0.0
         @test isa(sqeuclidean(a, b), T)
         @test euclidean(a, b) == 0.0
@@ -290,10 +325,15 @@ end # testset
 @testset "DimensionMismatch throwing" begin
     a = [1, 0]; b = [2]
     @test_throws DimensionMismatch sqeuclidean(a, b)
-    a = [1, 0]; b = [2.0] ; w = [3.0]
+    a = (1, 0); b = (2,)
+    @test_throws DimensionMismatch sqeuclidean(a, b)
+    a = (1, 0); b = (2.0,); w = (3.0,)
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
     @test_throws DimensionMismatch peuclidean(a, b, w)
     a = [1, 0]; b = [2.0, 4.0] ; w = [3.0]
+    @test_throws DimensionMismatch wsqeuclidean(a, b, w)
+    @test_throws DimensionMismatch peuclidean(a, b, w)
+    a = (1, 0); b = (2.0, 4.0) ; w = (3.0,)
     @test_throws DimensionMismatch wsqeuclidean(a, b, w)
     @test_throws DimensionMismatch peuclidean(a, b, w)
     p = [0.5, 0.5]; q = [0.3, 0.3, 0.4]
@@ -372,19 +412,21 @@ end #testset
         @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
         @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
-        @test haversine((1.,-15.625), (-179.,15.625), 6371.) ≈ 20015. atol=1e0
+        x, y = (1.,-15.625), (-179.,15.625)
+        @test haversine(x, y, 6371.) ≈ 20015. atol=1e0
+        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015. atol=1e0
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
     end
 end
 
 @testset "bhattacharyya / hellinger" begin
-    for T in (Float64, F64)
-        x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
-        a = T.([1.0, 2.0, 1.0, 3.0, 2.0, 1.0])
-        b = T.([1.0, 3.0, 0.0, 2.0, 2.0, 0.0])
-        p = rand(T, 12)
-        p[p .< median(p)] .= 0.0
-        q = rand(T, 12)
+    for T in (Int, Float64, F64)
+        x, y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
+        a = T.([1, 2, 1, 3, 2, 1])
+        b = T.([1, 3, 0, 2, 2, 0])
+        p = T == Int ? rand(0:10, 12) : rand(T, 12)
+        p[p .< median(p)] .= 0
+        q = T == Int ? rand(0:10, 12) : rand(T, 12)
 
         # Bhattacharyya and Hellinger distances are defined for discrete
         # probability distributions so to calculate the expected values
@@ -392,9 +434,11 @@ end
         px = x ./ sum(x)
         py = y ./ sum(y)
         expected_bc_x_y = sum(sqrt.(px .* py))
-        @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
-        @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
-        @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
+            @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
+            @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
+            @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        end
 
         pa = a ./ sum(a)
         pb = b ./ sum(b)
@@ -429,6 +473,7 @@ function test_colwise(dist, x, y, T)
         end
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
+        @test all(colwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
     end
@@ -507,10 +552,16 @@ function test_pairwise(dist, x, y, T)
         # As earlier, we have small rounding errors in accumulations
         @test pairwise(dist, x, y, dims=2) ≈ rxy
         @test pairwise(dist, x, dims=2) ≈ rxx
-        @test pairwise(dist, x, y, dims=2) ≈ rxy
-        @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
+        vecx = (x[:, i] for i in 1:nx)
+        vecy = (y[:, i] for i in 1:ny)
+        for (vecx, vecy) in ((vecx, vecy), (collect(vecx), collect(vecy)))
+            @test pairwise(dist, vecx, vecy) ≈ rxy
+            @test pairwise(dist, vecx) ≈ rxx
+            @test pairwise!(similar(rxy), dist, vecx, vecy) ≈ rxy
+            @test pairwise!(similar(rxx), dist, vecx) ≈ rxx
+        end
     end
 end
 
@@ -570,6 +621,50 @@ end
     test_pairwise(Mahalanobis(Q), X, Y, T)
 end
 
+function test_scalar_pairwise(dist, x, y, T)
+    @testset "Scalar pairwise test for $(typeof(dist))" begin
+        rxy = dist.(x, permutedims(y))
+        rxx = dist.(x, permutedims(x))
+        # As earlier, we have small rounding errors in accumulations
+        @test pairwise(dist, x, y) ≈ rxy
+        @test pairwise(dist, x) ≈ rxx
+        @test pairwise(dist, permutedims(x), permutedims(y), dims=2) ≈ rxy
+        @test pairwise(dist, permutedims(x), dims=2) ≈ rxx
+        @test_throws DimensionMismatch pairwise(dist, permutedims(x), permutedims(y), dims=1)
+    end
+end
+
+@testset "scalar pairwise metrics on $T" for T in (Float64, F64)
+    m = 5
+    n = 8
+    nx = 6
+    ny = 8
+    x = rand(T, nx)
+    y = rand(T, ny)
+    a = rand(1:3, nx)
+    b = rand(1:3, ny)
+    test_scalar_pairwise(SqEuclidean(), x, y, T)
+    test_scalar_pairwise(Euclidean(), x, y, T)
+    test_scalar_pairwise(Cityblock(), x, y, T)
+    test_scalar_pairwise(TotalVariation(), x, y, T)
+    test_scalar_pairwise(Chebyshev(), x, y, T)
+    test_scalar_pairwise(Minkowski(2.5), x, y, T)
+    test_scalar_pairwise(Hamming(), a, b, T)
+    test_scalar_pairwise(CosineDist(), x, y, T)
+    test_scalar_pairwise(CosineDist(), a, b, T)
+    test_scalar_pairwise(ChiSqDist(), x, y, T)
+    test_scalar_pairwise(KLDivergence(), x, y, T)
+    test_scalar_pairwise(JSDivergence(), x, y, T)
+    test_scalar_pairwise(BrayCurtis(), x, y, T)
+    w = rand(1, 1)
+    test_scalar_pairwise(WeightedSqEuclidean(w), x, y, T)
+    test_scalar_pairwise(WeightedEuclidean(w), x, y, T)
+    test_scalar_pairwise(WeightedCityblock(w), x, y, T)
+    test_scalar_pairwise(WeightedMinkowski(w, 2.5), x, y, T)
+    test_scalar_pairwise(WeightedHamming(w), a, b, T)
+    test_scalar_pairwise(PeriodicEuclidean(w), x, y, T)
+end
+
 @testset "Euclidean precision" begin
     X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
     pd = pairwise(Euclidean(1e-12), X, X, dims=2)
@@ -608,11 +703,16 @@ end
     testDist = Bregman(F, ∇)
     p = rand(4)
     q = rand(4)
-    p = p/sum(p);
-    q = q/sum(q);
-    @test testDist(p, q) ≈ gkl_divergence(p, q)
-    # Test if Bregman() correctly implements the squared euclidean dist. between them.
-    @test bregman(x -> norm(x)^2, x -> 2*x, p, q) ≈ sqeuclidean(p, q)
+    p = p/sum(p)
+    q = q/sum(q)
+    for (p, q) in ((p, q),
+                   (Iterators.take(p, 4), Iterators.take(q, 4)),
+                   ((p[i] for i in 1:4), (q[i] for i in 1:4)),
+                   )
+        @test testDist(p, q) ≈ gkl_divergence(p, q)
+        # Test if Bregman() correctly implements the squared euclidean dist. between them.
+        @test bregman(x -> norm(x)^2, x -> 2 .* x, p, q) ≈ sqeuclidean(p, q)
+    end
     # Test if Bregman() correctly implements the IS distance.
     F(p) = -1 * sum(log.(p))
     ∇(p) = map(x -> -1 * x^(-1), p)

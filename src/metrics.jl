@@ -52,7 +52,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedEuclidean{W} <: UnionMetric
     weights::W
 end
 
@@ -74,7 +74,7 @@ julia> evaluate(PeriodicEuclidean(L), x, y)
 0.25
 ```
 """
-struct PeriodicEuclidean{W <: AbstractArray{<: Real}} <: UnionMetric
+struct PeriodicEuclidean{W} <: UnionMetric
     periods::W
 end
 
@@ -90,14 +90,14 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
-struct WeightedSqEuclidean{W <: AbstractArray{<:Real}} <: UnionSemiMetric
+struct WeightedSqEuclidean{W} <: UnionSemiMetric
     weights::W
 end
 
 struct Chebyshev <: UnionMetric end
 
 struct Cityblock <: UnionMetric end
-struct WeightedCityblock{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedCityblock{W} <: UnionMetric
     weights::W
 end
 
@@ -108,13 +108,13 @@ struct RogersTanimoto <: UnionMetric end
 struct Minkowski{T <: Real} <: UnionMetric
     p::T
 end
-struct WeightedMinkowski{W <: AbstractArray{<:Real},T <: Real} <: UnionMetric
+struct WeightedMinkowski{W,T <: Real} <: UnionMetric
     weights::W
     p::T
 end
 
 struct Hamming <: UnionMetric end
-struct WeightedHamming{W <: AbstractArray{<:Real}} <: UnionMetric
+struct WeightedHamming{W} <: UnionMetric
     weights::W
 end
 
@@ -214,19 +214,31 @@ for dist in weightedmetrics
 end
 
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
-    result_type(dist, Ta, Tb, parameters(dist))
+    result_type(dist, _eltype(Ta), _eltype(Tb), parameters(dist))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb)))
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
-    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(eltype(p))))
+    typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b)
     _evaluate(d, a, b, parameters(d))
 end
-_evaluate(dist::UnionMetrics, a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
 
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    @inbounds for (ai, bi) in zip(a, b)
+        s = eval_reduce(d, s, eval_op(d, ai, bi))
+    end
+    return eval_end(d, s)
+end
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
@@ -243,9 +255,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         else
-            for (Ia, Ib) in zip(eachindex(a), eachindex(b))
-                ai = a[Ia]
-                bi = b[Ib]
+            for (ai, bi) in zip(a, b)
                 s = eval_reduce(d, s, eval_op(d, ai, bi))
             end
         end
@@ -253,6 +263,22 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if length(a) != length(p)
+        throw(DimensionMismatch("data collections have length $(length(a)) but parameters have length $(length(p))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    s = eval_start(d, a, b)
+    @inbounds for (ai, bi, pi) in zip(a, b, p)
+        s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
+    end
+    return eval_end(d, s)
+end
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
@@ -274,10 +300,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         else
-            for (Ia, Ib, Ip) in zip(eachindex(a), eachindex(b), eachindex(p))
-                ai = a[Ia]
-                bi = b[Ib]
-                pi = p[Ip]
+            for (ai, bi, pi) in zip(a, b, p)
                 s = eval_reduce(d, s, eval_op(d, ai, bi, pi))
             end
         end
@@ -291,28 +314,23 @@ function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end
 
-eval_start(d::UnionMetrics, a::AbstractArray, b::AbstractArray) = zero(result_type(d, a, b))
+eval_start(d::UnionMetrics, a, b) = zero(result_type(d, a, b))
 eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
-eval_end(d::UnionMetrics, s) = s
+eval_end(::UnionMetrics, s) = s
 
 for M in (metrics..., weightedmetrics...)
-    @eval @inline (dist::$M)(a::AbstractArray, b::AbstractArray) = _evaluate(dist, a, b, parameters(dist))
-    if M != SpanNormDist
-        @eval @inline (dist::$M)(a::Number, b::Number) = _evaluate(dist, a, b, parameters(dist))
-    end
+    @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b, parameters(dist))
 end
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
 eval_end(::Euclidean, s) = sqrt(s)
-euclidean(a::AbstractArray, b::AbstractArray) = Euclidean()(a, b)
-euclidean(a::Number, b::Number) = Euclidean()(a, b)
+euclidean(a, b) = Euclidean()(a, b)
 
 # Weighted Euclidean
 @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
 eval_end(::WeightedEuclidean, s) = sqrt(s)
-weuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedEuclidean(w)(a, b)
-weuclidean(a::Number, b::Number, w::Real) = WeightedEuclidean([w])(a, b)
+weuclidean(a, b, w) = WeightedEuclidean(w)(a, b)
 
 # PeriodicEuclidean
 @inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
@@ -322,68 +340,57 @@ weuclidean(a::Number, b::Number, w::Real) = WeightedEuclidean([w])(a, b)
     abs2(s3)
 end
 eval_end(::PeriodicEuclidean, s) = sqrt(s)
-peuclidean(a::AbstractArray, b::AbstractArray, p::AbstractArray{<: Real}) =
-    PeriodicEuclidean(p)(a, b)
-peuclidean(a::Number, b::Number, p::Real) = PeriodicEuclidean([p])(a, b)
+peuclidean(a, b, p) = PeriodicEuclidean(p)(a, b)
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
-sqeuclidean(a::AbstractArray, b::AbstractArray) = SqEuclidean()(a, b)
-sqeuclidean(a::Number, b::Number) = SqEuclidean()(a, b)
+sqeuclidean(a, b) = SqEuclidean()(a, b)
 
 # Weighted Squared Euclidean
 @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
-wsqeuclidean(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedSqEuclidean(w)(a, b)
-wsqeuclidean(a::Number, b::Number, w::Real) = WeightedSqEuclidean([w])(a, b)
+wsqeuclidean(a, b, w) = WeightedSqEuclidean(w)(a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
-cityblock(a::AbstractArray, b::AbstractArray) = Cityblock()(a, b)
-cityblock(a::Number, b::Number) = Cityblock()(a, b)
+cityblock(a, b) = Cityblock()(a, b)
 
 # Weighted City Block
 @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
-wcityblock(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedCityblock(w)(a, b)
-wcityblock(a::Number, b::Number, w::Real) = WeightedCityblock([w])(a, b)
+wcityblock(a, b, w) = WeightedCityblock(w)(a, b)
 
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
 eval_end(::TotalVariation, s) = s / 2
-totalvariation(a::AbstractArray, b::AbstractArray) = TotalVariation()(a, b)
-totalvariation(a::Number, b::Number) = TotalVariation()(a, b)
+totalvariation(a, b) = TotalVariation()(a, b)
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-Base.@propagate_inbounds eval_start(::Chebyshev, a::AbstractArray, b::AbstractArray) = abs(a[1] - b[1])
-chebyshev(a::AbstractArray, b::AbstractArray) = Chebyshev()(a, b)
-chebyshev(a::Number, b::Number) = Chebyshev()(a, b)
+Base.@propagate_inbounds eval_start(::Chebyshev, a, b) = abs(first(a) - first(b))
+chebyshev(a, b) = Chebyshev()(a, b)
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi)^dist.p
 @inline eval_end(dist::Minkowski, s) = s^(1 / dist.p)
-minkowski(a::AbstractArray, b::AbstractArray, p::Real) = Minkowski(p)(a, b)
-minkowski(a::Number, b::Number, p::Real) = Minkowski(p)(a, b)
+minkowski(a, b, p::Real) = Minkowski(p)(a, b)
 
 # Weighted Minkowski
 @inline eval_op(dist::WeightedMinkowski, ai, bi, wi) = abs(ai - bi)^dist.p * wi
 @inline eval_end(dist::WeightedMinkowski, s) = s^(1 / dist.p)
-wminkowski(a::AbstractArray, b::AbstractArray, w::AbstractArray, p::Real) = WeightedMinkowski(w, p)(a, b)
-wminkowski(a::Number, b::Number, w::Real, p::Real) = WeightedMinkowski([w], p)(a, b)
+wminkowski(a, b, w, p::Real) = WeightedMinkowski(w, p)(a, b)
 
 # Hamming
+result_type(::Hamming, ::Type, ::Type) = Int # fallback for Hamming
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
-hamming(a::AbstractArray, b::AbstractArray) = Hamming()(a, b)
-hamming(a::Number, b::Number) = Hamming()(a, b)
+hamming(a, b) = Hamming()(a, b)
 
 # WeightedHamming
 @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
-whamming(a::AbstractArray, b::AbstractArray, w::AbstractArray) = WeightedHamming(w)(a, b)
-whamming(a::Number, b::Number, w::Real) = WeightedHamming([w])(a, b)
+whamming(a, b, w) = WeightedHamming(w)(a, b)
 
 # Cosine dist
-@inline function eval_start(dist::CosineDist, a::AbstractArray, b::AbstractArray)
+@inline function eval_start(dist::CosineDist, a, b)
     T = result_type(dist, a, b)
     zero(T), zero(T), zero(T)
 end
@@ -397,32 +404,31 @@ function eval_end(::CosineDist, s)
     ab, a2, b2 = s
     max(1 - ab / (sqrt(a2) * sqrt(b2)), 0)
 end
-cosine_dist(a::AbstractArray, b::AbstractArray) = CosineDist()(a, b)
-cosine_dist(a::Number, b::Number) = CosineDist()(a, b)
+cosine_dist(a, b) = CosineDist()(a, b)
 
 # CorrDist
-_centralize(x::AbstractArray) = x .- mean(x)
-(dist::CorrDist)(a::AbstractArray, b::AbstractArray) = CosineDist()(_centralize(a), _centralize(b))
+_centralize(x) = x .- mean(x)
+(dist::CorrDist)(a, b) = CosineDist()(_centralize(a), _centralize(b))
 (dist::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
-corr_dist(a::AbstractArray, b::AbstractArray) = CorrDist()(a, b)
-corr_dist(a::Number, b::Number) = CorrDist()(a, b)
+corr_dist(a, b) = CorrDist()(a, b)
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
-chisq_dist(a::AbstractArray, b::AbstractArray) = ChiSqDist()(a, b)
+chisq_dist(a, b) = ChiSqDist()(a, b)
 
 # KLDivergence
 @inline eval_op(dist::KLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
-kl_divergence(a::AbstractArray, b::AbstractArray) = KLDivergence()(a, b)
+kl_divergence(a, b) = KLDivergence()(a, b)
 
 # GenKLDivergence
 @inline eval_op(dist::GenKLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
-gkl_divergence(a::AbstractArray, b::AbstractArray) = GenKLDivergence()(a, b)
+gkl_divergence(a, b) = GenKLDivergence()(a, b)
 
 # RenyiDivergence
-Base.@propagate_inbounds function eval_start(::RenyiDivergence, a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Real}
+Base.@propagate_inbounds function eval_start(::RenyiDivergence, a, b)
+    T = promote_type(_eltype(a), _eltype(b))
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
@@ -466,7 +472,7 @@ function eval_end(dist::RenyiDivergence, s::Tuple{T,T,T,T}) where {T <: Real}
     end
 end
 
-renyi_divergence(a::AbstractArray, b::AbstractArray, q::Real) = RenyiDivergence(q)(a, b)
+renyi_divergence(a, b, q::Real) = RenyiDivergence(q)(a, b)
 # Combine docs with RenyiDivergence. Fetching the docstring with @doc causes
 # problems during package compilation; see
 # https://github.com/JuliaLang/julia/issues/31640
@@ -483,14 +489,15 @@ end
     tu = u > 0 ? u * log(u) : zero(log(one(T)))
     ta + tb - tu
 end
-js_divergence(a::AbstractArray, b::AbstractArray) = JSDivergence()(a, b)
+js_divergence(a, b) = JSDivergence()(a, b)
 
 # SpanNormDist
 
-result_type(dist::SpanNormDist, a::AbstractArray, b::AbstractArray) =
-     typeof(eval_op(dist, oneunit(eltype(a)), oneunit(eltype(b))))
-Base.@propagate_inbounds function eval_start(::SpanNormDist, a::AbstractArray, b::AbstractArray)
-    a[1] - b[1], a[1] - b[1]
+result_type(dist::SpanNormDist, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+    typeof(eval_op(dist, oneunit(Ta), oneunit(Tb)))
+Base.@propagate_inbounds function eval_start(::SpanNormDist, a, b)
+    d = first(a) - first(b)
+    return d, d
 end
 eval_op(::SpanNormDist, ai, bi)  = ai - bi
 @inline function eval_reduce(::SpanNormDist, s1, s2)
@@ -505,13 +512,12 @@ end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 (::SpanNormDist)(a::Number, b::Number) = zero(promote_type(typeof(a), typeof(b)))
-spannorm_dist(a::AbstractArray, b::AbstractArray) = SpanNormDist()(a, b)
-spannorm_dist(a::Number, b::Number) = SpanNormDist()(a, b)
+spannorm_dist(a, b) = SpanNormDist()(a, b)
 
 # Jaccard
 
-@inline eval_start(::Jaccard, a::AbstractArray{Bool}, b::AbstractArray{Bool}) = 0, 0
-@inline function eval_start(dist::Jaccard, a::AbstractArray, b::AbstractArray)
+@inline eval_start(::Jaccard, ::AbstractArray{Bool}, ::AbstractArray{Bool}) = 0, 0
+@inline function eval_start(dist::Jaccard, a, b)
     T = result_type(dist, a, b)
     zero(T), zero(T)
 end
@@ -529,12 +535,11 @@ end
     @inbounds v = 1 - (a[1] / a[2])
     return v
 end
-jaccard(a::AbstractArray, b::AbstractArray) = Jaccard()(a, b)
-jaccard(a::Number, b::Number) = Jaccard()(a, b)
+jaccard(a, b) = Jaccard()(a, b)
 
 # BrayCurtis
 
-@inline function eval_start(dist::BrayCurtis, a::AbstractArray, b::AbstractArray)
+@inline function eval_start(dist::BrayCurtis, a, b)
     T = result_type(dist, a, b)
     zero(T), zero(T)
 end
@@ -552,12 +557,11 @@ end
     @inbounds v = a[1] / a[2]
     return v
 end
-braycurtis(a::AbstractArray, b::AbstractArray) = BrayCurtis()(a, b)
-braycurtis(a::Number, b::Number) = BrayCurtis()(a, b)
+braycurtis(a, b) = BrayCurtis()(a, b)
 
 # Tanimoto
 
-@inline eval_start(::RogersTanimoto, a::AbstractArray, b::AbstractArray) = 0, 0, 0, 0
+@inline eval_start(::RogersTanimoto, _, _) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
     tt = s1 && s2
     tf = s1 && !s2
@@ -579,7 +583,7 @@ end
     @inbounds denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
-rogerstanimoto(a::AbstractArray{T}, b::AbstractArray{T}) where {T <: Bool} = RogersTanimoto()(a, b)
+rogerstanimoto(a, b) = RogersTanimoto()(a, b)
 
 # Deviations
 

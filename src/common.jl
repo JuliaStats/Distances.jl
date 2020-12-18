@@ -12,6 +12,12 @@ function get_common_ncols(a::AbstractMatrix, b::AbstractMatrix)
     return na
 end
 
+function get_common_length(a, b)
+    n = length(a)
+    length(b) == n || throw(DimensionMismatch("The lengths of a and b must match."))
+    return n
+end
+
 function get_pairwise_dims(r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     ma, na = size(a)
     mb, nb = size(b)

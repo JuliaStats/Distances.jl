@@ -9,39 +9,54 @@ struct HellingerDist <: Metric end
 
 # Bhattacharyya coefficient
 
-function bhattacharyya_coeff(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number}
-    if length(a) != length(b)
-        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
-    end
-
+function bhattacharyya_coeff(a, b)
     n = length(a)
-    sqab = zero(T)
+    if n != length(b)
+        throw(DimensionMismatch("first argument has length $n which does not match the length of the second, $(length(b))."))
+    end
+    sqab, asum, bsum = _bhattacharyya_coeff(a, b)
     # We must normalize since we cannot assume that the vectors are normalized to probability vectors.
-    asum = zero(T)
-    bsum = zero(T)
+    return sqab / sqrt(asum * bsum)
+end
 
-    @simd for i = 1:n
+@inline function _bhattacharyya_coeff(a, b)
+    Ta = _eltype(a)
+    Tb = _eltype(b)
+    T = typeof(sqrt(zero(promote_type(Ta, Tb))))
+    sqab = zero(T)
+    asum = zero(Ta)
+    bsum = zero(Tb)
+
+    for (ai, bi) in zip(a, b)
+        sqab += sqrt(ai * bi)
+        asum += ai
+        bsum += bi
+    end
+    return sqab, asum, bsum
+end
+@inline function _bhattacharyya_coeff(a::AbstractVector{Ta}, b::AbstractVector{Tb}) where {Ta<:Number,Tb<:Number}
+    T = typeof(sqrt(oneunit(Ta)*oneunit(Tb)))
+    sqab = zero(T)
+    asum = zero(Ta)
+    bsum = zero(Tb)
+
+    @simd for i in eachindex(a, b)
         @inbounds ai = a[i]
         @inbounds bi = b[i]
         sqab += sqrt(ai * bi)
         asum += ai
         bsum += bi
     end
-
-    sqab / sqrt(asum * bsum)
+    return sqab, asum, bsum
 end
-
-bhattacharyya_coeff(a::T, b::T) where {T <: Number} = throw("Bhattacharyya coefficient cannot be calculated for scalars")
 
 # Faster pair- and column-wise versions TBD...
 
 
 # Bhattacharyya distance
-(::BhattacharyyaDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = -log(bhattacharyya_coeff(a, b))
-(::BhattacharyyaDist)(a::T, b::T) where {T <: Number} = throw("Bhattacharyya distance cannot be calculated for scalars")
+(::BhattacharyyaDist)(a, b) = -log(bhattacharyya_coeff(a, b))
 bhattacharyya(a, b) = BhattacharyyaDist()(a, b)
 
 # Hellinger distance
-(::HellingerDist)(a::AbstractVector{T}, b::AbstractVector{T}) where {T <: Number} = sqrt(1 - bhattacharyya_coeff(a, b))
-(::HellingerDist)(a::T, b::T) where {T <: Number} = throw("Hellinger distance cannot be calculated for scalars")
+(::HellingerDist)(a, b) = sqrt(1 - bhattacharyya_coeff(a, b))
 hellinger(a, b) = HellingerDist()(a, b)
