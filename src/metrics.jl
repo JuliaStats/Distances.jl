@@ -802,7 +802,7 @@ end
 
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, dist::CosineDist,
+function _pairwise!(r::AbstractMatrix, ::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
@@ -815,7 +815,7 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist,
     end
     r
 end
-function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = norm_percol(a)
@@ -838,16 +838,16 @@ end
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!(r::AbstractArray, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
+function colwise!(r::AbstractArray, ::CorrDist, a::AbstractVector, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist,
+function _pairwise!(r::AbstractMatrix, ::CorrDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
 end

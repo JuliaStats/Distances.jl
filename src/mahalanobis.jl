@@ -43,7 +43,6 @@ function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::A
     Q = dist.qmat
     m, n = get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
-    Qz = Q * z
     dot_percol!(r, Q * z, z)
 end
 
