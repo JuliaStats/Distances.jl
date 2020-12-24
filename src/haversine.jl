@@ -11,7 +11,7 @@ struct Haversine{T<:Real} <: Metric
 end
 
 function (dist::Haversine)(x, y)
-    length(x) == length(y) == 2 || haversine_error()
+    length(x) == length(y) == 2 || haversine_error(dist)
 
     @inbounds x1, x2 = x
     @inbounds y1, y2 = y
@@ -32,4 +32,34 @@ end
 
 haversine(x, y, radius::Real) = Haversine(radius)(x, y)
 
-@noinline haversine_error() = throw(ArgumentError("expected both inputs to have length 2 in Haversine distance"))
+@noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
+
+
+
+"""
+    SphericalAngle()
+
+The spherical angle distance between two locations on a sphere.
+
+Locations are described with two angles, longitude and latitude, in radians.
+The distance is computed with the haversine formula and also has units of radians.
+"""
+struct SphericalAngle <: Metric end
+
+function (dist::SphericalAngle)(x, y)
+    length(x) == length(y) == 2 || haversine_error(dist)
+
+    @inbounds λ₁, φ₁ = x
+    @inbounds λ₂, φ₂ = y
+
+    Δλ = λ₂ - λ₁  # longitudes
+    Δφ = φ₂ - φ₁  # latitudes
+
+    # haversine formula
+    a = sin(Δφ/2)^2 + cos(φ₁)*cos(φ₂)*sin(Δλ/2)^2
+
+    # distance on the sphere
+    2 * asin( min(√a, one(a)) ) # take care of floating point errors
+end
+
+spherical_angle(x, y) = SphericalAngle()(x, y)

@@ -92,6 +92,7 @@ end
     x₃ = rand(T, 2)
 
     test_metricity(Haversine(6371.0), x₁, x₂, x₃)
+    test_metricity(SphericalAngle(), x₁, x₂, x₃)
 
     k = rand(1:3, n)
     l = rand(1:3, n)
@@ -417,6 +418,18 @@ end #testset
         @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015. atol=1e0
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
     end
+end
+
+@testset "spherical angle" begin
+    @test spherical_angle([-π, 0],    [π,0]) ≈ 0 atol=1e-10
+    @test spherical_angle([0,-π/2], [0,π/2]) ≈ π atol=1e-10
+    @test spherical_angle((-π,0),     (π,0)) ≈ 0 atol=1e-10
+    @test spherical_angle((0,-π/2), (0,π/2)) ≈ π atol=1e-10
+    x, y = rand(2), rand(2)
+    x_deg, y_deg = rad2deg.(x), rad2deg.(y)
+    @test spherical_angle(x, y) ≈ haversine(x_deg, y_deg, 1) atol=1e-10
+    @test spherical_angle(Iterators.take(x, 2), Iterators.take(y, 2)) ≈ haversine(x_deg, y_deg, 1) atol=1e-10
+    @test_throws ArgumentError spherical_angle([0.,-π/2, 0.25], [0.,π/2])
 end
 
 @testset "bhattacharyya / hellinger" begin

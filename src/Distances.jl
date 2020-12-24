@@ -50,6 +50,7 @@ export
     HellingerDist,
 
     Haversine,
+    SphericalAngle,
 
     MeanAbsDeviation,
     MeanSqDeviation,
@@ -91,6 +92,7 @@ export
     bregman,
 
     haversine,
+    spherical_angle,
 
     meanad,
     msd,
