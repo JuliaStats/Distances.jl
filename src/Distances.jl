@@ -11,9 +11,9 @@ export
 
     # generic functions
     result_type,
-    zipwise,
+    colwise,
     pairwise,
-    zipwise!,
+    colwise!,
     pairwise!,
     evaluate,
 

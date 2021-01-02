@@ -32,20 +32,6 @@ end
 
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
 
-function zipwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    Q = dist.qmat
-    m, n = get_colwise_dims(size(Q, 1), r, a, b)
-    z = a - b
-    dot_percol!(r, Q * z, z)
-end
-
-function zipwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::AbstractMatrix)
-    Q = dist.qmat
-    m, n = get_colwise_dims(size(Q, 1), r, a, b)
-    z = a .- b
-    dot_percol!(r, Q * z, z)
-end
-
 function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
                     a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
@@ -94,14 +80,6 @@ function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
-
-function zipwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(zipwise!(r, SqMahalanobis(dist.qmat), a, b))
-end
-
-function zipwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(zipwise!(r, SqMahalanobis(dist.qmat), a, b))
-end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis,
                     a::AbstractMatrix, b::AbstractMatrix)

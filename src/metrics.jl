@@ -786,12 +786,6 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
 end
 
 # Weighted Euclidean
-function zipwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(zipwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
-function zipwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(zipwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
 function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
