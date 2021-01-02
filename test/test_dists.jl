@@ -345,10 +345,10 @@ end # testset
     @test_throws DimensionMismatch mahalanobis(q, q, Q)
     mat23 = [0.3 0.2 0.0; 0.1 0.0 0.4]
     mat22 = [0.3 0.2; 0.1 0.4]
-    @test_throws DimensionMismatch zipwise!(mat23, Euclidean(), mat23, mat23)
-    @test_throws DimensionMismatch zipwise!(mat23, Euclidean(), mat23, q)
-    @test_throws DimensionMismatch zipwise!(mat23, Euclidean(), mat23, mat22)
-    @test_throws DimensionMismatch zipwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
+    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
+    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
+    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
 end # testset
@@ -460,8 +460,8 @@ end
 end #testset
 
 
-function test_zipwise(dist, x, y, T)
-    @testset "Zipwise test for $(typeof(dist))" begin
+function test_colwise(dist, x, y, T)
+    @testset "Colwise test for $(typeof(dist))" begin
         n = size(x, 2)
         r1 = zeros(T, n)
         r2 = zeros(T, n)
@@ -472,10 +472,10 @@ function test_zipwise(dist, x, y, T)
             r3[j] = dist(x[:, j], y[:, 1])
         end
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
-        @test all(zipwise(dist, x, y) .≈ r1)
-        @test all(zipwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
-        @test all(zipwise(dist, x[:, 1], y) .≈ r2)
-        @test all(zipwise(dist, x, y[:, 1]) .≈ r3)
+        @test all(colwise(dist, x, y) .≈ r1)
+        @test all(colwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
+        @test all(colwise(dist, x[:, 1], y) .≈ r2)
+        @test all(colwise(dist, x, y[:, 1]) .≈ r3)
     end
 end
 
@@ -494,47 +494,47 @@ end
         P[P[:, i] .< median(P[:, i]) / 2, i] .= 0.0
     end
 
-    test_zipwise(SqEuclidean(), X, Y, T)
-    test_zipwise(Euclidean(), X, Y, T)
-    test_zipwise(Cityblock(), X, Y, T)
-    test_zipwise(TotalVariation(), X, Y, T)
-    test_zipwise(Chebyshev(), X, Y, T)
-    test_zipwise(Minkowski(2.5), X, Y, T)
-    test_zipwise(Hamming(), A, B, T)
-    test_zipwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T);
+    test_colwise(SqEuclidean(), X, Y, T)
+    test_colwise(Euclidean(), X, Y, T)
+    test_colwise(Cityblock(), X, Y, T)
+    test_colwise(TotalVariation(), X, Y, T)
+    test_colwise(Chebyshev(), X, Y, T)
+    test_colwise(Minkowski(2.5), X, Y, T)
+    test_colwise(Hamming(), A, B, T)
+    test_colwise(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), X, Y, T);
 
-    test_zipwise(CosineDist(), X, Y, T)
-    test_zipwise(CorrDist(), X, Y, T)
+    test_colwise(CosineDist(), X, Y, T)
+    test_colwise(CorrDist(), X, Y, T)
 
-    test_zipwise(ChiSqDist(), X, Y, T)
-    test_zipwise(KLDivergence(), P, Q, T)
-    test_zipwise(RenyiDivergence(0.0), P, Q, T)
-    test_zipwise(RenyiDivergence(1.0), P, Q, T)
-    test_zipwise(RenyiDivergence(Inf), P, Q, T)
-    test_zipwise(RenyiDivergence(0.5), P, Q, T)
-    test_zipwise(RenyiDivergence(2), P, Q, T)
-    test_zipwise(RenyiDivergence(10), P, Q, T)
-    test_zipwise(JSDivergence(), P, Q, T)
-    test_zipwise(SpanNormDist(), X, Y, T)
+    test_colwise(ChiSqDist(), X, Y, T)
+    test_colwise(KLDivergence(), P, Q, T)
+    test_colwise(RenyiDivergence(0.0), P, Q, T)
+    test_colwise(RenyiDivergence(1.0), P, Q, T)
+    test_colwise(RenyiDivergence(Inf), P, Q, T)
+    test_colwise(RenyiDivergence(0.5), P, Q, T)
+    test_colwise(RenyiDivergence(2), P, Q, T)
+    test_colwise(RenyiDivergence(10), P, Q, T)
+    test_colwise(JSDivergence(), P, Q, T)
+    test_colwise(SpanNormDist(), X, Y, T)
 
-    test_zipwise(BhattacharyyaDist(), X, Y, T)
-    test_zipwise(HellingerDist(), X, Y, T)
-    test_zipwise(BrayCurtis(), X, Y, T)
+    test_colwise(BhattacharyyaDist(), X, Y, T)
+    test_colwise(HellingerDist(), X, Y, T)
+    test_colwise(BrayCurtis(), X, Y, T)
 
     w = rand(T, m)
 
-    test_zipwise(WeightedSqEuclidean(w), X, Y, T)
-    test_zipwise(WeightedEuclidean(w), X, Y, T)
-    test_zipwise(WeightedCityblock(w), X, Y, T)
-    test_zipwise(WeightedMinkowski(w, 2.5), X, Y, T)
-    test_zipwise(WeightedHamming(w), A, B, T)
-    test_zipwise(PeriodicEuclidean(w), X, Y, T)
+    test_colwise(WeightedSqEuclidean(w), X, Y, T)
+    test_colwise(WeightedEuclidean(w), X, Y, T)
+    test_colwise(WeightedCityblock(w), X, Y, T)
+    test_colwise(WeightedMinkowski(w, 2.5), X, Y, T)
+    test_colwise(WeightedHamming(w), A, B, T)
+    test_colwise(PeriodicEuclidean(w), X, Y, T)
 
     Q = rand(T, m, m)
     Q = Q * Q'  # make sure Q is positive-definite
 
-    test_zipwise(SqMahalanobis(Q), X, Y, T)
-    test_zipwise(Mahalanobis(Q), X, Y, T)
+    test_colwise(SqMahalanobis(Q), X, Y, T)
+    test_colwise(Mahalanobis(Q), X, Y, T)
 end
 
 function test_pairwise(dist, x, y, T)
@@ -723,18 +723,18 @@ end
 end
 
 #=
-@testset "zero allocation zipwise!" begin
+@testset "zero allocation colwise!" begin
     d = Euclidean()
     a = rand(2, 41)
     b = rand(2, 41)
     z = zeros(41)
-    zipwise!(z, d, a, b)
+    colwise!(z, d, a, b)
     # This fails when bounds checking is enforced
     bounds = Base.JLOptions().check_bounds
     if bounds == 0
-        @test (@allocated zipwise!(z, d, a, b)) == 0
+        @test (@allocated colwise!(z, d, a, b)) == 0
     else
-        @test_broken (@allocated zipwise!(z, d, a, b)) == 0
+        @test_broken (@allocated colwise!(z, d, a, b)) == 0
     end
 end
 =#

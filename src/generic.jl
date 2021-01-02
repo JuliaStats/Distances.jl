@@ -44,106 +44,15 @@ __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 
 # Generic column-wise evaluation
 
-@deprecate colwise!(r::AbstractArray, metric::PreMetric, a, b) zipwise!(r, metric, a, b)
+@deprecate colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix) broadcast!(metric, r, Ref(a), eachcol(b))
+@deprecate colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector) broadcast!(metric, r, eachcol(a), Ref(b))
+@deprecate colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix) broadcast!(metric, r, eachcol(a), eachcol(b))
+@deprecate colwise!(r::AbstractArray, metric::PreMetric, a, b) broadcast!(metric, r, a, b)
 
-"""
-    zipwise!(r::AbstractArray, metric::PreMetric, a, b)
-
-Compute distances between corresponding elements of the iterable collections
-`a` and `b` according to distance `metric`, and store the result in `r`. Exactly
-one of `a` or `b` can be a length-1 iterator, in which case the distance between
-that object and all objects of the respective other iterator are computed.
-
-`r` must be an array of length `maximum(length(a), length(b))`.
-"""
-function zipwise!(r::AbstractArray, metric::PreMetric, a, b)
-    na = length(a)
-    nb = length(b)
-    if na == nb
-        length(r) == na || throw(DimensionMismatch("Incorrect size of r."))
-        @inbounds for (j, ab) in enumerate(zip(a, b))
-            r[j] = metric(ab...)
-        end
-    elseif na == 1
-        length(r) == nb || throw(DimensionMismatch("Incorrect size of r."))
-        @inbounds for (j, ab) in enumerate(zip(Iterators.repeated(a, nb), b))
-            r[j] = metric(ab...)
-        end
-    elseif nb == 1
-        length(r) == nb || throw(DimensionMismatch("Incorrect size of r."))
-        @inbounds for (j, ab) in enumerate(zip(a, Iterators.repeated(b, na)))
-            r[j] = metric(ab...)
-        end
-    else
-        throw(DimensionMismatch("The lengths of a and b must match."))
-    end
-    return r
-end
-
-# legacy methods, would be better to enforce iterators more strongly (colwise vs rowwise)
-function zipwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
-    zipwise!(r, metric, Ref(a), eachcol(b))
-end
-function zipwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
-    zipwise!(r, metric, eachcol(a), Ref(b))
-end
-function zipwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
-    zipwise!(r, metric, eachcol(a), eachcol(b))
-end
-
-@deprecate colwise(metric::PreMetric, a, b) zipwise(metric, a, b)
-
-"""
-    zipwise(metric::PreMetric, a, b)
-
-Compute distances between corresponding elements of the iterable collections
-`a` and `b` according to distance `metric`. Exactly one of `a` or `b` can be a
-length-1 iterator, in which case the distance between that object and all objects
-of the respective other iterator are computed.
-"""
-function zipwise(metric::PreMetric, a, b)
-    na = length(a)
-    nb = length(b)
-    if na == nb
-        r = Vector{result_type(metric, a, b)}(undef, na)
-        return zipwise!(r, metric, a, b)
-    elseif na == 1
-        r = Vector{result_type(metric, a, b)}(undef, nb)
-        return zipwise!(r, metric, Iterators.repeated(a, nb), b)
-    elseif nb == 1
-        r = Vector{result_type(metric, a, b)}(undef, na)
-        return zipwise!(r, metric, a, Iterators.repeated(b, na))
-    else
-        throw(DimensionMismatch("The lengths of a and b must match."))
-    end
-end
-
-# legacy methods, would be better to enforce iterators more strongly (colwise vs rowwise)
-"""
-    zipwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
-    zipwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
-    zipwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
-
-Compute distances between corresponding columns of `a` and `b` according to
-distance `metric`. Exactly one of `a` or `b` can be a vector, in which case the
-distance between that vector and all columns of the other matrix are computed.
-
-`a` and `b` must have the same number of columns if neither of the two is a
-vector.
-
-!!! note
-    If both `a` and `b` are vectors, the generic, iterator-based method of
-    `zipwise` applies.
-"""
-function zipwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
-    zipwise(metric, eachcol(a), eachcol(b))
-end
-function zipwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
-    zipwise(metric, eachcol(a), Iterators.repeated(b, size(a, 2)))
-end
-function zipwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
-    zipwise(metric, Iterators.repeated(a, size(b, 2)), eachcol(b))
-end
+@deprecate colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix) broadcast(metric, Ref(a), eachcol(b))
+@deprecate colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector) broadcast(metric, eachcol(a), Ref(b))
+@deprecate colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix) broadcast(metric, eachcol(a), eachcol(b))
+@deprecate colwise(metric::PreMetric, a, b) broadcast(metric, a, b)
 
 
 # Generic pairwise evaluation
