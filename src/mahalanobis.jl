@@ -34,16 +34,15 @@ sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahal
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
-    m, n = get_colwise_dims(size(Q, 1), r, a, b)
+    get_colwise_dims(size(Q, 1), r, a, b)
     z = a - b
     dot_percol!(r, Q * z, z)
 end
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::AbstractMatrix)
     Q = dist.qmat
-    m, n = get_colwise_dims(size(Q, 1), r, a, b)
+    get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
-    Qz = Q * z
     dot_percol!(r, Q * z, z)
 end
 

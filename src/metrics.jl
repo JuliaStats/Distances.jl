@@ -333,7 +333,7 @@ eval_end(::WeightedEuclidean, s) = sqrt(s)
 weuclidean(a, b, w) = WeightedEuclidean(w)(a, b)
 
 # PeriodicEuclidean
-@inline function eval_op(d::PeriodicEuclidean, ai, bi, p)
+@inline function eval_op(::PeriodicEuclidean, ai, bi, p)
     s1 = abs(ai - bi)
     s2 = mod(s1, p)
     s3 = min(s2, p - s2)
@@ -408,8 +408,8 @@ cosine_dist(a, b) = CosineDist()(a, b)
 
 # CorrDist
 _centralize(x) = x .- mean(x)
-(dist::CorrDist)(a, b) = CosineDist()(_centralize(a), _centralize(b))
-(dist::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
+(::CorrDist)(a, b) = CosineDist()(_centralize(a), _centralize(b))
+(::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
 corr_dist(a, b) = CorrDist()(a, b)
 
 # ChiSqDist
@@ -587,16 +587,16 @@ rogerstanimoto(a, b) = RogersTanimoto()(a, b)
 
 # Deviations
 
-(dist::MeanAbsDeviation)(a, b) = cityblock(a, b) / length(a)
+(::MeanAbsDeviation)(a, b) = cityblock(a, b) / length(a)
 meanad(a, b) = MeanAbsDeviation()(a, b)
 
-(dist::MeanSqDeviation)(a, b) = sqeuclidean(a, b) / length(a)
+(::MeanSqDeviation)(a, b) = sqeuclidean(a, b) / length(a)
 msd(a, b) = MeanSqDeviation()(a, b)
 
-(dist::RMSDeviation)(a, b) = sqrt(MeanSqDeviation()(a, b))
+(::RMSDeviation)(a, b) = sqrt(MeanSqDeviation()(a, b))
 rmsd(a, b) = RMSDeviation()(a, b)
 
-function (dist::NormRMSDeviation)(a, b)
+function (::NormRMSDeviation)(a, b)
     amin, amax = extrema(a)
     return RMSDeviation()(a, b) / (amax - amin)
 end
@@ -802,7 +802,7 @@ end
 
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, dist::CosineDist,
+function _pairwise!(r::AbstractMatrix, ::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
@@ -815,7 +815,7 @@ function _pairwise!(r::AbstractMatrix, dist::CosineDist,
     end
     r
 end
-function _pairwise!(r::AbstractMatrix, dist::CosineDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = norm_percol(a)
@@ -838,16 +838,16 @@ end
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!(r::AbstractArray, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function colwise!(r::AbstractVector, dist::CorrDist, a::AbstractVector, b::AbstractMatrix)
+function colwise!(r::AbstractArray, ::CorrDist, a::AbstractVector, b::AbstractMatrix)
     colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist,
+function _pairwise!(r::AbstractMatrix, ::CorrDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
 end
-function _pairwise!(r::AbstractMatrix, dist::CorrDist, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
 end

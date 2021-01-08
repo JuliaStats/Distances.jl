@@ -195,8 +195,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
     require_one_based_indexing(r)
     n = length(a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
-    itr = Iterators.product(enumerate(a), enumerate(a))
-    @inbounds for ((i, ai), (j, aj)) in itr
+    @inbounds for (j, aj) in enumerate(a), (i, ai) in enumerate(a)
         r[i, j] = if i > j
             metric(ai, aj)
         elseif i == j

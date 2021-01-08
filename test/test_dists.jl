@@ -466,6 +466,7 @@ function test_colwise(dist, x, y, T)
         r1 = zeros(T, n)
         r2 = zeros(T, n)
         r3 = zeros(T, n)
+        r4 = zeros(T, 1, n)
         for j = 1:n
             r1[j] = dist(x[:, j], y[:, j])
             r2[j] = dist(x[:, 1], y[:, j])
@@ -474,6 +475,8 @@ function test_colwise(dist, x, y, T)
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
+        colwise!(r4, dist, x, y)
+        @test all(r4[i] ≈ r1[i] for i in 1:n)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
     end
