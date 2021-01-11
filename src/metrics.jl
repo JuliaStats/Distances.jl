@@ -314,7 +314,13 @@ function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end
 
-eval_start(d::UnionMetrics, a, b) = zero(result_type(d, a, b))
+eval_start(d::UnionMetrics, a, b) = _eval_start(d, _eltype(a), _eltype(b))
+_eval_start(d, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+    _eval_start(d, _eltype(Ta), _eltype(Tb), parameters(d))
+_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
+    zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb))))
+_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
+    zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p)))))
 eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
 eval_end(::UnionMetrics, s) = s
 
@@ -382,6 +388,7 @@ wminkowski(a, b, w, p::Real) = WeightedMinkowski(w, p)(a, b)
 
 # Hamming
 result_type(::Hamming, ::Type, ::Type) = Int # fallback for Hamming
+eval_start(d::Hamming, a, b) = 0
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
 hamming(a, b) = Hamming()(a, b)
 
@@ -390,10 +397,8 @@ hamming(a, b) = Hamming()(a, b)
 whamming(a, b, w) = WeightedHamming(w)(a, b)
 
 # Cosine dist
-@inline function eval_start(dist::CosineDist, a, b)
-    T = result_type(dist, a, b)
-    zero(T), zero(T), zero(T)
-end
+@inline eval_start(dist::CosineDist, a, b) =
+    zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline eval_op(::CosineDist, ai, bi) = ai * bi, ai * ai, bi * bi
 @inline function eval_reduce(::CosineDist, s1, s2)
     a1, b1, c1 = s1
@@ -516,11 +521,8 @@ spannorm_dist(a, b) = SpanNormDist()(a, b)
 
 # Jaccard
 
-@inline eval_start(::Jaccard, ::AbstractArray{Bool}, ::AbstractArray{Bool}) = 0, 0
-@inline function eval_start(dist::Jaccard, a, b)
-    T = result_type(dist, a, b)
-    zero(T), zero(T)
-end
+eval_start(dist::Jaccard, a, b) =
+    zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::Jaccard, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
@@ -539,10 +541,8 @@ jaccard(a, b) = Jaccard()(a, b)
 
 # BrayCurtis
 
-@inline function eval_start(dist::BrayCurtis, a, b)
-    T = result_type(dist, a, b)
-    zero(T), zero(T)
-end
+eval_start(dist::BrayCurtis, a, b) =
+    zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::BrayCurtis, s1, s2)
     abs_m = abs(s1 - s2)
     abs_p = abs(s1 + s2)
