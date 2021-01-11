@@ -751,7 +751,7 @@ end
     @test @inferred cosine_dist(x, y) == 1 - dot(x, y) / (norm(x) * norm(y))
     @test @inferred corr_dist(x, y) == cosine_dist(x .- mean(x), y .- mean(y))
     @test @inferred chisq_dist(x, y) == sum((x .- y).^2 ./ (x .+ y))
-    @test @inferred spannorm_dist(x, y) === 0m
+    @test @inferred spannorm_dist(x, y) == 0m
     @test @inferred hellinger(x, y) == sqrt(1 - sum(sqrt.(x .* y) / sqrt(sum(x) * sum(y))))
     @test @inferred meanad(x, y) == 1m
     @test @inferred msd(x, y) == 1m^2
