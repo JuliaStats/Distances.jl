@@ -1,12 +1,13 @@
 # Distances.jl
 
-[![Build Status](https://travis-ci.org/JuliaStats/Distances.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/Distances.jl)
-[![Coverage Status](https://coveralls.io/repos/JuliaStats/Distances.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaStats/Distances.jl?branch=master)
+[![Build Status](https://github.com/JuliaStats/Distances.jl/workflows/CI/badge.svg)](https://github.com/JuliaStats/Distances.jl/actions?query=workflow%3ACI)
+[![Coverage Status](http://codecov.io/github/JuliaStats/Distances.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaStats/Distances.jl?branch=master)
 
 A Julia package for evaluating distances(metrics) between vectors.
 
-This package also provides optimized functions to compute column-wise and pairwise distances, which are often substantially faster than a straightforward loop implementation. (See the benchmark section below for details).
-
+This package also provides optimized functions to compute column-wise and
+pairwise distances, which are often substantially faster than a straightforward
+loop implementation. (See the benchmark section below for details).
 
 ## Supported distances
 
@@ -39,73 +40,133 @@ This package also provides optimized functions to compute column-wise and pairwi
 * Bray-Curtis dissimilarity
 * Bregman divergence
 
-For `Euclidean distance`, `Squared Euclidean distance`, `Cityblock distance`, `Minkowski distance`, and `Hamming distance`, a weighted version is also provided.
-
+For `Euclidean distance`, `Squared Euclidean distance`, `Cityblock distance`,
+`Minkowski distance`, and `Hamming distance`, a weighted version is also provided.
 
 ## Basic use
 
-The library supports three ways of computation: *computing the distance between two vectors*, *column-wise computation*, and *pairwise computation*.
+The library supports three ways of computation: *computing the distance between*
+*two iterators/vectors*, *"zip"-wise computation*, and *pairwise computation*.
+Each of these computation modes works with arbitrary iterable objects of known
+size.
 
-#### Computing the distance between two vectors
+### Computing the distance between two iterators or vectors
 
-Each distance corresponds to a *distance type*. You can always compute a certain distance between two vectors using the following syntax
+Each distance corresponds to a *distance type*. You can always compute a certain
+distance between two iterators or vectors of equal length using the following
+syntax
 
 ```julia
 r = evaluate(dist, x, y)
 r = dist(x, y)
 ```
 
-Here, `dist` is an instance of a distance type: for example, the type for Euclidean distance is `Euclidean` (more distance types will be introduced in the next section). You can compute the Euclidean distance between `x` and `y` as
+Here, `dist` is an instance of a distance type: for example, the type for Euclidean
+distance is `Euclidean` (more distance types will be introduced in the next section).
+You can compute the Euclidean distance between `x` and `y` as
 
 ```julia
 r = evaluate(Euclidean(), x, y)
 r = Euclidean()(x, y)
 ```
 
-Common distances also come with convenient functions for distance evaluation. For example, you may also compute Euclidean distance between two vectors as below
+Common distances also come with convenient functions for distance evaluation. For
+example, you may also compute Euclidean distance between two vectors as below
 
 ```julia
 r = euclidean(x, y)
 ```
 
-#### Computing distances between corresponding columns
+### Computing distances between corresponding objects ("column-wise")
 
-Suppose you have two `m-by-n` matrix `X` and `Y`, then you can compute all distances between corresponding columns of `X` and `Y` in one batch, using the `colwise` function, as
+Suppose you have two `m-by-n` matrix `X` and `Y`, then you can compute all
+distances between corresponding columns of `X` and `Y` in one batch, using
+the `colwise` function, as
 
 ```julia
 r = colwise(dist, X, Y)
 ```
 
-The output `r` is a vector of length `n`. In particular, `r[i]` is the distance between `X[:,i]` and `Y[:,i]`. The batch computation typically runs considerably faster than calling `evaluate` column-by-column.
+The output `r` is a vector of length `n`. In particular, `r[i]` is the distance
+between `X[:,i]` and `Y[:,i]`. The batch computation typically runs considerably
+faster than calling `evaluate` column-by-column.
 
-Note that either of `X` and `Y` can be just a single vector -- then the `colwise` function will compute the distance between this vector and each column of the other parameter.
+Note that either of `X` and `Y` can be just a single vector -- then the `colwise`
+function will compute the distance between this vector and each column of the other
+parameter.
 
-#### Computing pairwise distances
+The above extends to iterators of iterators/vectors, and the colwise computations
+means the distance computation of corresponding objects (à la `Base.zip`).
+For instance, in Julia v1.1 and above, the colwise behavior shown above can be
+equally well obtained by
 
-Let `X` and `Y` respectively have `m` and `n` columns. Then the `pairwise` function with the `dims=2` argument computes distances between each pair of columns in `X` and `Y`:
+```julia
+r = colwise(dist, eachcol(X), eachcol(Y))
+```
+
+Equally simple, the analogous "rowwise" distance computation can be obtained done via
+
+```julia
+r = colwise(dist, eachrow(X), eachrow(Y))
+```
+
+The iterator-based approach is in fact the future-proof way of computing distances
+between corresponding data points of iterable collections `X` and `Y`. Exceptions
+are given by distance types with `colwise` methods specialized for
+`AbstractVecOrMat` arguments, i.e., `CorrDist` and `[Sq]Mahalanobis`.
+
+### Computing pairwise distances
+
+Let `X` and `Y` have `m` and `n` columns, respectively, and the same number of rows.
+Then the `pairwise` function with the `dims=2` argument computes distances between
+each pair of columns in `X` and `Y`:
 
 ```julia
 R = pairwise(dist, X, Y, dims=2)
 ```
 
-In the output, `R` is a matrix of size `(m, n)`, such that `R[i,j]` is the distance between `X[:,i]` and `Y[:,j]`. Computing distances for all pairs using `pairwise` function is often remarkably faster than evaluting for each pair individually.
+In the output, `R` is a matrix of size `(m, n)`, such that `R[i,j]` is the
+distance between `X[:,i]` and `Y[:,j]`. Computing distances for all pairs using
+`pairwise` function is often remarkably faster than evaluting for each pair
+individually.
 
-If you just want to just compute distances between columns of a matrix `X`, you can write
+If you just want to just compute distances between all columns of a matrix `X`,
+you can write
 
 ```julia
 R = pairwise(dist, X, dims=2)
 ```
 
-This statement will result in an `m-by-m` matrix, where `R[i,j]` is the distance between `X[:,i]` and `X[:,j]`.
-`pairwise(dist, X)` is typically more efficient than `pairwise(dist, X, X)`, as the former will take advantage of the symmetry when `dist` is a semi-metric (including metric).
+This statement will result in an `m-by-m` matrix, where `R[i,j]` is the distance
+between `X[:,i]` and `X[:,j]`. `pairwise(dist, X)` is typically more efficient
+than `pairwise(dist, X, X)`, as the former will take advantage of the symmetry
+when `dist` is a semi-metric (including metric).
 
-For performance reasons, it is recommended to use matrices with observations in columns (as shown above). Indeed,
-the `Array` type in Julia is column-major, making it more efficient to access memory column by column. However,
-matrices with observations stored in rows are also supported via the argument `dims=1`.
+For performance reasons, it is recommended to use matrices with observations in
+columns (as shown above). Indeed, the `Array` type in Julia is column-major,
+making it more efficient to access memory column by column. However, matrices
+with observations stored in rows are also supported via the argument `dims=1`.
 
-#### Computing column-wise and pairwise distances inplace
+As before, the above can be generalized to iterators `X` and `Y` of
+iterators/vectors. For example, the distinction between `dims=1` and `dims=2` can
+again (in Julia v1.1 and above) be made by the `eachrow` and `eachcol` iterators.
 
-If the vector/matrix to store the results are pre-allocated, you may use the storage (without creating a new array) using the following syntax (`i` being either `1` or `2`):
+```julia
+R = pairwise(dist, eachcol(X), eachcol(Y)) # == pairwise(dist, X, Y; dims=2)
+R = pairwise(dist, eachrow(X), eachrow(Y)) # == pairwise(dist, X, Y; dims=1)
+```
+
+The iterator-based approach is in fact the future-proof way of computing distances
+between all data points of iterable collections `X` and `Y`. Exceptions
+are given by distance types with `pairwise` methods specialized for
+`AbstractMatrix` arguments, i.e., `CorrDist`, `CosineDist`, `[Weighted]SqEuclidean`,
+`[Weighted]Euclidean` and `[Sq]Mahalanobis`.
+
+### Computing column-wise and pairwise distances inplace
+
+If the vector/matrix to store the results are pre-allocated, you may use the
+storage (without creating a new array) using the following syntax
+(`i` being either `1` or `2`):
 
 ```julia
 colwise!(r, dist, X, Y)
@@ -113,8 +174,8 @@ pairwise!(R, dist, X, Y, dims=i)
 pairwise!(R, dist, X, dims=i)
 ```
 
-Please pay attention to the difference, the functions for inplace computation are `colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
-
+Please pay attention to the difference, the functions for inplace computation are
+`colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
 
 ## Distance type hierarchy
 
@@ -122,16 +183,16 @@ The distances are organized into a type hierarchy.
 
 At the top of this hierarchy is an abstract class **PreMetric**, which is defined to be a function `d` that satisfies
 
-	d(x, x) == 0  for all x
-	d(x, y) >= 0  for all x, y
+    d(x, x) == 0  for all x
+    d(x, y) >= 0  for all x, y
 
 **SemiMetric** is a abstract type that refines **PreMetric**. Formally, a *semi-metric* is a *pre-metric* that is also symmetric, as
 
-	d(x, y) == d(y, x)  for all x, y
+    d(x, y) == d(y, x)  for all x, y
 
 **Metric** is a abstract type that further refines **SemiMetric**. Formally, a *metric* is a *semi-metric* that also satisfies triangle inequality, as
 
-	d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
+    d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
 
 This type system has practical significance. For example, when computing pairwise distances
 between a set of vectors, you may only perform computation for half of the pairs, derive the
@@ -148,7 +209,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 | -------------------- | -------------------------- | --------------------|
 |  Euclidean           |  `euclidean(x, y)`         | `sqrt(sum((x - y) .^ 2))` |
 |  SqEuclidean         |  `sqeuclidean(x, y)`       | `sum((x - y).^2)` |
-|  PeriodicEuclidean   |  `peuclidean(x, y, p)`     | `sqrt(sum(min(mod(abs(x - y), p), p - mod(abs(x - y), p)).^2))`  |
+|  PeriodicEuclidean   |  `peuclidean(x, y, w)`     | `sqrt(sum(min(mod(abs(x - y), w), w - mod(abs(x - y), w)).^2))`  |
 |  Cityblock           |  `cityblock(x, y)`         | `sum(abs(x - y))` |
 |  TotalVariation      |  `totalvariation(x, y)`    | `sum(abs(x - y)) / 2` |
 |  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
@@ -166,7 +227,7 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  JSDivergence        |  `js_divergence(p, q)`     | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
 |  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y)` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
-|  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
+|  HellingerDist       |  `hellinger(x, y)`        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
 |  Haversine           |  `haversine(x, y, r)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
 |  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
 |  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | `(x - y)' * Q * (x - y)` |
@@ -181,7 +242,14 @@ Each distance corresponds to a distance type. The type name and the correspondin
 |  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
 |  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` |
 
-**Note:** The formulas above are using *Julia*'s functions. These formulas are mainly for conveying the math concepts in a concise way. The actual implementation may use a faster way. The arguments `x` and `y` are arrays of real numbers; `k` and `l` are arrays of distinct elements of any kind; a and b are arrays of Bools; and finally, `p` and `q` are arrays forming a discrete probability distribution and are therefore both expected to sum to one.
+**Note:** The formulas above are using *Julia*'s functions. These formulas are
+mainly for conveying the math concepts in a concise way. The actual implementation
+may use a faster way. The arguments `x` and `y` are iterable objects, typically
+arrays of real numbers; `w` is an iterator/array of parameters (like weights or
+periods); `k` and `l` are iterators/arrays of distinct elements of
+any kind; `a` and `b` are iterators/arrays of Bools; and finally, `p` and `q` are
+iterators/arrays forming a discrete probability distribution and are therefore
+both expected to sum to one.
 
 ### Precision for Euclidean and SqEuclidean
 
@@ -210,7 +278,6 @@ julia> pairwise(Euclidean(1e-12), x, x)
  0.0
 ```
 
-
 ## Benchmarks
 
 The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite
@@ -219,9 +286,13 @@ for a variety of distances, under column-wise and pairwise settings.
 Here are benchmarks obtained running Julia 1.0 on a computer with a dual-core Intel Core i5-2300K processor @ 2.3 GHz.
 The tables below can be replicated using the script in `benchmark/print_table.jl`.
 
-#### Column-wise benchmark
+### Column-wise benchmark
 
-The table below compares the performance (measured in terms of average elapsed time of each iteration) of a straightforward loop implementation and an optimized implementation provided in *Distances.jl*. The task in each iteration is to compute a specific distance between corresponding columns in two `200-by-10000` matrices.
+The table below compares the performance (measured in terms of average elapsed
+time of each iteration) of a straightforward loop implementation and an optimized
+implementation provided in *Distances.jl*. The task in each iteration is to
+compute a specific distance between corresponding columns in two `200-by-10000`
+matrices.
 
 |  distance  |  loop  |  colwise  |  gain  |
 |----------- | -------| ----------| -------|
@@ -251,11 +322,19 @@ The table below compares the performance (measured in terms of average elapsed t
 | Mahalanobis | 0.082180s |  0.019618s |  4.1891 |
 | BrayCurtis | 0.004464s |  0.001121s |  3.9809 |
 
-We can see that using `colwise` instead of a simple loop yields considerable gain (2x - 4x), especially when the internal computation of each distance is simple. Nonetheless, when the computation of a single distance is heavy enough (e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
+We can see that using `colwise` instead of a simple loop yields considerable
+gain (2x - 4x), especially when the internal computation of each distance is
+simple. Nonetheless, when the computation of a single distance is heavy enough
+(e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
 
 #### Pairwise benchmark
 
-The table below compares the performance (measured in terms of average elapsed time of each iteration) of a straightforward loop implementation and an optimized implementation provided in *Distances.jl*. The task in each iteration is to compute a specific distance in a pairwise manner between columns in a `100-by-200` and `100-by-250` matrices, which will result in a `200-by-250` distance matrix.
+The table below compares the performance (measured in terms of average elapsed
+time of each iteration) of a straightforward loop implementation and an optimized
+implementation provided in *Distances.jl*. The task in each iteration is to
+compute a specific distance in a pairwise manner between columns in a
+`100-by-200` and `100-by-250` matrices, which will result in a `200-by-250`
+distance matrix.
 
 |  distance  |  loop  |  pairwise  |  gain  |
 |----------- | -------| ----------| -------|
@@ -285,4 +364,8 @@ The table below compares the performance (measured in terms of average elapsed t
 | Mahalanobis | 0.197294s |  0.000420s | **470.2354** |
 | BrayCurtis | 0.012872s |  0.001489s |  8.6456 |
 
-For distances of which a major part of the computation is a quadratic form (e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be drastically improved by restructuring the computation and delegating the core part to `GEMM` in *BLAS*. The use of this strategy can easily lead to 100x performance gain over simple loops (see the highlighted part of the table above).
+For distances of which a major part of the computation is a quadratic form
+(e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be
+drastically improved by restructuring the computation and delegating the core
+part to `GEMM` in *BLAS*. The use of this strategy can easily lead to 100x
+performance gain over simple loops (see the highlighted part of the table above).
