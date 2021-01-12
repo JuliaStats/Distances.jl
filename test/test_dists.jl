@@ -414,9 +414,13 @@ end #testset
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
         @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
         x, y = (1.,-15.625), (-179.,15.625)
-        @test haversine(x, y, 6371.) ≈ 20015. atol=1e0
-        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015. atol=1e0
+        @test haversine(x, y, 6371.) ≈ 20015 atol=1e-1
+        @test haversine(x, y) ≈ 20015086 rtol=1e-7
+        @test haversine(Float32.(x), Float32.(y)) isa Float32
+        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015 atol=1e-1
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
+        x, y = (1.0°,-15.625°), (-179.0°,15.625°)
+        @test haversine(x, y, 6371.0km) ≈ 20015km atol=1e-1km
     end
 end
 

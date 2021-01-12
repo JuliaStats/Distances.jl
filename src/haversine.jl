@@ -1,14 +1,13 @@
 """
     Haversine([radius])
 
-The haversine distance between two locations on a sphere of given `radius`.
+The haversine distance between two locations on a sphere of given `radius`, whose
+default value is 6371000, i.e., the Earth's mean radius in units of meter.
 
 Locations are described with longitude and latitude in degrees.
-The computed distance has the same units as that of the radius.
-The default value is 6371000 meters, which is the mean volumetric
-radius of Earth (source https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html).
+The computed distance has the unit of the radius.
 """
-struct Haversine{T<:Real} <: Metric
+struct Haversine{T} <: Metric
     radius::T
 end
 Haversine() = Haversine(Float32(6371000))
@@ -19,11 +18,11 @@ function (dist::Haversine)(x, y)
     @inbounds x1, x2 = x
     @inbounds y1, y2 = y
     # longitudes
-    Δλ = deg2rad(y1 - x1)
+    Δλ = _deg2rad(y1 - x1)
 
     # latitudes
-    φ₁ = deg2rad(x2)
-    φ₂ = deg2rad(y2)
+    φ₁ = _deg2rad(x2)
+    φ₂ = _deg2rad(y2)
     Δφ = φ₂ - φ₁
 
     # haversine formula
@@ -33,11 +32,12 @@ function (dist::Haversine)(x, y)
     2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
-haversine(x, y, radius::Real = Float32(6371000)) = Haversine(radius)(x, y)
+haversine(x, y, radius=Float32(6371000)) = Haversine(radius)(x, y)
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
-
+_deg2rad(x::Real) = deg2rad(x)
+_deg2rad(x) = x # targets unitful numbers
 
 """
     SphericalAngle()
