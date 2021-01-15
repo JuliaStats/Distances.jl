@@ -9,7 +9,7 @@ The computed distance has the same units as that of the radius.
 struct Haversine{T<:Real} <: Metric
     radius::T
 end
-Haversine() = Haversine(6378137.0)
+Haversine() = Haversine(6371000.0)
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)
@@ -31,7 +31,7 @@ function (dist::Haversine)(x, y)
     2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
-haversine(x, y, radius::Real) = Haversine(radius)(x, y)
+haversine(x, y, radius::Real = 6371000.0) = Haversine(radius)(x, y)
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
