@@ -1,10 +1,12 @@
 """
-    Haversine(radius)
+    Haversine([radius])
 
 The haversine distance between two locations on a sphere of given `radius`.
 
 Locations are described with longitude and latitude in degrees.
 The computed distance has the same units as that of the radius.
+The default value is 6371000 meters, which is the mean volumetric
+radius of Earth (source https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html).
 """
 struct Haversine{T<:Real} <: Metric
     radius::T
