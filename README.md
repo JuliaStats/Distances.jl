@@ -104,7 +104,7 @@ equally well obtained by
 r = colwise(dist, eachcol(X), eachcol(Y))
 ```
 
-Equally simple, the analogous "rowwise" distance computation can be obtained done via
+Equally simple, the analogous "rowwise" distance computation can be obtained via
 
 ```julia
 r = colwise(dist, eachrow(X), eachrow(Y))
