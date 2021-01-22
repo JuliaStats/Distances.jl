@@ -38,7 +38,7 @@ haversine(x, y, radius=Float32(6371000)) = Haversine(radius)(x, y)
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
 _deg2rad(x::Real) = deg2rad(x)
-_deg2rad(x) = x # targets unitful numbers
+_deg2rad(x::Number) = x # targets unitful numbers
 
 """
     SphericalAngle()
