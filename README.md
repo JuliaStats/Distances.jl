@@ -229,7 +229,7 @@ definitions of the distances are listed in the following table.
 |  JSDivergence        |  `js_divergence(p, q)`     | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
 |  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y)` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
-|  HellingerDist       |  `hellinger(x, y) `        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
+|  HellingerDist       |  `hellinger(x, y)`        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
 |  Haversine           |  `haversine(x, y, r = 6_371_000)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
 |  SphericalAngle      |  `spherical_angle(x, y)`   | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
 |  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
