@@ -203,7 +203,8 @@ for these types `x != y` does not imply that `d(x, y) != 0` in general compared 
 mathematical definition of semi-metric and metric, as this property does not change
 computations in practice.
 
-Each distance corresponds to a distance type. The type name and the corresponding mathematical definitions of the distances are listed in the following table.
+Each distance corresponds to a distance type. The type name and the corresponding mathematical
+definitions of the distances are listed in the following table.
 
 | type name            |  convenient syntax         | math definition     |
 | -------------------- | -------------------------- | --------------------|
@@ -280,92 +281,49 @@ julia> pairwise(Euclidean(1e-12), x, x)
 
 ## Benchmarks
 
-The implementation has been carefully optimized based on benchmarks. The script in `benchmark/benchmarks.jl` defines a benchmark suite
-for a variety of distances, under column-wise and pairwise settings.
+The implementation has been carefully optimized based on benchmarks. The script in
+`benchmark/benchmarks.jl` defines a benchmark suite for a variety of distances,
+under column-wise and pairwise settings.
 
-Here are benchmarks obtained running Julia 1.0 on a computer with a dual-core Intel Core i5-2300K processor @ 2.3 GHz.
-The tables below can be replicated using the script in `benchmark/print_table.jl`.
+Here are benchmarks obtained running Julia 1.5 on a computer with a quad-core Intel
+Core i5-2300K processor @ 3.2 GHz. Extended versions of the tables below can be
+replicated using the script in `benchmark/print_table.jl`.
 
 ### Column-wise benchmark
 
 The table below compares the performance (measured in terms of average elapsed
-time of each iteration) of a straightforward loop implementation and an optimized
-implementation provided in *Distances.jl*. The task in each iteration is to
-compute a specific distance between corresponding columns in two `200-by-10000`
-matrices.
+time of each iteration) of a straightforward loop implementation and an
+implementation specialized to `[Sq]Mahalanobis` provided in *Distances.jl*.
+The task in each iteration is to compute a specific distance between corresponding
+columns in two `200-by-10000` matrices.
 
 |  distance  |  loop  |  colwise  |  gain  |
 |----------- | -------| ----------| -------|
-| SqEuclidean | 0.004432s |  0.001049s |  4.2270 |
-| Euclidean | 0.004537s |  0.001054s |  4.3031 |
-| PeriodicEuclidean | 0.012092s |  0.006714s |  1.8011 |
-| Cityblock | 0.004515s |  0.001060s |  4.2585 |
-| TotalVariation | 0.004496s |  0.001062s |  4.2337 |
-| Chebyshev | 0.009123s |  0.005034s |  1.8123 |
-| Minkowski | 0.047573s |  0.042508s |  1.1191 |
-| Hamming | 0.004355s |  0.001099s |  3.9638 |
-| CosineDist | 0.006432s |  0.002282s |  2.8185 |
-| CorrDist | 0.010273s |  0.012500s |  0.8219 |
-| ChiSqDist | 0.005291s |  0.001271s |  4.1635 |
-| KLDivergence | 0.031491s |  0.025643s |  1.2281 |
-| RenyiDivergence | 0.052420s |  0.048075s |  1.0904 |
-| RenyiDivergence | 0.017317s |  0.009023s |  1.9193 |
-| JSDivergence | 0.047905s |  0.044006s |  1.0886 |
-| BhattacharyyaDist | 0.007761s |  0.003796s |  2.0445 |
-| HellingerDist | 0.007636s |  0.003665s |  2.0836 |
-| WeightedSqEuclidean | 0.004550s |  0.001151s |  3.9541 |
-| WeightedEuclidean | 0.004687s |  0.001168s |  4.0125 |
-| WeightedCityblock | 0.004493s |  0.001157s |  3.8849 |
-| WeightedMinkowski | 0.049442s |  0.042145s |  1.1732 |
-| WeightedHamming | 0.004431s |  0.001153s |  3.8440 |
-| SqMahalanobis | 0.082493s |  0.019843s |  4.1574 |
-| Mahalanobis | 0.082180s |  0.019618s |  4.1891 |
-| BrayCurtis | 0.004464s |  0.001121s |  3.9809 |
+| SqMahalanobis | 0.089470s |  0.014424s |  6.2027 |
+| Mahalanobis | 0.090882s |  0.014096s |  6.4475 |
 
-We can see that using `colwise` instead of a simple loop yields considerable
-gain (2x - 4x), especially when the internal computation of each distance is
-simple. Nonetheless, when the computation of a single distance is heavy enough
-(e.g. *KLDivergence*,  *RenyiDivergence*), the gain is not as significant.
-
-#### Pairwise benchmark
+### Pairwise benchmark
 
 The table below compares the performance (measured in terms of average elapsed
-time of each iteration) of a straightforward loop implementation and an optimized
-implementation provided in *Distances.jl*. The task in each iteration is to
-compute a specific distance in a pairwise manner between columns in a
+time of each iteration) of a straightforward loop implementation and certain
+specialized implementations provided in *Distances.jl*. The task in each iteration
+is to compute a specific distance in a pairwise manner between columns in a
 `100-by-200` and `100-by-250` matrices, which will result in a `200-by-250`
 distance matrix.
 
 |  distance  |  loop  |  pairwise  |  gain  |
 |----------- | -------| ----------| -------|
-| SqEuclidean | 0.012498s |  0.000170s | **73.6596** |
-| Euclidean | 0.012583s |  0.000257s | 48.9628 |
-| PeriodicEuclidean | 0.030935s |  0.017572s |  1.7605 |
-| Cityblock | 0.012416s |  0.000910s | 13.6464 |
-| TotalVariation | 0.012763s |  0.000959s | 13.3080 |
-| Chebyshev | 0.023800s |  0.012042s |  1.9763 |
-| Minkowski | 0.121388s |  0.107333s |  1.1310 |
-| Hamming | 0.012171s |  0.000689s | 17.6538 |
-| CosineDist | 0.017474s |  0.000214s | **81.6546** |
-| CorrDist | 0.028195s |  0.000259s | **108.7360** |
-| ChiSqDist | 0.014372s |  0.003129s |  4.5932 |
-| KLDivergence | 0.079669s |  0.063491s |  1.2548 |
-| RenyiDivergence | 0.134093s |  0.117737s |  1.1389 |
-| RenyiDivergence | 0.047658s |  0.024960s |  1.9094 |
-| JSDivergence | 0.121999s |  0.110984s |  1.0993 |
-| BhattacharyyaDist | 0.021788s |  0.009414s |  2.3145 |
-| HellingerDist | 0.020735s |  0.008784s |  2.3606 |
-| WeightedSqEuclidean | 0.012671s |  0.000186s | **68.0345** |
-| WeightedEuclidean | 0.012867s |  0.000276s | **46.6634** |
-| WeightedCityblock | 0.012803s |  0.001539s |  8.3200 |
-| WeightedMinkowski | 0.127386s |  0.107257s |  1.1877 |
-| WeightedHamming | 0.012240s |  0.001462s |  8.3747 |
-| SqMahalanobis | 0.214285s |  0.000330s | **650.0722** |
-| Mahalanobis | 0.197294s |  0.000420s | **470.2354** |
-| BrayCurtis | 0.012872s |  0.001489s |  8.6456 |
+| SqEuclidean | 0.001273s |  0.000124s | **10.2290** |
+| Euclidean | 0.001444s |  0.000201s |  **7.1991** |
+| CosineDist | 0.001928s |  0.000149s | **12.9543** |
+| CorrDist | 0.016837s |  0.000187s | **90.1854** |
+| WeightedSqEuclidean | 0.001603s |  0.000143s | **11.2119** |
+| WeightedEuclidean | 0.001811s |  0.000238s |  **7.6032** |
+| SqMahalanobis | 0.308990s |  0.000248s | **1248.1892** |
+| Mahalanobis | 0.313415s |  0.000346s | **906.1836** |
 
 For distances of which a major part of the computation is a quadratic form
 (e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be
 drastically improved by restructuring the computation and delegating the core
-part to `GEMM` in *BLAS*. The use of this strategy can easily lead to 100x
-performance gain over simple loops (see the highlighted part of the table above).
+part to `GEMM` in *BLAS*. The use of this strategy can lead to dramatic
+performance gain over simple loops; see the the table above.
