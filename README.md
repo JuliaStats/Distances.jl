@@ -301,8 +301,8 @@ columns in two `200-by-10000` matrices.
 
 |  distance  |  loop  |  colwise  |  gain  |
 |----------- | -------| ----------| -------|
-| SqMahalanobis | 0.089470s |  0.014424s |  6.2027 |
-| Mahalanobis | 0.090882s |  0.014096s |  6.4475 |
+| SqMahalanobis | 0.089470s |  0.014424s |  **6.2027** |
+| Mahalanobis | 0.090882s |  0.014096s |  **6.4475** |
 
 ### Pairwise benchmark
 
@@ -316,7 +316,7 @@ distance matrix.
 |  distance  |  loop  |  pairwise  |  gain  |
 |----------- | -------| ----------| -------|
 | SqEuclidean | 0.001273s |  0.000124s | **10.2290** |
-| Euclidean | 0.001444s |  0.000201s |  **7.1991** |
+| Euclidean | 0.001445s |  0.000194s |  **7.4529** |
 | CosineDist | 0.001928s |  0.000149s | **12.9543** |
 | CorrDist | 0.016837s |  0.000187s | **90.1854** |
 | WeightedSqEuclidean | 0.001603s |  0.000143s | **11.2119** |
@@ -325,7 +325,7 @@ distance matrix.
 | Mahalanobis | 0.313415s |  0.000346s | **906.1836** |
 
 For distances of which a major part of the computation is a quadratic form
-(e.g. *Euclidean*, *CosineDist*, *Mahalanobis*), the performance can be
+(e.g. *Euclidean*, *CosineDist*, *[Sq]Mahalanobis*), the performance can be
 drastically improved by restructuring the computation and delegating the core
 part to `GEMM` in *BLAS*. The use of this strategy can lead to dramatic
 performance gain over simple loops; see the the table above.

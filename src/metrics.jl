@@ -612,22 +612,23 @@ nrmsd(a, b) = NormRMSDeviation()(a, b)
 # SqEuclidean
 function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
+    m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd
-        for j = 1:size(r, 2)
+        for j = 1:nb
             sb = sb2[j]
-            @simd for i = 1:size(r, 1)
+            @simd for i = 1:na
                 @inbounds r[i, j] = max(sa2[i] + sb - 2 * r[i, j], 0)
             end
         end
     else
-        for j = 1:size(r, 2)
+        for j = 1:nb
             sb = sb2[j]
-            for i = 1:size(r, 1)
+            for i = 1:na
                 @inbounds selfterms = sa2[i] + sb
                 @inbounds v = max(selfterms - 2 * r[i, j], 0)
                 if v < threshT * selfterms
@@ -636,7 +637,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
                     #   ((x+ϵ) - y)^2 ≈ x^2 - 2xy + y^2 + O(ϵ)    when |x-y| >> ϵ
                     #   ((x+ϵ) - y)^2 ≈ O(ϵ^2)                    otherwise
                     v = zero(v)
-                    for k = 1:size(a, 1)
+                    for k = 1:m
                         @inbounds v += (a[k, i] - b[k, j])^2
                     end
                 end
@@ -650,7 +651,7 @@ end
 function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
-    sa2 = sumsq_percol(a)
+    sa2 = sum(abs2, a, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:n
         for i = 1:(j - 1)
@@ -720,10 +721,11 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
-    sa2 = sumsq_percol(a)
-    sb2 = sumsq_percol(b)
+    sa2 = sum(abs2, a, dims=1)
+    sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
+        # If there's no chance of triggering the threshold, we can use @simd
         for j = 1:nb
             sb = sb2[j]
             @simd for i = 1:na
@@ -731,11 +733,11 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
             end
         end
     else
-        @inbounds for j = 1:nb
+        for j = 1:nb
             sb = sb2[j]
             for i = 1:na
-                selfterms = sa2[i] + sb
-                v = max(selfterms - 2 * r[i, j], 0)
+                @inbounds selfterms = sa2[i] + sb
+                @inbounds v = max(selfterms - 2 * r[i, j], 0)
                 if v < threshT * selfterms
                     # The distance is likely to be inaccurate, recalculate directly
                     # This reflects the following:
@@ -743,10 +745,10 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
                     #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
                     v = zero(v)
                     for k = 1:m
-                        v += (a[k, i] - b[k, j])^2
+                        @inbounds v += (a[k, i] - b[k, j])^2
                     end
                 end
-                r[i, j] = sqrt(v)
+                @inbounds r[i, j] = sqrt(v)
             end
         end
     end
@@ -756,7 +758,7 @@ end
 function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
-    sa2 = sumsq_percol(a)
+    sa2 = sum(abs2, a, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:n
         for i = 1:(j - 1)
@@ -830,7 +832,6 @@ end
 # 1. It calls the accelerated `_pairwise` specilization for CosineDist
 # 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
 #    of `_centralize` -- ~4x speed up
-_centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
 function _pairwise!(r::AbstractMatrix, ::CorrDist,
                     a::AbstractMatrix, b::AbstractMatrix)
