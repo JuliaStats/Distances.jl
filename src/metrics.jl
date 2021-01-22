@@ -786,12 +786,6 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
 end
 
 # Weighted Euclidean
-function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
-function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
 function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean,
                     a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
@@ -838,12 +832,6 @@ end
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractArray, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function colwise!(r::AbstractArray, ::CorrDist, a::AbstractVector, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
 function _pairwise!(r::AbstractMatrix, ::CorrDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
