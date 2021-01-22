@@ -57,7 +57,7 @@ function evaluate_colwise(dist, x, y)
     T = typeof(evaluate(dist, x[:, 1], y[:, 1]))
     r = Vector{T}(undef, n)
     for j = 1:n
-        r[j] = evaluate(dist, x[:, j], y[:, j])
+        r[j] = @views evaluate(dist, x[:, j], y[:, j])
     end
     return r
 end
@@ -109,8 +109,8 @@ function evaluate_pairwise(dist, x, y)
     T = typeof(evaluate(dist, x[:, 1], y[:, 1]))
     r = Matrix{T}(undef, nx, ny)
     for j = 1:ny
-        for i = 1:nx
-            r[i, j] = evaluate(dist, x[:, i], y[:, j])
+        @inbounds for i = 1:nx
+            r[i, j] = @views evaluate(dist, x[:, i], y[:, j])
         end
     end
     return r
