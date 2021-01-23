@@ -609,8 +609,8 @@ nrmsd(a, b) = NormRMSDeviation()(a, b)
 #
 ###########################################################
 
-# SqEuclidean
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
+# SqEuclidean/Euclidean
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
@@ -622,114 +622,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
         for j = 1:nb
             sb = sb2[j]
             @simd for i = 1:na
-                @inbounds r[i, j] = max(sa2[i] + sb - 2 * r[i, j], 0)
-            end
-        end
-    else
-        for j = 1:nb
-            sb = sb2[j]
-            for i = 1:na
-                @inbounds selfterms = sa2[i] + sb
-                @inbounds v = max(selfterms - 2 * r[i, j], 0)
-                if v < threshT * selfterms
-                    # The distance is likely to be inaccurate, recalculate at higher prec.
-                    # This reflects the following:
-                    #   ((x+ϵ) - y)^2 ≈ x^2 - 2xy + y^2 + O(ϵ)    when |x-y| >> ϵ
-                    #   ((x+ϵ) - y)^2 ≈ O(ϵ^2)                    otherwise
-                    v = zero(v)
-                    for k = 1:m
-                        @inbounds v += (a[k, i] - b[k, j])^2
-                    end
-                end
-                @inbounds r[i, j] = v
-            end
-        end
-    end
-    r
-end
-
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
-    m, n = get_pairwise_dims(r, a)
-    mul!(r, a', a)
-    sa2 = sum(abs2, a, dims=1)
-    threshT = convert(eltype(r), dist.thresh)
-    @inbounds for j = 1:n
-        for i = 1:(j - 1)
-            r[i, j] = r[j, i]
-        end
-        r[j, j] = 0
-        sa2j = sa2[j]
-        if threshT <= 0
-            @simd for i = (j + 1):n
-                r[i, j] = max(sa2[i] + sa2j - 2 * r[i, j], 0)
-            end
-        else
-            for i = (j + 1):n
-                selfterms = sa2[i] + sa2j
-                v = max(selfterms - 2 * r[i, j], 0)
-                if v < threshT * selfterms
-                    v = zero(v)
-                    for k = 1:size(a, 1)
-                        v += (a[k, i] - a[k, j])^2
-                    end
-                end
-                r[i, j] = v
-            end
-        end
-    end
-    r
-end
-
-# Weighted SqEuclidean
-function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    w = dist.weights
-    m, na, nb = get_pairwise_dims(length(w), r, a, b)
-
-    sa2 = wsumsq_percol(w, a)
-    sb2 = wsumsq_percol(w, b)
-    mul!(r, a', b .* w)
-    for j = 1:nb
-        @simd for i = 1:na
-            @inbounds r[i, j] = max(sa2[i] + sb2[j] - 2 * r[i, j], 0)
-        end
-    end
-    r
-end
-function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
-                    a::AbstractMatrix)
-    w = dist.weights
-    m, n = get_pairwise_dims(length(w), r, a)
-
-    sa2 = wsumsq_percol(w, a)
-    mul!(r, a', a .* w)
-
-    for j = 1:n
-        for i = 1:(j - 1)
-            @inbounds r[i, j] = r[j, i]
-        end
-        @inbounds r[j, j] = 0
-        @simd for i = (j + 1):n
-            @inbounds r[i, j] = max(sa2[i] + sa2[j] - 2 * r[i, j], 0)
-        end
-    end
-    r
-end
-
-# Euclidean
-function _pairwise!(r::AbstractMatrix, dist::Euclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    m, na, nb = get_pairwise_dims(r, a, b)
-    mul!(r, a', b)
-    sa2 = sum(abs2, a, dims=1)
-    sb2 = sum(abs2, b, dims=1)
-    threshT = convert(eltype(r), dist.thresh)
-    if threshT <= 0
-        # If there's no chance of triggering the threshold, we can use @simd
-        for j = 1:nb
-            sb = sb2[j]
-            @simd for i = 1:na
-                 @inbounds r[i, j] = sqrt(max(sa2[i] + sb - 2 * r[i, j], 0))
+                @inbounds r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2 * r[i, j], 0)))
             end
         end
     else
@@ -748,14 +641,14 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean,
                         @inbounds v += (a[k, i] - b[k, j])^2
                     end
                 end
-                @inbounds r[i, j] = sqrt(v)
+                @inbounds r[i, j] = eval_end(dist, v)
             end
         end
     end
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sum(abs2, a, dims=1)
@@ -768,32 +661,59 @@ function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
         sa2j = sa2[j]
         if threshT <= 0
             @simd for i = (j + 1):n
-                r[i, j] = sqrt(max(sa2[i] + sa2j - 2 * r[i, j], 0))
+                r[i, j] = eval_end(dist, (max(sa2[i] + sa2j - 2 * r[i, j], 0)))
             end
         else
             for i = (j + 1):n
-                selfterms = sa2[i] + sa2j
-                v = max(selfterms - 2 * r[i, j], 0)
-                if v < threshT * selfterms
-                    v = zero(v)
-                    for k = 1:m
-                        v += (a[k, i] - a[k, j])^2
-                    end
+            selfterms = sa2[i] + sa2j
+            v = max(selfterms - 2 * r[i, j], 0)
+            if v < threshT * selfterms
+                v = zero(v)
+                for k = 1:m
+                    v += (a[k, i] - a[k, j])^2
                 end
-                r[i, j] = sqrt(v)
+            end
+            r[i, j] = eval_end(dist, v)
             end
         end
     end
     r
 end
 
-# Weighted Euclidean
-function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean,
+# Weighted SqEuclidean/Euclidean
+function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
+    w = dist.weights
+    m, na, nb = get_pairwise_dims(length(w), r, a, b)
+
+    sa2 = wsumsq_percol(w, a)
+    sb2 = wsumsq_percol(w, b)
+    mul!(r, a', b .* w)
+    for j = 1:nb
+        @simd for i = 1:na
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sb2[j] - 2 * r[i, j], 0))
+        end
+    end
+    r
 end
-function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix)
-    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a))
+function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
+                    a::AbstractMatrix)
+    w = dist.weights
+    m, n = get_pairwise_dims(length(w), r, a)
+
+    sa2 = wsumsq_percol(w, a)
+    mul!(r, a', a .* w)
+
+    for j = 1:n
+        for i = 1:(j - 1)
+            @inbounds r[i, j] = r[j, i]
+        end
+        @inbounds r[j, j] = 0
+        @simd for i = (j + 1):n
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2 * r[i, j], 0))
+        end
+    end
+    r
 end
 
 # CosineDist
