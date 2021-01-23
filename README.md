@@ -93,28 +93,8 @@ between `X[:,i]` and `Y[:,i]`. The batch computation typically runs considerably
 faster than calling `evaluate` column-by-column.
 
 Note that either of `X` and `Y` can be just a single vector -- then the `colwise`
-function will compute the distance between this vector and each column of the other
-parameter.
-
-The above extends to iterators of iterators/vectors, and the colwise computations
-means the distance computation of corresponding objects (à la `Base.zip`).
-For instance, in Julia v1.1 and above, the colwise behavior shown above can be
-equally well obtained by
-
-```julia
-r = colwise(dist, eachcol(X), eachcol(Y))
-```
-
-Equally simple, the analogous "rowwise" distance computation can be obtained via
-
-```julia
-r = colwise(dist, eachrow(X), eachrow(Y))
-```
-
-The iterator-based approach is in fact the future-proof way of computing distances
-between corresponding data points of iterable collections `X` and `Y`. Exceptions
-are given by distance types with `colwise` methods specialized for
-`AbstractVecOrMat` arguments, i.e., `CorrDist` and `[Sq]Mahalanobis`.
+function computes the distance between this vector and each column of the other
+argument.
 
 ### Computing pairwise distances
 
@@ -143,25 +123,8 @@ between `X[:,i]` and `X[:,j]`. `pairwise(dist, X)` is typically more efficient
 than `pairwise(dist, X, X)`, as the former will take advantage of the symmetry
 when `dist` is a semi-metric (including metric).
 
-For performance reasons, it is recommended to use matrices with observations in
-columns (as shown above). Indeed, the `Array` type in Julia is column-major,
-making it more efficient to access memory column by column. However, matrices
-with observations stored in rows are also supported via the argument `dims=1`.
-
-As before, the above can be generalized to iterators `X` and `Y` of
-iterators/vectors. For example, the distinction between `dims=1` and `dims=2` can
-again (in Julia v1.1 and above) be made by the `eachrow` and `eachcol` iterators.
-
-```julia
-R = pairwise(dist, eachcol(X), eachcol(Y)) # == pairwise(dist, X, Y; dims=2)
-R = pairwise(dist, eachrow(X), eachrow(Y)) # == pairwise(dist, X, Y; dims=1)
-```
-
-The iterator-based approach is in fact the future-proof way of computing distances
-between all data points of iterable collections `X` and `Y`. Exceptions
-are given by distance types with `pairwise` methods specialized for
-`AbstractMatrix` arguments, i.e., `CorrDist`, `CosineDist`, `[Weighted]SqEuclidean`,
-`[Weighted]Euclidean` and `[Sq]Mahalanobis`.
+To compute pairwise distances for matrices with observations stored in rows use
+the argument `dims=1`.
 
 ### Computing column-wise and pairwise distances inplace
 
@@ -207,43 +170,43 @@ computations in practice.
 Each distance corresponds to a distance type. The type name and the corresponding mathematical
 definitions of the distances are listed in the following table.
 
-| type name            |  convenient syntax         | math definition     |
-| -------------------- | -------------------------- | --------------------|
-|  Euclidean           |  `euclidean(x, y)`         | `sqrt(sum((x - y) .^ 2))` |
-|  SqEuclidean         |  `sqeuclidean(x, y)`       | `sum((x - y).^2)` |
-|  PeriodicEuclidean   |  `peuclidean(x, y, w)`     | `sqrt(sum(min(mod(abs(x - y), w), w - mod(abs(x - y), w)).^2))`  |
-|  Cityblock           |  `cityblock(x, y)`         | `sum(abs(x - y))` |
-|  TotalVariation      |  `totalvariation(x, y)`    | `sum(abs(x - y)) / 2` |
-|  Chebyshev           |  `chebyshev(x, y)`         | `max(abs(x - y))` |
-|  Minkowski           |  `minkowski(x, y, p)`      | `sum(abs(x - y).^p) ^ (1/p)` |
-|  Hamming             |  `hamming(k, l)`           | `sum(k .!= l)` |
-|  RogersTanimoto      |  `rogerstanimoto(a, b)`    | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
-|  Jaccard             |  `jaccard(x, y)`           | `1 - sum(min(x, y)) / sum(max(x, y))` |
-|  BrayCurtis          |  `braycurtis(x, y)`        | `sum(abs(x - y)) / sum(abs(x + y))`  |
-|  CosineDist          |  `cosine_dist(x, y)`       | `1 - dot(x, y) / (norm(x) * norm(y))` |
-|  CorrDist            |  `corr_dist(x, y)`         | `cosine_dist(x - mean(x), y - mean(y))` |
-|  ChiSqDist           |  `chisq_dist(x, y)`        | `sum((x - y).^2 / (x + y))` |
-|  KLDivergence        |  `kl_divergence(p, q)`     | `sum(p .* log(p ./ q))` |
-|  GenKLDivergence     |  `gkl_divergence(x, y)`    | `sum(p .* log(p ./ q) - p + q)` |
-|  RenyiDivergence     | `renyi_divergence(p, q, k)`| `log(sum( p .* (p ./ q) .^ (k - 1))) / (k - 1)` |
-|  JSDivergence        |  `js_divergence(p, q)`     | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
-|  SpanNormDist        |  `spannorm_dist(x, y)`     | `max(x - y) - min(x - y)` |
-|  BhattacharyyaDist   |  `bhattacharyya(x, y)`     | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
-|  HellingerDist       |  `hellinger(x, y)`        | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
-|  Haversine           |  `haversine(x, y, r = 6_371_000)`      | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
-|  SphericalAngle      |  `spherical_angle(x, y)`   | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
-|  Mahalanobis         |  `mahalanobis(x, y, Q)`    | `sqrt((x - y)' * Q * (x - y))` |
-|  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`  | `(x - y)' * Q * (x - y)` |
-|  MeanAbsDeviation    |  `meanad(x, y)`            | `mean(abs.(x - y))` |
-|  MeanSqDeviation     |  `msd(x, y)`               | `mean(abs2.(x - y))` |
-|  RMSDeviation        |  `rmsd(x, y)`              | `sqrt(msd(x, y))` |
-|  NormRMSDeviation    |  `nrmsd(x, y)`             | `rmsd(x, y) / (maximum(x) - minimum(x))` |
-|  WeightedEuclidean   |  `weuclidean(x, y, w)`     | `sqrt(sum((x - y).^2 .* w))`  |
-|  WeightedSqEuclidean |  `wsqeuclidean(x, y, w)`   | `sum((x - y).^2 .* w)`  |
-|  WeightedCityblock   |  `wcityblock(x, y, w)`     | `sum(abs(x - y) .* w)`  |
-|  WeightedMinkowski   |  `wminkowski(x, y, w, p)`  | `sum(abs(x - y).^p .* w) ^ (1/p)` |
-|  WeightedHamming     |  `whamming(x, y, w)`       | `sum((x .!= y) .* w)`  |
-|  Bregman             |  `bregman(F, ∇, x, y; inner = LinearAlgebra.dot)` | `F(x) - F(y) - inner(∇(y), x - y)` |
+| type name            |  convenient syntax                | math definition     |
+| -------------------- | --------------------------------- | --------------------|
+|  Euclidean           |  `euclidean(x, y)`                | `sqrt(sum((x - y) .^ 2))` |
+|  SqEuclidean         |  `sqeuclidean(x, y)`              | `sum((x - y).^2)` |
+|  PeriodicEuclidean   |  `peuclidean(x, y, w)`            | `sqrt(sum(min(mod(abs(x - y), w), w - mod(abs(x - y), w)).^2))`  |
+|  Cityblock           |  `cityblock(x, y)`                | `sum(abs(x - y))` |
+|  TotalVariation      |  `totalvariation(x, y)`           | `sum(abs(x - y)) / 2` |
+|  Chebyshev           |  `chebyshev(x, y)`                | `max(abs(x - y))` |
+|  Minkowski           |  `minkowski(x, y, p)`             | `sum(abs(x - y).^p) ^ (1/p)` |
+|  Hamming             |  `hamming(k, l)`                  | `sum(k .!= l)` |
+|  RogersTanimoto      |  `rogerstanimoto(a, b)`           | `2(sum(a&!b) + sum(!a&b)) / (2(sum(a&!b) + sum(!a&b)) + sum(a&b) + sum(!a&!b))` |
+|  Jaccard             |  `jaccard(x, y)`                  | `1 - sum(min(x, y)) / sum(max(x, y))` |
+|  BrayCurtis          |  `braycurtis(x, y)`               | `sum(abs(x - y)) / sum(abs(x + y))`  |
+|  CosineDist          |  `cosine_dist(x, y)`              | `1 - dot(x, y) / (norm(x) * norm(y))` |
+|  CorrDist            |  `corr_dist(x, y)`                | `cosine_dist(x - mean(x), y - mean(y))` |
+|  ChiSqDist           |  `chisq_dist(x, y)`               | `sum((x - y).^2 / (x + y))` |
+|  KLDivergence        |  `kl_divergence(p, q)`            | `sum(p .* log(p ./ q))` |
+|  GenKLDivergence     |  `gkl_divergence(x, y)`           | `sum(p .* log(p ./ q) - p + q)` |
+|  RenyiDivergence     |  `renyi_divergence(p, q, k)`      | `log(sum( p .* (p ./ q) .^ (k - 1))) / (k - 1)` |
+|  JSDivergence        |  `js_divergence(p, q)`            | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
+|  SpanNormDist        |  `spannorm_dist(x, y)`            | `max(x - y) - min(x - y)` |
+|  BhattacharyyaDist   |  `bhattacharyya(x, y)`            | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
+|  HellingerDist       |  `hellinger(x, y)`                | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
+|  Haversine           |  `haversine(x, y, r = 6_371_000)` | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
+|  SphericalAngle      |  `spherical_angle(x, y)`          | [Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula) |
+|  Mahalanobis         |  `mahalanobis(x, y, Q)`           | `sqrt((x - y)' * Q * (x - y))` |
+|  SqMahalanobis       |  `sqmahalanobis(x, y, Q)`         | `(x - y)' * Q * (x - y)` |
+|  MeanAbsDeviation    |  `meanad(x, y)`                   | `mean(abs.(x - y))` |
+|  MeanSqDeviation     |  `msd(x, y)`                      | `mean(abs2.(x - y))` |
+|  RMSDeviation        |  `rmsd(x, y)`                     | `sqrt(msd(x, y))` |
+|  NormRMSDeviation    |  `nrmsd(x, y)`                    | `rmsd(x, y) / (maximum(x) - minimum(x))` |
+|  WeightedEuclidean   |  `weuclidean(x, y, w)`            | `sqrt(sum((x - y).^2 .* w))`  |
+|  WeightedSqEuclidean |  `wsqeuclidean(x, y, w)`          | `sum((x - y).^2 .* w)`  |
+|  WeightedCityblock   |  `wcityblock(x, y, w)`            | `sum(abs(x - y) .* w)`  |
+|  WeightedMinkowski   |  `wminkowski(x, y, w, p)`         | `sum(abs(x - y).^p .* w) ^ (1/p)` |
+|  WeightedHamming     |  `whamming(x, y, w)`              | `sum((x .!= y) .* w)`  |
+|  Bregman             |  `bregman(F, ∇, x, y; inner=dot)` | `F(x) - F(y) - inner(∇(y), x - y)` |
 
 **Note:** The formulas above are using *Julia*'s functions. These formulas are
 mainly for conveying the math concepts in a concise way. The actual implementation
