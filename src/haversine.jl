@@ -8,7 +8,7 @@ default value is 6,371,000, i.e., the Earth's (volumetric) mean radius in meters
 Locations are described with longitude and latitude in degrees.
 The computed distance has the unit of the radius.
 """
-struct Haversine{T} <: Metric
+struct Haversine{T<:Number} <: Metric
     radius::T
 end
 Haversine() = Haversine(Float32(6_371_000))
@@ -29,7 +29,7 @@ function (dist::Haversine)(x, y)
     2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
-haversine(x, y, radius=Float32(6_371_000)) = Haversine(radius)(x, y)
+haversine(x, y, radius::Number=Float32(6_371_000)) = Haversine(radius)(x, y)
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
