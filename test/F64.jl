@@ -8,7 +8,7 @@ F64(x::F64) = x
 for op in (:+, :-, :sin, :cos, :asin, :acos)
     @eval Base.$op(a::F64) = F64($op(a.x))
 end
-for op in (:+, :-, :*, :/, isdefined(Base, :atan2) ? :atan2 : :atan)
+for op in (:+, :-, :*, :/, :rem, isdefined(Base, :atan2) ? :atan2 : :atan)
     @eval Base.$op(a::F64, b::F64) = F64($op(a.x, b.x))
 end
 for op in (:zero, :one,)
@@ -47,5 +47,6 @@ Base.convert(::Type{Float64}, a::F64) = a.x
 Base.convert(::Type{F64}, a::T) where {T <: Number} = F64(a)
 
 # conversion
+Base.Float64(a::F64) = Float64(a.x)
 Base.Int64(a::F64) = Int64(a.x)
 Base.Int32(a::F64) = Int32(a.x)

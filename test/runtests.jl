@@ -5,6 +5,7 @@ using LinearAlgebra
 using OffsetArrays
 using Random
 using Statistics
+using Unitful.DefaultSymbols
 
 @test isempty(detect_ambiguities(Distances))
 

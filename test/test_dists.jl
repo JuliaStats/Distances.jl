@@ -414,9 +414,14 @@ end #testset
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
         @test haversine((0.,-90.),  (0.,90.),  1.) ≈ π atol=1e-10
         x, y = (1.,-15.625), (-179.,15.625)
-        @test haversine(x, y, 6371.) ≈ 20015. atol=1e0
-        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015. atol=1e0
+        @test haversine(x, y, 6371.) ≈ 20015 atol=1e-1
+        @test haversine(x, y) ≈ 20015086 rtol=1e-7
+        @test Haversine()(x, y) ≈ 20015086 rtol=1e-7
+        @test haversine(Float32.(x), Float32.(y)) isa Float32
+        @test haversine(Iterators.take(x, 2), Iterators.take(y, 2), 6371.) ≈ 20015 atol=1e-1
         @test_throws ArgumentError haversine([0.,-90., 0.25], [0.,90.], 1.)
+        x, y = (1.0°,-15.625°), (-179.0°,15.625°)
+        @test haversine(x, y, 6371.0km) ≈ 20015km atol=1e-1km
     end
 end
 
@@ -736,6 +741,33 @@ end
         return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
     end
     @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
+end
+
+@testset "Unitful vectors" begin
+    x = [1m, 2m, 3m]; y = [2m, 3m, 4m]; w = [1, 1, 1]; p = [2m, 2m, 2m]
+    @test @inferred sqeuclidean(x, y) == 3m^2
+    @test @inferred euclidean(x, y) == sqrt(3)m
+    @test @inferred cityblock(x, y) == 3m
+    @test @inferred totalvariation(x, y) == 1.5m
+    @test @inferred chebyshev(x, y) == 1m
+    @test @inferred minkowski(x, y, 2) == sqrt(3)m
+    @test @inferred jaccard(x, y) == 1 - sum(min.(x, y)) / sum(max.(x, y))
+    @test @inferred braycurtis(x, y) == sum(abs.(x .- y)) / sum(abs.(x .+ y))
+    @test @inferred cosine_dist(x, y) == 1 - dot(x, y) / (norm(x) * norm(y))
+    @test @inferred corr_dist(x, y) == cosine_dist(x .- mean(x), y .- mean(y))
+    @test @inferred chisq_dist(x, y) == sum((x .- y).^2 ./ (x .+ y))
+    @test @inferred spannorm_dist(x, y) == 0m
+    @test @inferred hellinger(x, y) == sqrt(1 - sum(sqrt.(x .* y) / sqrt(sum(x) * sum(y))))
+    @test @inferred meanad(x, y) == 1m
+    @test @inferred msd(x, y) == 1m^2
+    @test @inferred rmsd(x, y) == 1m
+    @test @inferred nrmsd(x, y) == rmsd(x, y) / (maximum(x) - minimum(x))
+    @test @inferred weuclidean(x, y, w) == euclidean(x, y)
+    @test @inferred wsqeuclidean(x, y, w) == sqeuclidean(x, y)
+    @test @inferred wcityblock(x, y, w) == cityblock(x, y)
+    @test @inferred wminkowski(x, y, w, 2) == euclidean(x, y)
+    @test @inferred whamming(x, y, w) == hamming(x, y)
+    @test @inferred peuclidean(x, y, p) == sqrt(3)m
 end
 
 #=
