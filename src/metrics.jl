@@ -609,48 +609,49 @@ nrmsd(a, b) = NormRMSDeviation()(a, b)
 #
 ###########################################################
 
-# SqEuclidean
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean,
+# SqEuclidean/Euclidean
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
+    m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd
-        for j = 1:size(r, 2)
+        for j = 1:nb
             sb = sb2[j]
-            @simd for i = 1:size(r, 1)
-                @inbounds r[i, j] = max(sa2[i] + sb - 2 * r[i, j], 0)
+            @simd for i = 1:na
+                @inbounds r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2 * r[i, j], 0)))
             end
         end
     else
-        for j = 1:size(r, 2)
+        for j = 1:nb
             sb = sb2[j]
-            for i = 1:size(r, 1)
+            for i = 1:na
                 @inbounds selfterms = sa2[i] + sb
                 @inbounds v = max(selfterms - 2 * r[i, j], 0)
                 if v < threshT * selfterms
-                    # The distance is likely to be inaccurate, recalculate at higher prec.
+                    # The distance is likely to be inaccurate, recalculate directly
                     # This reflects the following:
-                    #   ((x+ϵ) - y)^2 ≈ x^2 - 2xy + y^2 + O(ϵ)    when |x-y| >> ϵ
-                    #   ((x+ϵ) - y)^2 ≈ O(ϵ^2)                    otherwise
+                    #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
+                    #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
                     v = zero(v)
-                    for k = 1:size(a, 1)
+                    for k = 1:m
                         @inbounds v += (a[k, i] - b[k, j])^2
                     end
                 end
-                @inbounds r[i, j] = v
+                @inbounds r[i, j] = eval_end(dist, v)
             end
         end
     end
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::AbstractMatrix)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
-    sa2 = sumsq_percol(a)
+    sa2 = sum(abs2, a, dims=1)
     threshT = convert(eltype(r), dist.thresh)
     @inbounds for j = 1:n
         for i = 1:(j - 1)
@@ -660,7 +661,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
         sa2j = sa2[j]
         if threshT <= 0
             @simd for i = (j + 1):n
-                r[i, j] = max(sa2[i] + sa2j - 2 * r[i, j], 0)
+                r[i, j] = eval_end(dist, (max(sa2[i] + sa2j - 2 * r[i, j], 0)))
             end
         else
             for i = (j + 1):n
@@ -668,19 +669,19 @@ function _pairwise!(r::AbstractMatrix, dist::SqEuclidean, a::AbstractMatrix)
                 v = max(selfterms - 2 * r[i, j], 0)
                 if v < threshT * selfterms
                     v = zero(v)
-                    for k = 1:size(a, 1)
+                    for k = 1:m
                         v += (a[k, i] - a[k, j])^2
                     end
                 end
-                r[i, j] = v
+                r[i, j] = eval_end(dist, v)
             end
         end
     end
     r
 end
 
-# Weighted SqEuclidean
-function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
+# Weighted SqEuclidean/Euclidean
+function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
     w = dist.weights
     m, na, nb = get_pairwise_dims(length(w), r, a, b)
@@ -690,12 +691,12 @@ function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
     mul!(r, a', b .* w)
     for j = 1:nb
         @simd for i = 1:na
-            @inbounds r[i, j] = max(sa2[i] + sb2[j] - 2 * r[i, j], 0)
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sb2[j] - 2 * r[i, j], 0))
         end
     end
     r
 end
-function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
+function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix)
     w = dist.weights
     m, n = get_pairwise_dims(length(w), r, a)
@@ -709,95 +710,10 @@ function _pairwise!(r::AbstractMatrix, dist::WeightedSqEuclidean,
         end
         @inbounds r[j, j] = 0
         @simd for i = (j + 1):n
-            @inbounds r[i, j] = max(sa2[i] + sa2[j] - 2 * r[i, j], 0)
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2 * r[i, j], 0))
         end
     end
     r
-end
-
-# Euclidean
-function _pairwise!(r::AbstractMatrix, dist::Euclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    m, na, nb = get_pairwise_dims(r, a, b)
-    mul!(r, a', b)
-    sa2 = sumsq_percol(a)
-    sb2 = sumsq_percol(b)
-    threshT = convert(eltype(r), dist.thresh)
-    if threshT <= 0
-        for j = 1:nb
-            sb = sb2[j]
-            @simd for i = 1:na
-                 @inbounds r[i, j] = sqrt(max(sa2[i] + sb - 2 * r[i, j], 0))
-            end
-        end
-    else
-        @inbounds for j = 1:nb
-            sb = sb2[j]
-            for i = 1:na
-                selfterms = sa2[i] + sb
-                v = max(selfterms - 2 * r[i, j], 0)
-                if v < threshT * selfterms
-                    # The distance is likely to be inaccurate, recalculate directly
-                    # This reflects the following:
-                    #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
-                    #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
-                    v = zero(v)
-                    for k = 1:m
-                        v += (a[k, i] - b[k, j])^2
-                    end
-                end
-                r[i, j] = sqrt(v)
-            end
-        end
-    end
-    r
-end
-
-function _pairwise!(r::AbstractMatrix, dist::Euclidean, a::AbstractMatrix)
-    m, n = get_pairwise_dims(r, a)
-    mul!(r, a', a)
-    sa2 = sumsq_percol(a)
-    threshT = convert(eltype(r), dist.thresh)
-    @inbounds for j = 1:n
-        for i = 1:(j - 1)
-            r[i, j] = r[j, i]
-        end
-        r[j, j] = 0
-        sa2j = sa2[j]
-        if threshT <= 0
-            @simd for i = (j + 1):n
-                r[i, j] = sqrt(max(sa2[i] + sa2j - 2 * r[i, j], 0))
-            end
-        else
-            for i = (j + 1):n
-                selfterms = sa2[i] + sa2j
-                v = max(selfterms - 2 * r[i, j], 0)
-                if v < threshT * selfterms
-                    v = zero(v)
-                    for k = 1:m
-                        v += (a[k, i] - a[k, j])^2
-                    end
-                end
-                r[i, j] = sqrt(v)
-            end
-        end
-    end
-    r
-end
-
-# Weighted Euclidean
-function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
-function colwise!(r::AbstractArray, dist::WeightedEuclidean, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(colwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
-function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a, b))
-end
-function _pairwise!(r::AbstractMatrix, dist::WeightedEuclidean, a::AbstractMatrix)
-    sqrt!(_pairwise!(r, WeightedSqEuclidean(dist.weights), a))
 end
 
 # CosineDist
@@ -836,14 +752,7 @@ end
 # 1. It calls the accelerated `_pairwise` specilization for CosineDist
 # 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
 #    of `_centralize` -- ~4x speed up
-_centralize_colwise(x::AbstractVector) = x .- mean(x)
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function colwise!(r::AbstractArray, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function colwise!(r::AbstractArray, ::CorrDist, a::AbstractVector, b::AbstractMatrix)
-    colwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
 function _pairwise!(r::AbstractMatrix, ::CorrDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
