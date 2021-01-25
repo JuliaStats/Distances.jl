@@ -665,15 +665,15 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::Ab
             end
         else
             for i = (j + 1):n
-            selfterms = sa2[i] + sa2j
-            v = max(selfterms - 2 * r[i, j], 0)
-            if v < threshT * selfterms
-                v = zero(v)
-                for k = 1:m
-                    v += (a[k, i] - a[k, j])^2
+                selfterms = sa2[i] + sa2j
+                v = max(selfterms - 2 * r[i, j], 0)
+                if v < threshT * selfterms
+                    v = zero(v)
+                    for k = 1:m
+                        v += (a[k, i] - a[k, j])^2
+                    end
                 end
-            end
-            r[i, j] = eval_end(dist, v)
+                r[i, j] = eval_end(dist, v)
             end
         end
     end
