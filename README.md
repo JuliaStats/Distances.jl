@@ -256,39 +256,37 @@ replicated using the script in `benchmark/print_table.jl`.
 
 ### Column-wise benchmark
 
-The table below compares the performance (measured in terms of average elapsed
-time of each iteration) of a straightforward loop implementation and an
-implementation specialized to `[Sq]Mahalanobis` provided in *Distances.jl*.
-The task in each iteration is to compute a specific distance between corresponding
-columns in two `200-by-10000` matrices.
+Generically, column-wise distances are computed using a straightforward loop
+implementation. For `[Sq]Mahalanobis`, however, specialized methods are
+provided in *Distances.jl*, and the table below compares the performance
+(measured in terms of average elapsed time of each iteration) of the generic
+to the specialized implementation. The task in each iteration is to compute a
+specific distance between corresponding columns in two `200-by-10000` matrices.
 
-|  distance  |  loop  |  colwise  |  gain  |
-|----------- | -------| ----------| -------|
+|  distance     | loop      |  colwise   |  gain       |
+|---------------|-----------|------------|-------------|
 | SqMahalanobis | 0.089470s |  0.014424s |  **6.2027** |
-| Mahalanobis | 0.090882s |  0.014096s |  **6.4475** |
+| Mahalanobis   | 0.090882s |  0.014096s |  **6.4475** |
 
 ### Pairwise benchmark
 
-The table below compares the performance (measured in terms of average elapsed
-time of each iteration) of a straightforward loop implementation and certain
-specialized implementations provided in *Distances.jl*. The task in each iteration
-is to compute a specific distance in a pairwise manner between columns in a
-`100-by-200` and `100-by-250` matrices, which will result in a `200-by-250`
-distance matrix.
+Generically, pairwise distances are computed using a straightforward loop
+implementation. For distances of which a major part of the computation is a
+quadratic form, however, the performance can be drastically improved by restructuring
+the computation and delegating the core part to `GEMM` in *BLAS*. The table below
+compares the performance (measured in terms of average elapsed time of each
+iteration) of generic to the specialized implementations provided in *Distances.jl*.
+The task in each iteration is to compute a specific distance in a pairwise manner
+between columns in a `100-by-200` and `100-by-250` matrices, which will result in
+a `200-by-250` distance matrix.
 
-|  distance  |  loop  |  pairwise  |  gain  |
-|----------- | -------| ----------| -------|
-| SqEuclidean | 0.001273s |  0.000124s | **10.2290** |
-| Euclidean | 0.001445s |  0.000194s |  **7.4529** |
-| CosineDist | 0.001928s |  0.000149s | **12.9543** |
-| CorrDist | 0.016837s |  0.000187s | **90.1854** |
-| WeightedSqEuclidean | 0.001603s |  0.000143s | **11.2119** |
-| WeightedEuclidean | 0.001811s |  0.000238s |  **7.6032** |
-| SqMahalanobis | 0.308990s |  0.000248s | **1248.1892** |
-| Mahalanobis | 0.313415s |  0.000346s | **906.1836** |
-
-For distances of which a major part of the computation is a quadratic form
-(e.g. *Euclidean*, *CosineDist*, *[Sq]Mahalanobis*), the performance can be
-drastically improved by restructuring the computation and delegating the core
-part to `GEMM` in *BLAS*. The use of this strategy can lead to dramatic
-performance gain over simple loops; see the the table above.
+|  distance             |  loop     |  pairwise  |  gain  |
+|---------------------- | --------- | -----------| -------|
+| SqEuclidean           | 0.001273s |  0.000124s | **10.2290** |
+| Euclidean             | 0.001445s |  0.000194s |  **7.4529** |
+| CosineDist            | 0.001928s |  0.000149s | **12.9543** |
+| CorrDist              | 0.016837s |  0.000187s | **90.1854** |
+| WeightedSqEuclidean   | 0.001603s |  0.000143s | **11.2119** |
+| WeightedEuclidean     | 0.001811s |  0.000238s |  **7.6032** |
+| SqMahalanobis         | 0.308990s |  0.000248s | **1248.1892** |
+| Mahalanobis           | 0.313415s |  0.000346s | **906.1836** |
