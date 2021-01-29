@@ -38,6 +38,7 @@ result_type(f, a::Type, b::Type) = typeof(f(oneunit(a), oneunit(b))) # don't req
 
 _eltype(a) = __eltype(Base.IteratorEltype(a), a)
 _eltype(::Type{T}) where {T} = eltype(T) === T ? T : _eltype(eltype(T))
+_eltype(::Type{Union{Missing, T}}) where {T} = Union{Missing, T}
 
 __eltype(::Base.HasEltype, a) = _eltype(eltype(a))
 __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))

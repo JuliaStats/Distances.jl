@@ -315,8 +315,8 @@ function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
 end
 
 eval_start(d::UnionMetrics, a, b) = _eval_start(d, _eltype(a), _eltype(b))
-_eval_start(d, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
-    _eval_start(d, _eltype(Ta), _eltype(Tb), parameters(d))
+_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+    _eval_start(d, Ta, Tb, parameters(d))
 _eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb))))
 _eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =

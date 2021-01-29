@@ -60,3 +60,5 @@ function (dist::SphericalAngle)(x, y)
 end
 
 spherical_angle(x, y) = SphericalAngle()(x, y)
+
+result_type(::Union{Haversine, SphericalAngle}, ::Type, ::Type) = Float64
