@@ -182,6 +182,7 @@ end
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
             for (x, y) in ((x, y),
+                           (convert(Array{Union{Missing, T}}, x), convert(Array{Union{Missing, T}}, y)),
                            ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
                            (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
                           )
@@ -640,6 +641,13 @@ end
 
     test_pairwise(SqMahalanobis(Q), X, Y, T)
     test_pairwise(Mahalanobis(Q), X, Y, T)
+
+    m, nx, ny = 2, 8, 6
+
+    X = rand(T, m, nx)
+    Y = rand(T, m, ny)
+    test_pairwise(Haversine(), X, Y, T)
+    test_pairwise(SphericalAngle(), X, Y, T)
 end
 
 function test_scalar_pairwise(dist, x, y, T)
