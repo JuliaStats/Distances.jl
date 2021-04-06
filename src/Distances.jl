@@ -2,6 +2,7 @@ module Distances
 
 using LinearAlgebra
 using Statistics
+import StatsAPI: pairwise, pairwise!
 
 export
     # generic types/functions
