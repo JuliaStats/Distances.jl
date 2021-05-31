@@ -51,7 +51,7 @@ function (dist::SqMahalanobis)(a::AbstractVector, b::AbstractVector)
 end
 
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix, isposdef::Bool = isposdef(Q)) =
-    SqMahalanobis(Q, isposdef)(a, b)
+    SqMahalanobis(Q, isposdef=isposdef)(a, b)
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
@@ -129,7 +129,7 @@ function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix, isposdef::Bool = isposdef(Q)) =
-    Mahalanobis(Q, isposdef)(a, b)
+    Mahalanobis(Q, isposdef=isposdef)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat, isposdef=dist._isposdef), a, b))
