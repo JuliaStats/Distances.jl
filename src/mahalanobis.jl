@@ -2,11 +2,31 @@
 
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
+    _isposdef::Bool
+    function Mahalanobis{M}(Q::M, isposdef::Bool) where {M <: AbstractMatrix}
+        if !isposdef
+            ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
+            @warn "bilinear form is not positive definite"    
+        end
+        return new{M}(Q, isposdef)
+    end
 end
+Mahalanobis(Q::AbstractMatrix; isposdef::Bool = isposdef(Q)) =
+    Mahalanobis{typeof(Q)}(Q, isposdef)
 
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
+    _isposdef::Bool
+    function SqMahalanobis{M}(Q::M, isposdef::Bool) where {M <: AbstractMatrix}
+        if !isposdef
+            ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
+            @warn "bilinear form is not positive definite"    
+        end
+        return new{M}(Q, isposdef)
+    end
 end
+SqMahalanobis(Q::AbstractMatrix; isposdef::Bool = isposdef(Q)) =
+    SqMahalanobis{typeof(Q)}(Q, isposdef)
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
     z = zero(T1) - zero(T2)
@@ -30,7 +50,8 @@ function (dist::SqMahalanobis)(a::AbstractVector, b::AbstractVector)
     return dot(z, Q * z)
 end
 
-sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
+sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix, isposdef::Bool = isposdef(Q)) =
+    SqMahalanobis(Q, isposdef)(a, b)
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
@@ -57,9 +78,17 @@ function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
     sb2 = dot_percol(b, Qb)
     mul!(r, a', Qb)
 
-    for j = 1:nb
-        @simd for i = 1:na
-            @inbounds r[i, j] = max(sa2[i] + sb2[j] - 2 * r[i, j], 0)
+    if dist._isposdef
+        for j = 1:nb
+            @simd for i = 1:na
+                @inbounds r[i, j] = max(sa2[i] + sb2[j] - 2 * r[i, j], 0)
+            end
+        end
+    else # indefinite
+        for j = 1:nb
+            @simd for i = 1:na
+                @inbounds r[i, j] = sa2[i] + sb2[j] - 2 * r[i, j]
+            end
         end
     end
     r
@@ -79,8 +108,14 @@ function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
             @inbounds r[i, j] = r[j, i]
         end
         r[j, j] = 0
-        for i = (j + 1):n
-            @inbounds r[i, j] = max(sa2[i] + sa2[j] - 2 * r[i, j], 0)
+        if dist._isposdef
+            for i = (j + 1):n
+                @inbounds r[i, j] = max(sa2[i] + sa2[j] - 2 * r[i, j], 0)
+            end
+        else
+            for i = (j + 1):n
+                @inbounds r[i, j] = sa2[i] + sa2[j] - 2 * r[i, j]
+            end
         end
     end
     r
@@ -90,25 +125,26 @@ end
 # Mahalanobis
 
 function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
-    sqrt(SqMahalanobis(dist.qmat)(a, b))
+    sqrt(SqMahalanobis(dist.qmat, isposdef=dist._isposdef)(a, b))
 end
 
-mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
+mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix, isposdef::Bool = isposdef(Q)) =
+    Mahalanobis(Q, isposdef)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, isposdef=dist._isposdef), a, b))
 end
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, isposdef=dist._isposdef), a, b))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis,
                     a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat), a, b))
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, isposdef=dist._isposdef), a, b))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis,
                     a::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat), a))
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, isposdef=dist._isposdef), a))
 end

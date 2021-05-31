@@ -405,6 +405,15 @@ end
             @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
             @test eltype(mahalanobis(x, y, Q)) == T
         end
+        A = rand(T, length(x), length(x))
+        S = A + A'
+        @test_throws ArgumentError SqMahalanobis(A)
+        @test_logs (:warn, "bilinear form is not positive definite") SqMahalanobis(S)
+        @test_throws ArgumentError Mahalanobis(A)
+        @test_logs (:warn, "bilinear form is not positive definite") Mahalanobis(S)
+        # test that posdef'ness can be overwritten
+        @test SqMahalanobis(A, isposdef=true) isa SemiMetric
+        @test Mahalanobis(A, isposdef=true) isa Metric
     end
 end #testset
 
