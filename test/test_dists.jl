@@ -713,19 +713,21 @@ end
 end
 
 @testset "Euclidean precision" begin
-    X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(Euclidean(1e-12), X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
+    x = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
+    for X in (x, complex(x))
+        pd = pairwise(Euclidean(1e-12), X, X, dims=2)
+        @test pd[1, 1] == 0
+        @test pd[2, 2] == 0
+        pd = pairwise(Euclidean(1e-12), X, dims=2)
+        @test pd[1, 1] == 0
+        @test pd[2, 2] == 0
+        pd = pairwise(SqEuclidean(1e-12), X, X, dims=2)
+        @test pd[1, 1] == 0
+        @test pd[2, 2] == 0
+        pd = pairwise(SqEuclidean(1e-12), X, dims=2)
+        @test pd[1, 1] == 0
+        @test pd[2, 2] == 0
+    end
 end
 
 @testset "non-negativity" begin
