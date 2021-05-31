@@ -648,7 +648,8 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
+                    a::AbstractMatrix{<:Real})
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     sa2 = sum(abs2, a, dims=1)
@@ -680,6 +681,25 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::Ab
     r
 end
 
+function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
+                    a::AbstractMatrix{<:Complex})
+    m, n = Distances.get_pairwise_dims(r, a)
+    _r = similar(r, eltype(a))
+    mul!(_r, a', a)
+    sa2 = sum(abs2, a, dims=1)
+    @inbounds for j = 1:n
+        for i = 1:(j - 1)
+            r[i, j] = r[j, i]
+        end
+        r[j, j] = 0
+        sa2j = sa2[j]
+        @simd for i = (j + 1):n
+            r[i, j] = Distances.eval_end(dist, max(sa2[i] + sa2j - 2 * real(_r[i, j]), 0))
+        end
+    end
+    r
+end
+
 # Weighted SqEuclidean/Euclidean
 function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
@@ -696,8 +716,9 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     end
     r
 end
+
 function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
-                    a::AbstractMatrix)
+                    a::AbstractMatrix{<:Real})
     w = dist.weights
     m, n = get_pairwise_dims(length(w), r, a)
 
@@ -715,6 +736,29 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     end
     r
 end
+
+function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
+                    a::AbstractMatrix{<:Complex})
+    w = dist.weights
+    m, n = get_pairwise_dims(length(w), r, a)
+
+    sa2 = wsumsq_percol(w, a)
+    _r = similar(r, eltype(a))
+    mul!(_r, a', a .* w)
+
+    for j = 1:n
+        for i = 1:(j - 1)
+            @inbounds r[i, j] = r[j, i]
+        end
+        @inbounds r[j, j] = 0
+        @simd for i = (j + 1):n
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2 * real(_r[i, j]), 0))
+        end
+    end
+    r
+end
+
+
 
 # CosineDist
 
