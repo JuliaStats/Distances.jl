@@ -728,8 +728,8 @@ end
     @test_throws ArgumentError bregman(x -> x, x -> 2*x, [1, 2, 3], [1, 2, 3])
     # Test if Bregman() correctly implements the gkl divergence between two random vectors.
     F(p) = LinearAlgebra.dot(p, log.(p));
-    ∇(p) = map(x -> log(x) + 1, p)
-    testDist = Bregman(F, ∇)
+    ∇F(p) = map(x -> log(x) + 1, p)
+    testDist = Bregman(F, ∇F)
     p = rand(4)
     q = rand(4)
     p = p/sum(p)
@@ -743,12 +743,12 @@ end
         @test bregman(x -> norm(x)^2, x -> 2 .* x, p, q) ≈ sqeuclidean(p, q)
     end
     # Test if Bregman() correctly implements the IS distance.
-    F(p) = -1 * sum(log.(p))
-    ∇(p) = map(x -> -1 * x^(-1), p)
+    G(p) = -1 * sum(log.(p))
+    ∇G(p) = map(x -> -1 * x^(-1), p)
     function ISdist(p::AbstractVector, q::AbstractVector)
         return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
     end
-    @test bregman(F, ∇, p, q) ≈ ISdist(p, q)
+    @test bregman(G, ∇G, p, q) ≈ ISdist(p, q)
 end
 
 @testset "Unitful vectors" begin
