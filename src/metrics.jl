@@ -750,12 +750,12 @@ function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix)
     mul!(r, a', a)
     ra = norm_percol(a)
     @inbounds for j = 1:n
-        @simd for i = j + 1:n
-            r[i, j] = max(1 - r[i, j] / (ra[i] * ra[j]), 0)
-        end
-        r[j, j] = 0
         for i = 1:(j - 1)
             r[i, j] = r[j, i]
+        end
+        r[j, j] = 0
+        @simd for i = j + 1:n
+            r[i, j] = max(1 - r[i, j] / (ra[i] * ra[j]), 0)
         end
     end
     r
