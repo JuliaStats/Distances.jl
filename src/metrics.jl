@@ -614,6 +614,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
+    # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
     R = inplace ? mul!(r, a', b) : a'b
     sa2 = sum(abs2, a, dims=1)
@@ -654,6 +655,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::Ab
     require_one_based_indexing(r, a)
     m, n = get_pairwise_dims(r, a)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
+    # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     R = inplace ? mul!(r, a', a) : a'a
     sa2 = sum(abs2, a, dims=1)
     threshT = convert(eltype(r), dist.thresh)
@@ -693,6 +695,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
 
     sa2 = wsumsq_percol(w, a)
     sb2 = wsumsq_percol(w, b)
+    # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
     R = inplace ? mul!(r, a', w .* b) : a'*Diagonal(w)*b
     for j = 1:nb
@@ -709,6 +712,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     m, n = get_pairwise_dims(length(w), r, a)
 
     sa2 = wsumsq_percol(w, a)
+    # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
     R = inplace ? mul!(r, a', w .* a) : a'*Diagonal(w)*a
 
