@@ -612,26 +612,27 @@ nrmsd(a, b) = NormRMSDeviation()(a, b)
 # SqEuclidean/Euclidean
 function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
+    require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
     R = inplace ? mul!(r, a', b) : a'b
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
     threshT = convert(eltype(r), dist.thresh)
-    if threshT <= 0
+    @inbounds if threshT <= 0
         # If there's no chance of triggering the threshold, we can use @simd
         for j = 1:nb
             sb = sb2[j]
             @simd for i = 1:na
-                @inbounds r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2real(R[i, j]), 0)))
+                r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2real(R[i, j]), 0)))
             end
         end
     else
         for j = 1:nb
             sb = sb2[j]
             for i = 1:na
-                @inbounds selfterms = sa2[i] + sb
-                @inbounds v = max(selfterms - 2real(R[i, j]), 0)
+                selfterms = sa2[i] + sb
+                v = max(selfterms - 2real(R[i, j]), 0)
                 if v < threshT * selfterms
                     # The distance is likely to be inaccurate, recalculate directly
                     # This reflects the following:
@@ -639,10 +640,10 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
                     #         sqrt(x+ϵ) ≈ O(sqrt(ϵ))             otherwise.
                     v = zero(v)
                     for k = 1:m
-                        @inbounds v += abs2(a[k, i] - b[k, j])
+                        v += abs2(a[k, i] - b[k, j])
                     end
                 end
-                @inbounds r[i, j] = eval_end(dist, v)
+                r[i, j] = eval_end(dist, v)
             end
         end
     end
@@ -650,6 +651,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::AbstractMatrix)
+    require_one_based_indexing(r, a)
     m, n = get_pairwise_dims(r, a)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
     R = inplace ? mul!(r, a', a) : a'a
@@ -685,6 +687,7 @@ end
 # Weighted SqEuclidean/Euclidean
 function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix, b::AbstractMatrix)
+    require_one_based_indexing(r, a, b)
     w = dist.weights
     m, na, nb = get_pairwise_dims(length(w), r, a, b)
 
@@ -701,6 +704,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
 end
 function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedEuclidean},
                     a::AbstractMatrix)
+    require_one_based_indexing(r, a)
     w = dist.weights
     m, n = get_pairwise_dims(length(w), r, a)
 
@@ -708,13 +712,13 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
     R = inplace ? mul!(r, a', w .* a) : a'*Diagonal(w)*a
 
-    for j = 1:n
+    @inbounds for j = 1:n
         for i = 1:(j - 1)
-            @inbounds r[i, j] = r[j, i]
+            r[i, j] = r[j, i]
         end
-        @inbounds r[j, j] = 0
+        r[j, j] = 0
         @simd for i = (j + 1):n
-            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2real(R[i, j]), 0))
+            r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2real(R[i, j]), 0))
         end
     end
     r
@@ -724,6 +728,7 @@ end
 
 function _pairwise!(r::AbstractMatrix, ::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
+    require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
     mul!(r, a', b)
     ra = norm_percol(a)
@@ -736,6 +741,7 @@ function _pairwise!(r::AbstractMatrix, ::CosineDist,
     r
 end
 function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix)
+    require_one_based_indexing(r, a)
     m, n = get_pairwise_dims(r, a)
     mul!(r, a', a)
     ra = norm_percol(a)
