@@ -27,8 +27,8 @@ function test_metricity(dist, x, y, z)
         @test d == evaluate(dist, x, y)
         if d isa Distances.UnionMetrics
             # currently only UnionMetrics supports this strategy trait
-            d_vec = Distances._evaluate(Distances.Vectorization(), dist, x, y, Distances.parameters(dist))
-            d_scalar = Distances._evaluate(Distances.ScalarMapReduce(), dist, x, y, Distances.parameters(dist))
+            d_vec = Distances._evaluate(Distances.Broadcasting(), dist, x, y, Distances.parameters(dist))
+            d_scalar = Distances._evaluate(Distances.MapReduce1(), dist, x, y, Distances.parameters(dist))
             @test d_vec ≈ d_scalar
         end
 

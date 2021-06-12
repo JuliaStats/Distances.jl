@@ -221,25 +221,26 @@ result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
 
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p=parameters(d))
-    _evaluate(infer_evaluate_strategy(d, a, b), d, a, b, p)
+    _evaluate(evaluate_strategy(d, a, b), d, a, b, p)
 end
 for M in (metrics..., weightedmetrics...)
     @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b)
 end
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
-function _evaluate(::Vectorization, d::UnionMetrics, a, b, ::Nothing)
+function _evaluate(::Broadcasting, d::UnionMetrics, a, b, ::Nothing)
     map_op(x,y) = eval_op(d, x, y)
     reduce_op(x, y) = eval_reduce(d, x, y)
     eval_end(d, reduce(reduce_op, map_op.(a, b); init=eval_start(d, a, b)))
 end
-function _evaluate(::Vectorization, d::UnionMetrics, a, b, p)
+function _evaluate(::Broadcasting, d::UnionMetrics, a, b, p)
     map_op(x,y,p) = eval_op(d, x, y, p)
     reduce_op(x, y) = eval_reduce(d, x, y)
     eval_end(d, reduce(reduce_op, map_op.(a, b, p); init=eval_start(d, a, b)))
 end
+_evaluate(::AbstractEvaluateStrategy, d::UnionMetrics, a, b, p) = error("Not implemented.")
 
-Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a, b, ::Nothing)
+Base.@propagate_inbounds function _evaluate(::MapReduce1, d::UnionMetrics, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -252,7 +253,7 @@ Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, 
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
+Base.@propagate_inbounds function _evaluate(::MapReduce1, d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -276,7 +277,7 @@ Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, 
     end
 end
 
-Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a, b, p)
+Base.@propagate_inbounds function _evaluate(::MapReduce1, d::UnionMetrics, a, b, p)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -292,7 +293,7 @@ Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, 
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
+Base.@propagate_inbounds function _evaluate(::MapReduce1, d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -321,8 +322,8 @@ Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, 
     end
 end
 
-_evaluate(::ScalarMapReduce, dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
-function _evaluate(::ScalarMapReduce, dist::UnionMetrics, a::Number, b::Number, p)
+_evaluate(::MapReduce1, dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
+function _evaluate(::MapReduce1, dist::UnionMetrics, a::Number, b::Number, p)
     length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end

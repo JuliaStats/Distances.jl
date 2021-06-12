@@ -45,24 +45,56 @@ __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 
 
 abstract type AbstractEvaluateStrategy end
-struct Vectorization <: AbstractEvaluateStrategy end
-struct ScalarMapReduce <: AbstractEvaluateStrategy end
+struct Broadcasting <: AbstractEvaluateStrategy end
+struct MapReduce1 <: AbstractEvaluateStrategy end
 
-# Infer the optimal evaluation strategy based on given array types and distance type.
-function infer_evaluate_strategy(d::PreMetric, a, b)
-    da, db = device(a), device(b)
-    return _infer_evaluate_strategy(d::PreMetric, da, db)
+"""
+    evaluate_strategy(d::PreMetric, a, b)
+
+Infer the optimal strategy to evaluate `d(a, b)`.
+
+Two strategies are provided in Distances, take `Euclidean` as an example:
+
+- `Broadcasting`: evaluate each pair by broadcasting, this is usually performant for arrays
+  that has slow scalar indexing, e.g., `CUDA.CuArray`. But it introduces an extra memory
+  allocation due to large intermediate result. For `Euclidean`, this is almost equivalent
+  to `sqrt(sum(abs2, a - b))`. 
+- `MapReduce1`: use a single-thread version of mapreduce. This has minimal memory allocation.
+  For `Euclidean`, this is almost equivalent to
+  `sqrt(mapreduce(ab->abs2(ab[1]-ab[2]), +, zip(a, b); init=0))`.
+
+# Example
+
+This function is non-exported. Packages that provides custom array types can provide
+specializations for this function and could implement their own evaluation strategy
+for specific (pre)metric types.
+
+For example, these delegates distance evaluation for `CuArray` to the `Broadcasting` strategy.
+
+```julia
+evaluate_strategy(d::Distances.UnionMetrics, a::CuArray, b::CuArray) = Distances.Broadcasting()
+evaluate_strategy(d::Distances.UnionMetrics, a, b::CuArray) = Distances.Broadcasting()
+evaluate_strategy(d::Distances.UnionMetrics, a::CuArray, b) = Distances.Broadcasting()
+```
+
+!!! note
+    Currently, only `Distances.UnionMetrics` respect the result of this function.
+
+Adding a new implementation strategy for `UnionMetrics` types can be done by adding new methods
+to `Distances._evaluate`. For example,
+
+```julia
+struct AnotherFancyStrategy <: Distances.AbstractEvaluateStrategy
+function Distances._evaluate(::AnotherFancyStrategy, d::UnionMetrics, a, b, p)
+    # implementation details
 end
-@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::AbstractDevice) = ScalarMapReduce()
-# when one of the input are scalar types
-@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::Nothing) = ScalarMapReduce()
-@inline _infer_evaluate_strategy(d::PreMetric, ::Nothing, ::AbstractDevice) = ScalarMapReduce()
-@inline _infer_evaluate_strategy(d::PreMetric, ::Nothing, ::Nothing) = ScalarMapReduce()
-# It is way slower to use scalar indexing if any of the given array is GPU array
-@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::GPU) = Vectorization()
-@inline _infer_evaluate_strategy(d::PreMetric, ::GPU, ::AbstractDevice) = Vectorization()
-@inline _infer_evaluate_strategy(d::PreMetric, ::GPU, ::GPU) = Vectorization()
+```
 
+The `_evaluate` function belongs to implementation detail that normal users shouldn't
+call directly. But it is considered as a stable API so package developer can add new
+strategy implementation to it.
+"""
+evaluate_strategy(::PreMetric, ::Any, ::Any) = MapReduce1()
 
 # Generic column-wise evaluation
 
