@@ -220,13 +220,26 @@ result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb}
 result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b)
-    _evaluate(d, a, b, parameters(d))
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p=parameters(d))
+    _evaluate(infer_evaluate_strategy(d, a, b), d, a, b, p)
+end
+for M in (metrics..., weightedmetrics...)
+    @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b)
 end
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
+function _evaluate(::Vectorization, d::UnionMetrics, a, b, ::Nothing)
+    map_op(x,y) = eval_op(d, x, y)
+    reduce_op(x, y) = eval_reduce(d, x, y)
+    eval_end(d, reduce(reduce_op, map_op.(a, b); init=eval_start(d, a, b)))
+end
+function _evaluate(::Vectorization, d::UnionMetrics, a, b, p)
+    map_op(x,y,p) = eval_op(d, x, y, p)
+    reduce_op(x, y) = eval_reduce(d, x, y)
+    eval_end(d, reduce(reduce_op, map_op.(a, b, p); init=eval_start(d, a, b)))
+end
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
+Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -239,7 +252,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
+Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -263,7 +276,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
+Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a, b, p)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -279,7 +292,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
+Base.@propagate_inbounds function _evaluate(::ScalarMapReduce, d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -308,8 +321,8 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
-_evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
-function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
+_evaluate(::ScalarMapReduce, dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
+function _evaluate(::ScalarMapReduce, dist::UnionMetrics, a::Number, b::Number, p)
     length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end
@@ -323,10 +336,6 @@ _eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
     zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p)))))
 eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
 eval_end(::UnionMetrics, s) = s
-
-for M in (metrics..., weightedmetrics...)
-    @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b, parameters(dist))
-end
 
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
@@ -373,7 +382,14 @@ totalvariation(a, b) = TotalVariation()(a, b)
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
-Base.@propagate_inbounds eval_start(::Chebyshev, a, b) = abs(first(a) - first(b))
+Base.@propagate_inbounds function eval_start(d::Chebyshev, a, b)
+    T = result_type(d, a, b)
+    if any(isnan, a) || any(isnan, b)
+        return convert(T, NaN)
+    else
+        zero(T) # lower bound of chebyshev distance
+    end
+end
 chebyshev(a, b) = Chebyshev()(a, b)
 
 # Minkowski

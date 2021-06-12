@@ -23,7 +23,14 @@ end
 
 function test_metricity(dist, x, y, z)
     @testset "Test metricity of $(typeof(dist))" begin
-        @test dist(x, y) == evaluate(dist, x, y)
+        d = dist(x, y)
+        @test d == evaluate(dist, x, y)
+        if d isa Distances.UnionMetrics
+            # currently only UnionMetrics supports this strategy trait
+            d_vec = Distances._evaluate(Distances.Vectorization(), dist, x, y, Distances.parameters(dist))
+            d_scalar = Distances._evaluate(Distances.ScalarMapReduce(), dist, x, y, Distances.parameters(dist))
+            @test d_vec ≈ d_scalar
+        end
 
         dxy = dist(x, y)
         dxz = dist(x, z)

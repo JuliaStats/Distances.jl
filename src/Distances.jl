@@ -1,5 +1,6 @@
 module Distances
 
+using ArrayInterface: device, AbstractDevice, GPU
 using LinearAlgebra
 using Statistics
 import StatsAPI: pairwise, pairwise!

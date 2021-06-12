@@ -43,6 +43,27 @@ _eltype(::Type{Union{Missing, T}}) where {T} = Union{Missing, T}
 __eltype(::Base.HasEltype, a) = _eltype(eltype(a))
 __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 
+
+abstract type AbstractEvaluateStrategy end
+struct Vectorization <: AbstractEvaluateStrategy end
+struct ScalarMapReduce <: AbstractEvaluateStrategy end
+
+# Infer the optimal evaluation strategy based on given array types and distance type.
+function infer_evaluate_strategy(d::PreMetric, a, b)
+    da, db = device(a), device(b)
+    return _infer_evaluate_strategy(d::PreMetric, da, db)
+end
+@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::AbstractDevice) = ScalarMapReduce()
+# when one of the input are scalar types
+@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::Nothing) = ScalarMapReduce()
+@inline _infer_evaluate_strategy(d::PreMetric, ::Nothing, ::AbstractDevice) = ScalarMapReduce()
+@inline _infer_evaluate_strategy(d::PreMetric, ::Nothing, ::Nothing) = ScalarMapReduce()
+# It is way slower to use scalar indexing if any of the given array is GPU array
+@inline _infer_evaluate_strategy(d::PreMetric, ::AbstractDevice, ::GPU) = Vectorization()
+@inline _infer_evaluate_strategy(d::PreMetric, ::GPU, ::AbstractDevice) = Vectorization()
+@inline _infer_evaluate_strategy(d::PreMetric, ::GPU, ::GPU) = Vectorization()
+
+
 # Generic column-wise evaluation
 
 """
