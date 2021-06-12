@@ -53,15 +53,14 @@ struct MapReduce1 <: AbstractEvaluateStrategy end
 
 Infer the optimal strategy to evaluate `d(a, b)`.
 
-Two strategies are provided in Distances, take `Euclidean` as an example:
+Currently, two strategies are provided in Distances:
 
 - `Broadcasting`: evaluate each pair by broadcasting, this is usually performant for arrays
   that has slow scalar indexing, e.g., `CUDA.CuArray`. But it introduces an extra memory
   allocation due to large intermediate result. For `Euclidean`, this is almost equivalent
   to `sqrt(sum(abs2, a - b))`. 
 - `MapReduce1`: use a single-thread version of mapreduce. This has minimal memory allocation.
-  For `Euclidean`, this is almost equivalent to
-  `sqrt(mapreduce(ab->abs2(ab[1]-ab[2]), +, zip(a, b); init=0))`.
+  For `Euclidean`, this is almost equivalent to `sqrt(mapreduce((x,y)->abs2(x-y), +, a, b))`.
 
 # Example
 
