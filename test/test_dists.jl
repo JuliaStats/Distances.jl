@@ -408,12 +408,12 @@ end
         A = rand(T, length(x), length(x))
         S = A + A'
         @test_throws ArgumentError SqMahalanobis(A)
-        @test_logs (:warn, "bilinear form is not positive definite") SqMahalanobis(S)
+        @test_logs (:warn, "bilinear form is not positive semidefinite") SqMahalanobis(S)
         @test_throws ArgumentError Mahalanobis(A)
-        @test_logs (:warn, "bilinear form is not positive definite") Mahalanobis(S)
-        # test that posdef'ness can be overwritten
-        @test SqMahalanobis(A, isposdef=true) isa SemiMetric
-        @test Mahalanobis(A, isposdef=true) isa Metric
+        @test_logs (:warn, "bilinear form is not positive semidefinite") Mahalanobis(S)
+        # test that semiposdef'ness can be overwritten, avoiding all checks
+        @test SqMahalanobis(A, true) isa SemiMetric
+        @test Mahalanobis(A, true) isa Metric
     end
 end #testset
 
