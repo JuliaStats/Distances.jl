@@ -55,8 +55,8 @@ end
 
 # Bhattacharyya distance
 (::BhattacharyyaDist)(a, b) = -log(bhattacharyya_coeff(a, b))
-bhattacharyya(a, b) = BhattacharyyaDist()(a, b)
+const bhattacharyya = BhattacharyyaDist()
 
 # Hellinger distance
 (::HellingerDist)(a, b) = sqrt(1 - bhattacharyya_coeff(a, b))
-hellinger(a, b) = HellingerDist()(a, b)
+const hellinger = HellingerDist()

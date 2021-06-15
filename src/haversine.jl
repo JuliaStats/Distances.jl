@@ -59,6 +59,6 @@ function (dist::SphericalAngle)(x, y)
     2 * asin( min(√a, one(a)) ) # take care of floating point errors
 end
 
-spherical_angle(x, y) = SphericalAngle()(x, y)
+const spherical_angle = SphericalAngle()
 
 result_type(::Union{Haversine, SphericalAngle}, ::Type, ::Type) = Float64
