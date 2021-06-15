@@ -84,8 +84,7 @@ function (dist::SqMahalanobis)(a::AbstractVector, b::AbstractVector)
     return dot(z, Q * z)
 end
 
-sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) =
-    SqMahalanobis(Q)(a, b)
+sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
@@ -146,8 +145,7 @@ function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
     sqrt(SqMahalanobis(dist.qmat, skipchecks = true)(a, b))
 end
 
-mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) =
-    Mahalanobis(Q)(a, b)
+mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
