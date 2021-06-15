@@ -650,6 +650,24 @@ end
     test_pairwise(SphericalAngle(), X, Y, T)
 end
 
+@testset "pairwise metrics on complex arrays" begin
+    m = 5
+    n = 8
+    nx = 6
+    ny = 8
+
+    X = rand(ComplexF64, m, nx)
+    Y = rand(ComplexF64, m, ny)
+    
+    test_pairwise(SqEuclidean(), X, Y, Float64)
+    test_pairwise(Euclidean(), X, Y, Float64)
+
+    w = rand(m)
+
+    test_pairwise(WeightedSqEuclidean(w), X, Y, Float64)
+    test_pairwise(WeightedEuclidean(w), X, Y, Float64)
+end
+
 function test_scalar_pairwise(dist, x, y, T)
     @testset "Scalar pairwise test for $(typeof(dist))" begin
         rxy = dist.(x, permutedims(y))
@@ -695,19 +713,13 @@ end
 end
 
 @testset "Euclidean precision" begin
-    X = [0.1 0.2; 0.3 0.4; -0.1 -0.1]
-    pd = pairwise(Euclidean(1e-12), X, X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(Euclidean(1e-12), X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
-    pd = pairwise(SqEuclidean(1e-12), X, dims=2)
-    @test pd[1, 1] == 0
-    @test pd[2, 2] == 0
+    x = [0.1 0.1; 0.3 0.3; -0.1 -0.1]
+    for X in (x, complex(x))
+        @test iszero(pairwise(Euclidean(1e-12), X, X, dims=2))
+        @test iszero(pairwise(Euclidean(1e-12), X, dims=2))
+        @test iszero(pairwise(SqEuclidean(1e-12), X, X, dims=2))
+        @test iszero(pairwise(SqEuclidean(1e-12), X, dims=2))
+    end
 end
 
 @testset "non-negativity" begin
