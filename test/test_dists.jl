@@ -406,14 +406,16 @@ end
             @test eltype(mahalanobis(x, y, Q)) == T
         end
         A = rand(T, length(x), length(x))
-        S = A + A'
-        @test_throws ArgumentError SqMahalanobis(A)
-        @test_logs (:warn, "bilinear form is not positive semidefinite") SqMahalanobis(S)
-        @test_throws ArgumentError Mahalanobis(A)
-        @test_logs (:warn, "bilinear form is not positive semidefinite") Mahalanobis(S)
+        S = A + A' - I
+        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") SqMahalanobis(A)
+        @test_throws ArgumentError("bilinear form is not positive semidefinite") SqMahalanobis(S)
+        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") Mahalanobis(A)
+        @test_throws ArgumentError("bilinear form is not positive semidefinite") Mahalanobis(S)
         # test that semiposdef'ness can be overwritten, avoiding all checks
         @test SqMahalanobis(A, true) isa SemiMetric
         @test Mahalanobis(A, true) isa Metric
+        @test SqMahalanobis(S, true) isa SemiMetric
+        @test Mahalanobis(S, true) isa Metric
     end
 end #testset
 
