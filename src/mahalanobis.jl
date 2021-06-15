@@ -1,11 +1,11 @@
 # Mahalanobis distances
 
 """
-    Mahalanobis(Q, skipchecks=false) <: Metric
+    Mahalanobis(Q, skipchecks = false) <: Metric
 
 Create a Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
 Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
-unless `skipchecks = true`.
+unless the keyword argument `skipchecks = true`.
 
 # Example:
 ```julia
@@ -17,27 +17,26 @@ Mahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 julia> dist = Mahalanobis(A)
 ERROR: ArgumentError: bilinear form is not symmetric/Hermitian
 
-julia> dist = Mahalanobis(A, true)
+julia> dist = Mahalanobis(A, skipchecks = true)
 Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 """
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
-    Mahalanobis{M}(Q::M) where {M <: AbstractMatrix} = new{M}(Q)
-end
-function Mahalanobis(Q::M, skipchecks::Bool = false) where {M <: AbstractMatrix}
-    if !skipchecks
-        ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
-        eigmin(Q) ≥ 0 || throw(ArgumentError("bilinear form is not positive semidefinite"))
+    function Mahalanobis(Q::AbstractMatrix; skipchecks::Bool = false)
+        if !skipchecks
+            ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
+            eigmin(Q) ≥ 0 || throw(ArgumentError("bilinear form is not positive semidefinite"))
+        end
+        return new{typeof(Q)}(Q)
     end
-    return Mahalanobis{M}(Q)
 end
 
 """
-    SqMahalanobis(Q, skipchecks=false) <: Metric
+    SqMahalanobis(Q, skipchecks = false) <: Metric
 
 Create a squared Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
 Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
-unless `skipchecks = true`.
+unless the keyword argument `skipchecks = true`.
 
 # Example:
 ```julia
@@ -49,19 +48,18 @@ SqMahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 julia> dist = SqMahalanobis(A)
 ERROR: ArgumentError: bilinear form is not symmetric/Hermitian
 
-julia> dist = SqMahalanobis(A, true)
+julia> dist = SqMahalanobis(A, skipchecks = true)
 SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 """
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
-    SqMahalanobis{M}(Q::M) where {M <: AbstractMatrix} = new{M}(Q)
-end
-function SqMahalanobis(Q::M, skipchecks::Bool = false) where {M <: AbstractMatrix}
-    if !skipchecks
-        ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
-        eigmin(Q) ≥ 0 || throw(ArgumentError("bilinear form is not positive semidefinite"))
+    function SqMahalanobis(Q::AbstractMatrix; skipchecks::Bool = false)
+        if !skipchecks
+            ishermitian(Q) || throw(ArgumentError("bilinear form is not symmetric/Hermitian"))
+            eigmin(Q) ≥ 0 || throw(ArgumentError("bilinear form is not positive semidefinite"))
+        end
+        return new{typeof(Q)}(Q)
     end
-    return SqMahalanobis{M}(Q)
 end
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
@@ -145,24 +143,24 @@ end
 # Mahalanobis
 
 function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
-    sqrt(SqMahalanobis(dist.qmat, true)(a, b))
+    sqrt(SqMahalanobis(dist.qmat, skipchecks = true)(a, b))
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) =
     Mahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, true), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, true), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, true), a, b))
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, true), a))
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a))
 end
