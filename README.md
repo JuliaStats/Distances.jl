@@ -189,7 +189,7 @@ definitions of the distances are listed in the following table.
 |  KLDivergence        |  `kl_divergence(p, q)`            | `sum(p .* log(p ./ q))` |
 |  GenKLDivergence     |  `gkl_divergence(x, y)`           | `sum(p .* log(p ./ q) - p + q)` |
 |  RenyiDivergence     |  `renyi_divergence(p, q, k)`      | `log(sum( p .* (p ./ q) .^ (k - 1))) / (k - 1)` |
-|  JSDivergence        |  `js_divergence(p, q)`            | `KL(p, m) / 2 + KL(p, m) / 2 with m = (p + q) / 2` |
+|  JSDivergence        |  `js_divergence(p, q)`            | `KL(p, m) / 2 + KL(q, m) / 2 with m = (p + q) / 2` |
 |  SpanNormDist        |  `spannorm_dist(x, y)`            | `max(x - y) - min(x - y)` |
 |  BhattacharyyaDist   |  `bhattacharyya(x, y)`            | `-log(sum(sqrt(x .* y) / sqrt(sum(x) * sum(y)))` |
 |  HellingerDist       |  `hellinger(x, y)`                | `sqrt(1 - sum(sqrt(x .* y) / sqrt(sum(x) * sum(y))))` |
