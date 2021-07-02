@@ -405,6 +405,17 @@ end
             @test mahalanobis(x, y, Q) == sqrt(sqmahalanobis(x, y, Q))
             @test eltype(mahalanobis(x, y, Q)) == T
         end
+        A = rand(T, length(x), length(x))
+        S = A + A' - I
+        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") SqMahalanobis(A)
+        @test_throws ArgumentError("bilinear form is not positive semidefinite") SqMahalanobis(S)
+        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") Mahalanobis(A)
+        @test_throws ArgumentError("bilinear form is not positive semidefinite") Mahalanobis(S)
+        # test that semiposdef'ness can be overwritten, avoiding all checks
+        @test SqMahalanobis(A, skipchecks=true) isa SemiMetric
+        @test Mahalanobis(A, skipchecks=true) isa Metric
+        @test SqMahalanobis(S, skipchecks=true) isa SemiMetric
+        @test Mahalanobis(S, skipchecks=true) isa Metric
     end
 end #testset
 
