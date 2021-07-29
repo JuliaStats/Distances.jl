@@ -62,4 +62,4 @@ end
 
 spherical_angle(x, y) = SphericalAngle()(x, y)
 
-result_type(::Union{Haversine, SphericalAngle}, ::Type, ::Type) = Float64
+result_type(d::Haversine, ::Type{T1}, ::Type{T2}) where {T1<:Number, T2<:Number} = promote_type(T1, T2)
