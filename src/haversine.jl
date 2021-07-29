@@ -62,4 +62,5 @@ end
 
 spherical_angle(x, y) = SphericalAngle()(x, y)
 
-result_type(d::Haversine, ::Type{T1}, ::Type{T2}) where {T1<:Number, T2<:Number} = promote_type(T1, T2)
+result_type(d::Haversine{T1}, ::Type{T2}, ::Type{T3}) where {T1<:Number,T2<:Number,T3<:Number} = promote_type(T1, T2, T3)
+result_type(d::SphericalAngle, ::Type{T1}, ::Type{T2}) where {T1<:Number,T2<:Number} = promote_type(T1, T2)
