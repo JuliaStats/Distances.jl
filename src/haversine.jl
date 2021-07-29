@@ -11,7 +11,8 @@ The computed distance has the unit of the radius.
 struct Haversine{T<:Number} <: Metric
     radius::T
 end
-Haversine() = Haversine(Float32(6_371_000))
+Haversine{T}() where {T<:Number} = Haversine(T(6_371_000))
+Haversine() = Haversine{Int}()
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)
@@ -26,10 +27,10 @@ function (dist::Haversine)(x, y)
     a = sind(Δφ/2)^2 + cosd(φ₁)*cosd(φ₂)*sind(Δλ/2)^2
 
     # distance on the sphere
-    2 * dist.radius * asin( min(√a, one(a)) ) # take care of floating point errors
+    2 * (dist.radius * asin( min(√a, one(a)) )) # take care of floating point errors
 end
 
-haversine(x, y, radius::Number=Float32(6_371_000)) = Haversine(radius)(x, y)
+haversine(x, y, radius::Number=6_371_000) = Haversine(radius)(x, y)
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
