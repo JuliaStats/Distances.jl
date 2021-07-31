@@ -409,7 +409,7 @@ end
 end #testset
 
 @testset "haversine" begin
-    for T in (Float64, F64)
+    for T in (Float32, Float64, F64)
         @test haversine([-180.,0.], [180.,0.], 1.) ≈ 0 atol=1e-10
         @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
