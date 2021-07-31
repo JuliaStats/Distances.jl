@@ -34,6 +34,8 @@ haversine(x, y, radius::Number=6_371_000) = Haversine(radius)(x, y)
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
+result_type(d::Haversine{T1}, ::Type{T2}, ::Type{T3}) where {T1<:Number,T2<:Number,T3<:Number} = promote_type(T1, T2, T3)
+
 """
     SphericalAngle()
 
@@ -62,5 +64,4 @@ end
 
 spherical_angle(x, y) = SphericalAngle()(x, y)
 
-result_type(d::Haversine{T1}, ::Type{T2}, ::Type{T3}) where {T1<:Number,T2<:Number,T3<:Number} = promote_type(T1, T2, T3)
 result_type(d::SphericalAngle, ::Type{T1}, ::Type{T2}) where {T1<:Number,T2<:Number} = promote_type(T1, T2)
