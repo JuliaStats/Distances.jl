@@ -60,6 +60,36 @@ function test_metricity(dist, x, y, z)
     end
 end
 
+function test_batch(dist, _x, _y, args=(); Tins=(Float32, Float64), Touts=Tins)
+    _xs = hcat(_x, _x)
+    _ys = hcat(_y, _y)
+
+    for (Tin, Tout) in zip(Tins, Touts)
+        x, y = Tin.(_x), Tin.(_y)
+        xs, ys = Tin.(_xs), Tin.(_ys)
+
+        # Instantiate using `args` if not already instantiated.
+        d = if dist isa PreMetric
+            dist
+        else
+            dist(map(a -> Tin.(a), args)...)
+        end
+
+        # Ensure that `result_type` preserves the type.
+        @test result_type(d, xs, ys) === Tout
+
+        # Ensure that `pairwise` preserves the type,
+        # e.g. if someone decides to implement their own.
+        colpairs = pairwise(d, xs, ys; dims=2)
+        @test eltype(colpairs) === Tout
+        @test all(colpairs .== d(x, y))
+
+        cols = colwise(d, xs, ys)
+        @test eltype(cols) === Tout
+        @test all(cols .== d(x, y))
+    end
+end
+
 @testset "PreMetric, SemiMetric, Metric on $T" for T in (Float64, F64)
     Random.seed!(123)
     n = 100
@@ -409,7 +439,18 @@ end
 end #testset
 
 @testset "haversine" begin
-    for T in (Float32, Float64, F64)
+    let x = [1.,-15.625], y = [-179.,15.625]
+        # Type used in default constructor should work for both `Float32` and `Float64`.
+        test_batch(Haversine(), x, y)
+
+        # `Float32` should be promoted to `Float64`.
+        test_batch(Haversine{Float32}(), x, y)
+
+        # `Haversine(T(radius))` should result in `T` when inputs also has eltype `T`.
+        test_batch(Haversine, x, y, (6_371_000, ))
+    end
+
+    for T in (Float64, F64)
         @test haversine([-180.,0.], [180.,0.], 1.) ≈ 0 atol=1e-10
         @test haversine([0.,-90.],  [0.,90.],  1.) ≈ π atol=1e-10
         @test haversine((-180.,0.), (180.,0.), 1.) ≈ 0 atol=1e-10
