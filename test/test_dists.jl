@@ -407,10 +407,10 @@ end
         end
         A = rand(T, length(x), length(x))
         S = A + A' - I
-        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") SqMahalanobis(A)
-        @test_throws ArgumentError("bilinear form is not positive semidefinite") SqMahalanobis(S)
-        @test_throws ArgumentError("bilinear form is not symmetric/Hermitian") Mahalanobis(A)
-        @test_throws ArgumentError("bilinear form is not positive semidefinite") Mahalanobis(S)
+        @test_throws ArgumentError("matrix is not symmetric/Hermitian") SqMahalanobis(A)
+        @test_throws ArgumentError("matrix is not positive semidefinite") SqMahalanobis(S)
+        @test_throws ArgumentError("matrix is not symmetric/Hermitian") Mahalanobis(A)
+        @test_throws ArgumentError("matrix is not positive semidefinite") Mahalanobis(S)
         # test that semiposdef'ness can be overwritten, avoiding all checks
         @test SqMahalanobis(A, skipchecks=true) isa SemiMetric
         @test Mahalanobis(A, skipchecks=true) isa Metric

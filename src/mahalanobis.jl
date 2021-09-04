@@ -15,7 +15,7 @@ julia> dist = Mahalanobis(Q)
 Mahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 
 julia> dist = Mahalanobis(A)
-ERROR: ArgumentError: bilinear form is not symmetric/Hermitian
+ERROR: ArgumentError: matrix is not symmetric/Hermitian
 
 julia> dist = Mahalanobis(A, skipchecks=true)
 Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
@@ -46,7 +46,7 @@ julia> dist = SqMahalanobis(Q)
 SqMahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 
 julia> dist = SqMahalanobis(A)
-ERROR: ArgumentError: bilinear form is not symmetric/Hermitian
+ERROR: ArgumentError: matrix is not symmetric/Hermitian
 
 julia> dist = SqMahalanobis(A, skipchecks=true)
 SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
