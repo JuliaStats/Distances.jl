@@ -331,7 +331,7 @@ end
 # Euclidean
 @inline eval_op(::Euclidean, ai, bi) = abs2(ai - bi)
 eval_end(::Euclidean, s) = sqrt(s)
-euclidean(a, b) = Euclidean()(a, b)
+const euclidean = Euclidean()
 
 # Weighted Euclidean
 @inline eval_op(::WeightedEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
@@ -350,7 +350,7 @@ peuclidean(a, b, p) = PeriodicEuclidean(p)(a, b)
 
 # SqEuclidean
 @inline eval_op(::SqEuclidean, ai, bi) = abs2(ai - bi)
-sqeuclidean(a, b) = SqEuclidean()(a, b)
+const sqeuclidean = SqEuclidean()
 
 # Weighted Squared Euclidean
 @inline eval_op(::WeightedSqEuclidean, ai, bi, wi) = abs2(ai - bi) * wi
@@ -358,7 +358,7 @@ wsqeuclidean(a, b, w) = WeightedSqEuclidean(w)(a, b)
 
 # Cityblock
 @inline eval_op(::Cityblock, ai, bi) = abs(ai - bi)
-cityblock(a, b) = Cityblock()(a, b)
+const cityblock = Cityblock()
 
 # Weighted City Block
 @inline eval_op(::WeightedCityblock, ai, bi, wi) = abs((ai - bi) * wi)
@@ -367,14 +367,14 @@ wcityblock(a, b, w) = WeightedCityblock(w)(a, b)
 # Total variation
 @inline eval_op(::TotalVariation, ai, bi) = abs(ai - bi)
 eval_end(::TotalVariation, s) = s / 2
-totalvariation(a, b) = TotalVariation()(a, b)
+const totalvariation = TotalVariation()
 
 # Chebyshev
 @inline eval_op(::Chebyshev, ai, bi) = abs(ai - bi)
 @inline eval_reduce(::Chebyshev, s1, s2) = max(s1, s2)
 # if only NaN, will output NaN
 Base.@propagate_inbounds eval_start(::Chebyshev, a, b) = abs(first(a) - first(b))
-chebyshev(a, b) = Chebyshev()(a, b)
+const chebyshev = Chebyshev()
 
 # Minkowski
 @inline eval_op(dist::Minkowski, ai, bi) = abs(ai - bi)^dist.p
@@ -390,7 +390,7 @@ wminkowski(a, b, w, p::Real) = WeightedMinkowski(w, p)(a, b)
 result_type(::Hamming, ::Type, ::Type) = Int # fallback for Hamming
 eval_start(d::Hamming, a, b) = 0
 @inline eval_op(::Hamming, ai, bi) = ai != bi ? 1 : 0
-hamming(a, b) = Hamming()(a, b)
+const hamming = Hamming()
 
 # WeightedHamming
 @inline eval_op(::WeightedHamming, ai, bi, wi) = ai != bi ? wi : zero(eltype(wi))
@@ -409,27 +409,27 @@ function eval_end(::CosineDist, s)
     ab, a2, b2 = s
     max(1 - ab / (sqrt(a2) * sqrt(b2)), 0)
 end
-cosine_dist(a, b) = CosineDist()(a, b)
+const cosine_dist = CosineDist()
 
 # CorrDist
 _centralize(x) = x .- mean(x)
 (::CorrDist)(a, b) = CosineDist()(_centralize(a), _centralize(b))
 (::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
-corr_dist(a, b) = CorrDist()(a, b)
+const corr_dist = CorrDist()
 
 # ChiSqDist
 @inline eval_op(::ChiSqDist, ai, bi) = (d = abs2(ai - bi) / (ai + bi); ifelse(ai != bi, d, zero(d)))
-chisq_dist(a, b) = ChiSqDist()(a, b)
+const chisq_dist = ChiSqDist()
 
 # KLDivergence
 @inline eval_op(dist::KLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
-kl_divergence(a, b) = KLDivergence()(a, b)
+const kl_divergence = KLDivergence()
 
 # GenKLDivergence
 @inline eval_op(dist::GenKLDivergence, ai, bi) =
     ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
-gkl_divergence(a, b) = GenKLDivergence()(a, b)
+const gkl_divergence = GenKLDivergence()
 
 # RenyiDivergence
 Base.@propagate_inbounds function eval_start(::RenyiDivergence, a, b)
@@ -494,7 +494,7 @@ end
     tu = u > 0 ? u * log(u) : zero(log(one(T)))
     ta + tb - tu
 end
-js_divergence(a, b) = JSDivergence()(a, b)
+const js_divergence = JSDivergence()
 
 # SpanNormDist
 
@@ -517,7 +517,7 @@ end
 
 eval_end(::SpanNormDist, s) = s[2] - s[1]
 (::SpanNormDist)(a::Number, b::Number) = zero(promote_type(typeof(a), typeof(b)))
-spannorm_dist(a, b) = SpanNormDist()(a, b)
+const spannorm_dist = SpanNormDist()
 
 # Jaccard
 
@@ -537,7 +537,7 @@ end
     @inbounds v = 1 - (a[1] / a[2])
     return v
 end
-jaccard(a, b) = Jaccard()(a, b)
+const jaccard = Jaccard()
 
 # BrayCurtis
 
@@ -557,7 +557,7 @@ end
     @inbounds v = a[1] / a[2]
     return v
 end
-braycurtis(a, b) = BrayCurtis()(a, b)
+const braycurtis = BrayCurtis()
 
 # Tanimoto
 
@@ -583,24 +583,24 @@ end
     @inbounds denominator = a[1] + a[4] + 2(a[2] + a[3])
     numerator / denominator
 end
-rogerstanimoto(a, b) = RogersTanimoto()(a, b)
+const rogerstanimoto = RogersTanimoto()
 
 # Deviations
 
 (::MeanAbsDeviation)(a, b) = cityblock(a, b) / length(a)
-meanad(a, b) = MeanAbsDeviation()(a, b)
+const meanad = MeanAbsDeviation()
 
 (::MeanSqDeviation)(a, b) = sqeuclidean(a, b) / length(a)
-msd(a, b) = MeanSqDeviation()(a, b)
+const msd = MeanSqDeviation()
 
 (::RMSDeviation)(a, b) = sqrt(MeanSqDeviation()(a, b))
-rmsd(a, b) = RMSDeviation()(a, b)
+const rmsd = RMSDeviation()
 
 function (::NormRMSDeviation)(a, b)
     amin, amax = extrema(a)
     return RMSDeviation()(a, b) / (amax - amin)
 end
-nrmsd(a, b) = NormRMSDeviation()(a, b)
+const nrmsd = NormRMSDeviation()
 
 
 ###########################################################
