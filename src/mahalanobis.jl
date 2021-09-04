@@ -1,7 +1,7 @@
 # Mahalanobis distances
 
 """
-    Mahalanobis(Q, skipchecks = false) <: Metric
+    Mahalanobis(Q; skipchecks=false) <: Metric
 
 Create a Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
 Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
