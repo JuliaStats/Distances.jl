@@ -407,12 +407,14 @@ end
         end
         A = rand(T, length(x), length(x))
         S = A + A' - I
-        @test_throws ArgumentError("matrix is not symmetric/Hermitian") SqMahalanobis(A)
-        @test_throws ArgumentError("matrix is not positive semidefinite") SqMahalanobis(S)
-        @test_throws ArgumentError("matrix is not symmetric/Hermitian") Mahalanobis(A)
-        @test_throws ArgumentError("matrix is not positive semidefinite") Mahalanobis(S)
+        @test_throws DomainError SqMahalanobis(A)
+        @test_logs (:warn, "matrix is not positive semidefinite") SqMahalanobis(S)
+        @test_throws DomainError Mahalanobis(A)
+        @test_logs (:warn, "matrix is not positive semidefinite") Mahalanobis(S)
         # test that semiposdef'ness can be overwritten, avoiding all checks
+        @test_logs (:warn, "matrix is not symmetric/Hermitian") SqMahalanobis(A, skipchecks=true)
         @test SqMahalanobis(A, skipchecks=true) isa SemiMetric
+        @test_logs (:warn, "matrix is not symmetric/Hermitian") Mahalanobis(A, skipchecks=true)
         @test Mahalanobis(A, skipchecks=true) isa Metric
         @test SqMahalanobis(S, skipchecks=true) isa SemiMetric
         @test Mahalanobis(S, skipchecks=true) isa Metric
