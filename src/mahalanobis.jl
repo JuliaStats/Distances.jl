@@ -5,7 +5,7 @@
 
 Create a Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
 Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
-unless the keyword argument `skipchecks = true`.
+where the latter check can be skipped by passing the keyword argument `skipchecks = true`.
 
 # Example:
 ```julia
@@ -14,18 +14,18 @@ julia> A = collect(reshape(1:9, 3, 3)); Q = A'A;
 julia> dist = Mahalanobis(Q)
 Mahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 
-julia> dist = Mahalanobis(A)
-ERROR: ArgumentError: matrix is not symmetric/Hermitian
-
 julia> dist = Mahalanobis(A, skipchecks=true)
+┌ Warning: matrix is not symmetric/Hermitian
+└ @ Distances ...
 Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 """
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
     function Mahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
+        # TODO: turn the warnings into errors in next breaking release
+        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
         if !skipchecks
-            ishermitian(Q) || throw(ArgumentError("matrix is not symmetric/Hermitian"))
-            eigmin(Q) ≥ 0 || throw(ArgumentError("matrix is not positive semidefinite"))
+            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
         end
         return new{typeof(Q)}(Q)
     end
@@ -36,7 +36,7 @@ end
 
 Create a squared Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
 Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
-unless the keyword argument `skipchecks = true`.
+where the latter check can be skipped by passing the keyword argument `skipchecks = true`.
 
 # Example:
 ```julia
@@ -45,18 +45,18 @@ julia> A = collect(reshape(1:9, 3, 3)); Q = A'A;
 julia> dist = SqMahalanobis(Q)
 SqMahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
 
-julia> dist = SqMahalanobis(A)
-ERROR: ArgumentError: matrix is not symmetric/Hermitian
-
 julia> dist = SqMahalanobis(A, skipchecks=true)
+┌ Warning: matrix is not symmetric/Hermitian
+└ @ Distances ...
 SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 """
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
     function SqMahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
+        # TODO: turn the warnings into errors in next breaking release
+        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
         if !skipchecks
-            ishermitian(Q) || throw(ArgumentError("matrix is not symmetric/Hermitian"))
-            eigmin(Q) ≥ 0 || throw(ArgumentError("matrix is not positive semidefinite"))
+            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
         end
         return new{typeof(Q)}(Q)
     end
