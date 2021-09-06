@@ -394,6 +394,7 @@ end # testset
 end
 
 @testset "mahalanobis" begin
+    Random.seed!(1234)
     for T in (Float64, F64, ComplexF64)
         x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
 
