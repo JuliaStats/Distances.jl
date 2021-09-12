@@ -513,6 +513,7 @@ end
 const js_divergence = JSDivergence()
 
 # SpanNormDist
+
 result_type(dist::SpanNormDist, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
     typeof(eval_op(dist, oneunit(Ta), oneunit(Tb)))
 Base.@propagate_inbounds function eval_start(::SpanNormDist, a, b)
@@ -535,6 +536,7 @@ eval_end(::SpanNormDist, s) = s[2] - s[1]
 const spannorm_dist = SpanNormDist()
 
 # Jaccard
+
 eval_start(dist::Jaccard, a, b) =
     zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::Jaccard, s1, s2)
@@ -554,6 +556,7 @@ end
 const jaccard = Jaccard()
 
 # BrayCurtis
+
 eval_start(dist::BrayCurtis, a, b) =
     zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::BrayCurtis, s1, s2)
@@ -573,6 +576,7 @@ end
 const braycurtis = BrayCurtis()
 
 # Tanimoto
+
 @inline eval_start(::RogersTanimoto, _, _) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
     tt = s1 && s2
@@ -598,6 +602,7 @@ end
 const rogerstanimoto = RogersTanimoto()
 
 # Deviations
+
 (::MeanAbsDeviation)(a, b) = cityblock(a, b) / length(a)
 const meanad = MeanAbsDeviation()
 
