@@ -159,6 +159,7 @@ end
 
 
 # Generic pairwise evaluation
+
 function _pairwise!(r::AbstractMatrix, metric::Distance, a, b=a)
     require_one_based_indexing(r)
     na = length(a)
@@ -184,7 +185,8 @@ function _pairwise!(r::AbstractMatrix, metric::Distance, a, b=a)
 end
 
 
-function _pairwise!(r::AbstractMatrix, metric::Distance, a::AbstractMatrix, b::AbstractMatrix=a)
+function _pairwise!(r::AbstractMatrix, metric::Distance, 
+                    a::AbstractMatrix, b::AbstractMatrix=a)
     require_one_based_indexing(r, a, b)
     na = size(a, 2)
     nb = size(b, 2)
