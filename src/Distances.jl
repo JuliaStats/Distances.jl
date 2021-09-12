@@ -8,8 +8,8 @@ import StatsAPI: pairwise, pairwise!
 
 
 
-export Distance,
-
+export 
+    Distance,
     # generic functions
     issymmetric,
     issubadditive,
