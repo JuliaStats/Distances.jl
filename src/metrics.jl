@@ -5,8 +5,8 @@
 #   Abstract metric types
 #
 ###########################################################
-abstract type UnionDistance <: Distance end
 
+abstract type UnionDistance <: Distance end
 
 ###########################################################
 #
@@ -17,7 +17,6 @@ abstract type UnionDistance <: Distance end
 struct Euclidean <: UnionDistance
     thresh::Float64
 end
-
 
 """
     Euclidean([thresh])
@@ -52,6 +51,7 @@ Euclidean() = Euclidean(0)
 struct WeightedEuclidean{W} <: UnionDistance
     weights::W
 end
+
 """
     PeriodicEuclidean(L)
 
@@ -93,28 +93,23 @@ end
 struct Chebyshev <: UnionDistance end
 
 struct Cityblock <: UnionDistance end
-
 struct WeightedCityblock{W} <: UnionDistance
     weights::W
 end
 
 struct TotalVariation <: UnionDistance end
-
 struct Jaccard <: UnionDistance end
-
 struct RogersTanimoto <: UnionDistance end
 
 struct Minkowski{T <: Real} <: UnionDistance
     p::T
 end
-
 struct WeightedMinkowski{W,T <: Real} <: UnionDistance
     weights::W
     p::T
 end
 
 struct Hamming <: UnionDistance end
-
 struct WeightedHamming{W} <: UnionDistance
     weights::W
 end
@@ -122,12 +117,12 @@ end
 struct CosineDist <: UnionDistance end
 # CorrDist is excluded from `UnionDistance`
 struct CorrDist <: Distance end
-
 struct BrayCurtis <: UnionDistance end
 
 struct ChiSqDist <: UnionDistance end
 struct KLDivergence <: UnionDistance end
 struct GenKLDivergence <: UnionDistance end
+
 """
     RenyiDivergence(α::Real)
     renyi_divergence(P, Q, α::Real)
@@ -191,7 +186,6 @@ struct SpanNormDist <: UnionDistance end
 # Deviations are handled separately from the other distances/divergences and
 # are excluded from `UnionDistance`
 struct MeanAbsDeviation <: Distance end
-
 struct MeanSqDeviation <: Distance end
 struct RMSDeviation <: Distance end
 struct NormRMSDeviation <: Distance end
