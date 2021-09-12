@@ -1,6 +1,7 @@
 module Distances
 
 using LinearAlgebra
+import LinearAlgebra: issymmetric
 using Statistics
 import StatsAPI: pairwise, pairwise!
 
@@ -9,13 +10,9 @@ import StatsAPI: pairwise, pairwise!
 
 export Distance,
 
-    # Metric types
-    metric_type,
-    IsPreMetric,
-    IsSemiMetric,
-    IsMetric,
-
     # generic functions
+    issymmetric,
+    issubadditive,
     result_type,
     colwise,
     pairwise,

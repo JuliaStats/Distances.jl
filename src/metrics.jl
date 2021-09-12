@@ -201,15 +201,15 @@ struct NormRMSDeviation <: Distance end
 #  Metric types
 #
 ###########################################################
+const metrics = (Euclidean, WeightedEuclidean, Chebyshev,Cityblock,WeightedCityblock,TotalVariation,Jaccard,RogersTanimoto,Minkowski,WeightedMinkowski,Hamming,WeightedHamming,MeanAbsDeviation,RMSDeviation)
+for dist in metrics
+    @eval issubadditive(::$dist) = true
+end
 const semimetrics = (SqEuclidean,WeightedSqEuclidean,CosineDist,CorrDist,BrayCurtis,ChiSqDist,JSDivergence,SpanNormDist,MeanSqDeviation)
 for dist in semimetrics
-    @eval metric_type(::$dist) = IsSemiMetric
+    @eval issymmetric(::$dist) = true
 end
 
-const metrics = (Euclidean, WeightedEuclidean, Chebyshev,Cityblock,WeightedCityblock,TotalVariation,Jaccard,RogersTanimoto,Minkowski,WeightedMinkowski,Hamming,WeightedHamming,MeanAbsDeviation,RMSDeviation)
-for dist in semimetrics
-    @eval metric_type(::$dist) = IsMetric
-end
 
 
 ###########################################################

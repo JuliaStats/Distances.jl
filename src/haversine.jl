@@ -12,7 +12,7 @@ struct Haversine{T<:Number} <: Distance
     radius::T
 end
 Haversine() = Haversine(Float32(6_371_000))
-MetricType(::Haversine) = IsMetric()
+issubadditive(::Haversine) = true
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)

@@ -28,19 +28,17 @@ function test_metricity(dist, x, y, z)
         dxy = dist(x, y)
         dxz = dist(x, z)
         dyz = dist(y, z)
-        if metric_type(dist) <: IsPreMetric
-            # Unfortunately small non-zero numbers (~10^-16) are appearing
-            # in our tests due to accumulating floating point rounding errors.
-            # We either need to allow small errors in our tests or change the
-            # way we do accumulations...
-            @test dist(x, x) + one(eltype(x)) ≈ one(eltype(x))
-            @test dist(y, y) + one(eltype(y)) ≈ one(eltype(y))
-            @test dist(z, z) + one(eltype(z)) ≈ one(eltype(z))
-            @test dxy ≥ zero(eltype(x))
-            @test dxz ≥ zero(eltype(x))
-            @test dyz ≥ zero(eltype(x))
-        end
-        if metric_type(dist) <: IsSemiMetric
+        # Unfortunately small non-zero numbers (~10^-16) are appearing
+        # in our tests due to accumulating floating point rounding errors.
+        # We either need to allow small errors in our tests or change the
+        # way we do accumulations...
+        @test dist(x, x) + one(eltype(x)) ≈ one(eltype(x))
+        @test dist(y, y) + one(eltype(y)) ≈ one(eltype(y))
+        @test dist(z, z) + one(eltype(z)) ≈ one(eltype(z))
+        @test dxy ≥ zero(eltype(x))
+        @test dxz ≥ zero(eltype(x))
+        @test dyz ≥ zero(eltype(x))
+        if issymmetric(dist)
             @test dxy ≈ dist(y, x)
             @test dxz ≈ dist(z, x)
             @test dyz ≈ dist(y, z)
@@ -49,7 +47,7 @@ function test_metricity(dist, x, y, z)
             @test dist(z, x) ≥ zero(eltype(x))
             @test dist(z, y) ≥ zero(eltype(x))
         end
-        if metric_type(dist) <: IsMetric
+        if issubadditive(dist)
             # Again we have small rounding errors in accumulations
             @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
             dyx = dist(y, x)

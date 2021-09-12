@@ -1,28 +1,20 @@
 # Generic concepts and functions
 abstract type Distance end
+# a distance is a function d that satisfies:
+#
+#   d(x, y) >= 0
+#   d(x, x) = 0
+#
 evaluate(dist::Distance, a, b) = dist(a, b)
-
-
-# A Distance should define metric_type that says whether it is a pre-metric, a semi-metric, or an actual metric
-abstract type IsPreMetric end
-# a premetric is a function d that satisfies:
-#
-#   d(x, y) >= 0
-#   d(x, x) = 0
-#
-abstract type IsSemiMetric <: IsPreMetric end
-# a semimetric is a function d that satisfies:
-#
-#   d(x, y) >= 0
-#   d(x, x) = 0
-#   d(x, y) = d(y, x)
-#
-abstract type IsMetric <: IsSemiMetric end
-# a metric is a semimetric that satisfies triangle inequality:
+# a subadditive distance satisfies
 #
 #   d(x, y) + d(y, z) >= d(x, z)
 #
-metric_type(::Distance) = IsPreMetric
+issubadditive(dist::Distance) = false
+# a symmetric distance satisfies:
+#   d(x, y) = d(y, x)
+#
+issymmetric(dist::Distance) = issubadditive(dist)
 
 
 # Generic functions
@@ -172,7 +164,7 @@ function _pairwise!(r::AbstractMatrix, metric::Distance, a, b=a)
     na = length(a)
     nb = length(b)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
-    if (b === a) && metric_type(metric) <: IsSemiMetric
+    if (b === a) && issymmetric(metric)
         @inbounds for (j, aj) in enumerate(a), (i, ai) in enumerate(a)
             r[i, j] = if i > j
                 metric(ai, aj)
@@ -197,7 +189,7 @@ function _pairwise!(r::AbstractMatrix, metric::Distance, a::AbstractMatrix, b::A
     na = size(a, 2)
     nb = size(b, 2)
     size(r) == (na, nb) || throw(DimensionMismatch("Incorrect size of r."))
-    if (b === a) && metric_type(metric) <: IsSemiMetric
+    if (b === a) && issymmetric(metric)
         @inbounds for j = 1:na
             for i = 1:(j - 1)
                 r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric

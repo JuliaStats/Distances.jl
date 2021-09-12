@@ -141,31 +141,33 @@ pairwise!(R, dist, X, dims=i)
 Please pay attention to the difference, the functions for inplace computation are
 `colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
 
-## Distance type hierarchy
+## Distance properties
 
-The distances are organized into a type hierarchy.
-
-At the top of this hierarchy is an abstract class **PreMetric**, which is defined to be a function `d` that satisfies
+Distances is an abstract class for function `d` that satisfies
 
     d(x, x) == 0  for all x
     d(x, y) >= 0  for all x, y
 
-**SemiMetric** is a abstract type that refines **PreMetric**. Formally, a *semi-metric* is a *pre-metric* that is also symmetric, as
+Distances can have two main properties:
+
+`issymmetric(dist)` indicates whether the distance is symmetric; i.e.,
 
     d(x, y) == d(y, x)  for all x, y
 
-**Metric** is a abstract type that further refines **SemiMetric**. Formally, a *metric* is a *semi-metric* that also satisfies triangle inequality, as
+`issubadditive(dist)` indicates whether the distance satisfies the triangle inequality; i.e.,
 
     d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
 
-This type system has practical significance. For example, when computing pairwise distances
+Note that a subadditive distance is always symmetric.
+
+These properties have practical significance. For example, when computing pairwise distances
 between a set of vectors, you may only perform computation for half of the pairs, derive the
-values immediately for the remaining half by leveraging the symmetry of *semi-metrics*. Note
-that the types of `SemiMetric` and `Metric` do not completely follow the definition in
-mathematics as they do not require the "distance" to be able to distinguish between points:
-for these types `x != y` does not imply that `d(x, y) != 0` in general compared to the
-mathematical definition of semi-metric and metric, as this property does not change
-computations in practice.
+values immediately for the remaining half by leveraging the symmetry of the distance. 
+
+Note that a subadditive distance is not necessarly a metric in the mathematical since 
+it is not required to be able to distinguish between points:
+`x != y` does not imply that `d(x, y) != 0` in general compared to the
+mathematical definition of metric.
 
 Each distance corresponds to a distance type. The type name and the corresponding mathematical
 definitions of the distances are listed in the following table.
