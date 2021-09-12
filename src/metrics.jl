@@ -1,16 +1,12 @@
-# Ordinary metrics
+# Ordinary distances
 
 ###########################################################
 #
 #   Abstract metric types
 #
 ###########################################################
+abstract type UnionDistance <: Distance end
 
-abstract type UnionPreMetric <: PreMetric end
-
-abstract type UnionSemiMetric <: SemiMetric end
-
-abstract type UnionMetric <: Metric end
 
 ###########################################################
 #
@@ -18,9 +14,10 @@ abstract type UnionMetric <: Metric end
 #
 ###########################################################
 
-struct Euclidean <: UnionMetric
+struct Euclidean <: UnionDistance
     thresh::Float64
 end
+
 
 """
     Euclidean([thresh])
@@ -52,10 +49,9 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W} <: UnionMetric
+struct WeightedEuclidean{W} <: UnionDistance
     weights::W
 end
-
 """
     PeriodicEuclidean(L)
 
@@ -74,11 +70,11 @@ julia> evaluate(PeriodicEuclidean(L), x, y)
 0.25
 ```
 """
-struct PeriodicEuclidean{W} <: UnionMetric
+struct PeriodicEuclidean{W} <: UnionDistance
     periods::W
 end
 
-struct SqEuclidean <: UnionSemiMetric
+struct SqEuclidean <: UnionDistance
     thresh::Float64
 end
 
@@ -90,48 +86,53 @@ see [`Euclidean`](@ref).
 """
 SqEuclidean() = SqEuclidean(0)
 
-struct WeightedSqEuclidean{W} <: UnionSemiMetric
+struct WeightedSqEuclidean{W} <: UnionDistance
     weights::W
 end
 
-struct Chebyshev <: UnionMetric end
+struct Chebyshev <: UnionDistance end
 
-struct Cityblock <: UnionMetric end
-struct WeightedCityblock{W} <: UnionMetric
+struct Cityblock <: UnionDistance end
+
+struct WeightedCityblock{W} <: UnionDistance
     weights::W
 end
 
-struct TotalVariation <: UnionMetric end
-struct Jaccard <: UnionMetric end
-struct RogersTanimoto <: UnionMetric end
+struct TotalVariation <: UnionDistance end
 
-struct Minkowski{T <: Real} <: UnionMetric
+struct Jaccard <: UnionDistance end
+
+struct RogersTanimoto <: UnionDistance end
+
+struct Minkowski{T <: Real} <: UnionDistance
     p::T
 end
-struct WeightedMinkowski{W,T <: Real} <: UnionMetric
+
+struct WeightedMinkowski{W,T <: Real} <: UnionDistance
     weights::W
     p::T
 end
 
-struct Hamming <: UnionMetric end
-struct WeightedHamming{W} <: UnionMetric
+struct Hamming <: UnionDistance end
+
+struct WeightedHamming{W} <: UnionDistance
     weights::W
 end
 
-struct CosineDist <: UnionSemiMetric end
-# CorrDist is excluded from `UnionMetrics`
-struct CorrDist <: SemiMetric end
-struct BrayCurtis <: UnionSemiMetric end
+struct CosineDist <: UnionDistance end
+# CorrDist is excluded from `UnionDistance`
+struct CorrDist <: Distance end
 
-struct ChiSqDist <: UnionSemiMetric end
-struct KLDivergence <: UnionPreMetric end
-struct GenKLDivergence <: UnionPreMetric end
+struct BrayCurtis <: UnionDistance end
 
+struct ChiSqDist <: UnionDistance end
+struct KLDivergence <: UnionDistance end
+struct GenKLDivergence <: UnionDistance end
 """
     RenyiDivergence(α::Real)
     renyi_divergence(P, Q, α::Real)
 
-Create a Rényi premetric of order α.
+Create a Rényi Distance of order α.
 
 Rényi defined a spectrum of divergence measures generalising the
 Kullback–Leibler divergence (see `KLDivergence`). The divergence is
@@ -161,7 +162,7 @@ julia> pairwise(Euclidean(2), x, x)
  0.655407  0.0
 ```
 """
-struct RenyiDivergence{T <: Real} <: UnionPreMetric
+struct RenyiDivergence{T <: Real} <: UnionDistance
     p::T # order of power mean (order of divergence - 1)
     is_normal::Bool
     is_zero::Bool
@@ -183,21 +184,33 @@ struct RenyiDivergence{T <: Real} <: UnionPreMetric
 end
 RenyiDivergence(q::T) where {T} = RenyiDivergence{T}(q)
 
-struct JSDivergence <: UnionSemiMetric end
+struct JSDivergence <: UnionDistance end
 
-struct SpanNormDist <: UnionSemiMetric end
+struct SpanNormDist <: UnionDistance end
 
 # Deviations are handled separately from the other distances/divergences and
-# are excluded from `UnionMetrics`
-struct MeanAbsDeviation <: Metric end
-struct MeanSqDeviation <: SemiMetric end
-struct RMSDeviation <: Metric end
-struct NormRMSDeviation <: PreMetric end
+# are excluded from `UnionDistance`
+struct MeanAbsDeviation <: Distance end
 
-# Union types
-const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
-const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
+struct MeanSqDeviation <: Distance end
+struct RMSDeviation <: Distance end
+struct NormRMSDeviation <: Distance end
+
+###########################################################
+#
+#  Metric types
+#
+###########################################################
+const semimetrics = (SqEuclidean,WeightedSqEuclidean,CosineDist,CorrDist,BrayCurtis,ChiSqDist,JSDivergence,SpanNormDist,MeanSqDeviation)
+for dist in semimetrics
+    @eval metric_type(::$dist) = IsSemiMetric
+end
+
+const metrics = (Euclidean, WeightedEuclidean, Chebyshev,Cityblock,WeightedCityblock,TotalVariation,Jaccard,RogersTanimoto,Minkowski,WeightedMinkowski,Hamming,WeightedHamming,MeanAbsDeviation,RMSDeviation)
+for dist in semimetrics
+    @eval metric_type(::$dist) = IsMetric
+end
+
 
 ###########################################################
 #
@@ -205,28 +218,31 @@ const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
 #
 ###########################################################
 
-parameters(::UnionPreMetric) = nothing
-parameters(::UnionSemiMetric) = nothing
-parameters(::UnionMetric) = nothing
+# Union types
+const distances = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
+const weighteddistances = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
+
+
+parameters(::UnionDistance) = nothing
 parameters(d::PeriodicEuclidean) = d.periods
-for dist in weightedmetrics
+for dist in weighteddistances
     @eval parameters(d::$dist) = d.weights
 end
 
-result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+result_type(dist::UnionDistance, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
     result_type(dist, _eltype(Ta), _eltype(Tb), parameters(dist))
-result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
+result_type(dist::UnionDistance, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb)))
-result_type(dist::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
+result_type(dist::UnionDistance, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
     typeof(_evaluate(dist, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p))))
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b)
+Base.@propagate_inbounds function _evaluate(d::UnionDistance, a, b)
     _evaluate(d, a, b, parameters(d))
 end
 
 # breaks the implementation into eval_start, eval_op, eval_reduce and eval_end
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
+Base.@propagate_inbounds function _evaluate(d::UnionDistance, a, b, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -239,7 +255,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, ::Nothing)
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, ::Nothing)
+Base.@propagate_inbounds function _evaluate(d::UnionDistance, a::AbstractArray, b::AbstractArray, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -263,7 +279,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
+Base.@propagate_inbounds function _evaluate(d::UnionDistance, a, b, p)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first collection has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -279,7 +295,7 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a, b, p)
     end
     return eval_end(d, s)
 end
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b::AbstractArray, p::AbstractArray)
+Base.@propagate_inbounds function _evaluate(d::UnionDistance, a::AbstractArray, b::AbstractArray, p::AbstractArray)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
@@ -308,23 +324,23 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
-_evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
-function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
+_evaluate(dist::UnionDistance, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
+function _evaluate(dist::UnionDistance, a::Number, b::Number, p)
     length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
     eval_end(dist, eval_op(dist, a, b, first(p)))
 end
 
-eval_start(d::UnionMetrics, a, b) = _eval_start(d, _eltype(a), _eltype(b))
-_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
+eval_start(d::UnionDistance, a, b) = _eval_start(d, _eltype(a), _eltype(b))
+_eval_start(d::UnionDistance, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
     _eval_start(d, Ta, Tb, parameters(d))
-_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
+_eval_start(d::UnionDistance, ::Type{Ta}, ::Type{Tb}, ::Nothing) where {Ta,Tb} =
     zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb))))
-_eval_start(d::UnionMetrics, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
+_eval_start(d::UnionDistance, ::Type{Ta}, ::Type{Tb}, p) where {Ta,Tb} =
     zero(typeof(eval_op(d, oneunit(Ta), oneunit(Tb), oneunit(_eltype(p)))))
-eval_reduce(::UnionMetrics, s1, s2) = s1 + s2
-eval_end(::UnionMetrics, s) = s
+eval_reduce(::UnionDistance, s1, s2) = s1 + s2
+eval_end(::UnionDistance, s) = s
 
-for M in (metrics..., weightedmetrics...)
+for M in (distances..., weighteddistances...)
     @eval @inline (dist::$M)(a, b) = _evaluate(dist, a, b, parameters(dist))
 end
 
@@ -497,7 +513,6 @@ end
 const js_divergence = JSDivergence()
 
 # SpanNormDist
-
 result_type(dist::SpanNormDist, ::Type{Ta}, ::Type{Tb}) where {Ta,Tb} =
     typeof(eval_op(dist, oneunit(Ta), oneunit(Tb)))
 Base.@propagate_inbounds function eval_start(::SpanNormDist, a, b)
@@ -520,7 +535,6 @@ eval_end(::SpanNormDist, s) = s[2] - s[1]
 const spannorm_dist = SpanNormDist()
 
 # Jaccard
-
 eval_start(dist::Jaccard, a, b) =
     zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::Jaccard, s1, s2)
@@ -540,7 +554,6 @@ end
 const jaccard = Jaccard()
 
 # BrayCurtis
-
 eval_start(dist::BrayCurtis, a, b) =
     zero.(typeof.(eval_op(dist, oneunit(_eltype(a)), oneunit(_eltype(b)))))
 @inline function eval_op(::BrayCurtis, s1, s2)
@@ -560,7 +573,6 @@ end
 const braycurtis = BrayCurtis()
 
 # Tanimoto
-
 @inline eval_start(::RogersTanimoto, _, _) = 0, 0, 0, 0
 @inline function eval_op(::RogersTanimoto, s1, s2)
     tt = s1 && s2
@@ -586,7 +598,6 @@ end
 const rogerstanimoto = RogersTanimoto()
 
 # Deviations
-
 (::MeanAbsDeviation)(a, b) = cityblock(a, b) / length(a)
 const meanad = MeanAbsDeviation()
 

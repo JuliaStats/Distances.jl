@@ -2,10 +2,12 @@
 # be compared are probability distributions, frequencies or counts rather than
 # vectors of samples. Pre-calc accordingly if you have samples.
 
-struct BhattacharyyaDist <: SemiMetric end
+struct BhattacharyyaDist <: Distance end
+metric_type(::BhattacharyyaDist) = IsSemiMetric
 
-struct HellingerDist <: Metric end
 
+struct HellingerDist <: Distance end
+metric_type(::HellingerDist) = IsMetric
 
 # Bhattacharyya coefficient
 

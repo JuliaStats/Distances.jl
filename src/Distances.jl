@@ -4,11 +4,16 @@ using LinearAlgebra
 using Statistics
 import StatsAPI: pairwise, pairwise!
 
-export
-    # generic types/functions
-    PreMetric,
-    SemiMetric,
-    Metric,
+
+
+
+export Distance,
+
+    # Metric types
+    metric_type,
+    IsPreMetric,
+    IsSemiMetric,
+    IsMetric,
 
     # generic functions
     result_type,

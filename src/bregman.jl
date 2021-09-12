@@ -12,7 +12,7 @@ of good automatic differentiation packages.
 
 function evaluate(dist::Bregman, p::AbstractVector, q::AbstractVector)
 """
-struct Bregman{T1 <: Function, T2 <: Function, T3 <: Function} <: PreMetric
+struct Bregman{T1 <: Function, T2 <: Function, T3 <: Function} <: Distance
     F::T1
     ∇::T2
     inner::T3

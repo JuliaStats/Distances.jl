@@ -8,10 +8,11 @@ default value is 6,371,000, i.e., the Earth's (volumetric) mean radius in meters
 Locations are described with longitude and latitude in degrees.
 The computed distance has the unit of the radius.
 """
-struct Haversine{T<:Number} <: Metric
+struct Haversine{T<:Number} <: Distance
     radius::T
 end
 Haversine() = Haversine(Float32(6_371_000))
+MetricType(::Haversine) = IsMetric()
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)
@@ -41,7 +42,9 @@ The spherical angle distance between two locations on a sphere.
 Locations are described with two angles, longitude and latitude, in radians.
 The distance is computed with the haversine formula and also has units of radians.
 """
-struct SphericalAngle <: Metric end
+struct SphericalAngle <: Distance end
+MetricType(::SphericalAngle) = IsMetric()
+
 
 function (dist::SphericalAngle)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)

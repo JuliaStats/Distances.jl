@@ -1,12 +1,14 @@
 # Mahalanobis distances
 
-struct Mahalanobis{M<:AbstractMatrix} <: Metric
+struct Mahalanobis{M<:AbstractMatrix} <: Distance
     qmat::M
 end
+MetricType(::Mahalanobis) = IsMetric()
 
-struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
+struct SqMahalanobis{M<:AbstractMatrix} <: Distance
     qmat::M
 end
+MetricType(::SqMahalanobis) = IsSemiMetric()
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
     z = zero(T1) - zero(T2)

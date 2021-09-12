@@ -1,6 +1,6 @@
 # Unit tests for Distances
 
-struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
+struct FooDist <: Distance end # Julia 1.0 Compat: struct definition must be put in global scope
 
 @testset "result_type" begin
     foodist(a, b) = a + b
@@ -28,7 +28,7 @@ function test_metricity(dist, x, y, z)
         dxy = dist(x, y)
         dxz = dist(x, z)
         dyz = dist(y, z)
-        if isa(dist, PreMetric)
+        if metric_type(dist) <: IsPreMetric
             # Unfortunately small non-zero numbers (~10^-16) are appearing
             # in our tests due to accumulating floating point rounding errors.
             # We either need to allow small errors in our tests or change the
@@ -40,7 +40,7 @@ function test_metricity(dist, x, y, z)
             @test dxz ≥ zero(eltype(x))
             @test dyz ≥ zero(eltype(x))
         end
-        if isa(dist, SemiMetric)
+        if metric_type(dist) <: IsSemiMetric
             @test dxy ≈ dist(y, x)
             @test dxz ≈ dist(z, x)
             @test dyz ≈ dist(y, z)
@@ -49,7 +49,7 @@ function test_metricity(dist, x, y, z)
             @test dist(z, x) ≥ zero(eltype(x))
             @test dist(z, y) ≥ zero(eltype(x))
         end
-        if isa(dist, Metric)
+        if metric_type(dist) <: IsMetric
             # Again we have small rounding errors in accumulations
             @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
             dyx = dist(y, x)
