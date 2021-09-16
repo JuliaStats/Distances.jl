@@ -197,11 +197,11 @@ struct NormRMSDeviation <: Distance end
 ###########################################################
 const metrics = (Euclidean, WeightedEuclidean, Chebyshev,Cityblock,WeightedCityblock,TotalVariation,Jaccard,RogersTanimoto,Minkowski,WeightedMinkowski,Hamming,WeightedHamming,MeanAbsDeviation,RMSDeviation)
 for dist in metrics
-    @eval issubadditive(::$dist) = true
+    @eval MetricProperty(::Type{$dist}) = IsMetric
 end
 const semimetrics = (SqEuclidean,WeightedSqEuclidean,CosineDist,CorrDist,BrayCurtis,ChiSqDist,JSDivergence,SpanNormDist,MeanSqDeviation)
 for dist in semimetrics
-    @eval issymmetric(::$dist) = true
+    @eval MetricProperty(::Type{$dist}) = IsSemiMetric
 end
 
 

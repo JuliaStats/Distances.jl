@@ -3,11 +3,10 @@
 # vectors of samples. Pre-calc accordingly if you have samples.
 
 struct BhattacharyyaDist <: Distance end
-issymmetric(::BhattacharyyaDist) = true
-
+MetricType(::Type{BhattacharyyaDist}) = IsSemiMetric
 
 struct HellingerDist <: Distance end
-issubadditive(::HellingerDist) = true
+MetricType(::Type{HellingerDist}) = IsMetric
 
 # Bhattacharyya coefficient
 

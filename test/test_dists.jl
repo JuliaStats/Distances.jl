@@ -38,7 +38,7 @@ function test_metricity(dist, x, y, z)
         @test dxy ≥ zero(eltype(x))
         @test dxz ≥ zero(eltype(x))
         @test dyz ≥ zero(eltype(x))
-        if issymmetric(dist)
+        if MetricType(dist) <: IsSemiMetric
             @test dxy ≈ dist(y, x)
             @test dxz ≈ dist(z, x)
             @test dyz ≈ dist(y, z)
@@ -47,7 +47,7 @@ function test_metricity(dist, x, y, z)
             @test dist(z, x) ≥ zero(eltype(x))
             @test dist(z, y) ≥ zero(eltype(x))
         end
-        if issubadditive(dist)
+        if MetricType(dist) <: IsMetric
             # Again we have small rounding errors in accumulations
             @test dxz ≤ dxy + dyz || dxz ≈ dxy + dyz
             dyx = dist(y, x)

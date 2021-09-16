@@ -10,6 +10,11 @@ import StatsAPI: pairwise, pairwise!
 
 export 
     Distance,
+    # traits
+    MetricType,
+    IsPreMetric,
+    IsSemiMetric,
+    IsMetric,
     # generic functions
     issymmetric,
     issubadditive,

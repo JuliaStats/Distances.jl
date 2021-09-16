@@ -3,12 +3,12 @@
 struct Mahalanobis{M<:AbstractMatrix} <: Distance
     qmat::M
 end
-issubadditive(::Mahalanobis) = true
+MetricType(::Type{<:Mahalanobis}) = IsMetric
 
 struct SqMahalanobis{M<:AbstractMatrix} <: Distance
     qmat::M
 end
-issymmetric(::SqMahalanobis) = true
+MetricType(::Type{<:SqMahalanobis}) = IsSemiMetric
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
     z = zero(T1) - zero(T2)

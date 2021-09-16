@@ -12,7 +12,7 @@ struct Haversine{T<:Number} <: Distance
     radius::T
 end
 Haversine() = Haversine(Float32(6_371_000))
-issubadditive(::Haversine) = true
+MetricType(::Type{<:Haversine}) = IsMetric
 
 function (dist::Haversine)(x, y)
     length(x) == length(y) == 2 || haversine_error(dist)
@@ -43,7 +43,7 @@ Locations are described with two angles, longitude and latitude, in radians.
 The distance is computed with the haversine formula and also has units of radians.
 """
 struct SphericalAngle <: Distance end
-MetricType(::SphericalAngle) = IsMetric()
+MetricType(::Type{<:SphericalAngle}) = IsMetric
 
 
 function (dist::SphericalAngle)(x, y)
