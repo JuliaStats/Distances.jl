@@ -145,20 +145,23 @@ Please pay attention to the difference, the functions for inplace computation ar
 
 Distances is an abstract class for function `d` that satisfies
 
+ 
+`MetricType` indicates the particular properties of the distance
+
+`IsPreMetric` indicates that the distance is a premetric; i.e.,
+
     d(x, x) == 0  for all x
     d(x, y) >= 0  for all x, y
 
-Distances can have two main properties:
-
-`issymmetric(dist)` indicates whether the distance is symmetric; i.e.,
+`IsSemiMetric` indicates that the distance is also symmetric; i.e.,
 
     d(x, y) == d(y, x)  for all x, y
 
-`issubadditive(dist)` indicates whether the distance satisfies the triangle inequality; i.e.,
+`IsMetric` indicates that the distance also satisfies the triangle inequality; i.e.,
 
     d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
 
-Note that a subadditive distance is always symmetric.
+Note that we have `IsMetric <: IsSemiMetric <: IsPreMetric`.
 
 These properties have practical significance. For example, when computing pairwise distances
 between a set of vectors, you may only perform computation for half of the pairs, derive the
