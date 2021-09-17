@@ -394,7 +394,6 @@ end # testset
 end
 
 @testset "mahalanobis" begin
-    Random.seed!(1234)
     for T in (Float64, F64, ComplexF64)
         x, y = T.([4.0, 5.0, 6.0, 7.0]), T.([3.0, 9.0, 8.0, 1.0])
 
@@ -408,9 +407,11 @@ end
         end
         A = rand(T, length(x), length(x))
         S = A + A' - I
-        @test_throws DomainError SqMahalanobis(A)
+        # TODO: let Distances.jl throw in next breaking release
+        # @test_throws ArgumentError SqMahalanobis(A)
         @test_logs (:warn, "matrix is not positive semidefinite") SqMahalanobis(S)
-        @test_throws DomainError Mahalanobis(A)
+        # TODO: let Distances.jl throw in next breaking release
+        # @test_throws ArgumentError Mahalanobis(A)
         @test_logs (:warn, "matrix is not positive semidefinite") Mahalanobis(S)
         # test that semiposdef'ness can be overwritten, avoiding all checks
         @test_logs (:warn, "matrix is not symmetric/Hermitian") SqMahalanobis(A, skipchecks=true)
