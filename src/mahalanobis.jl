@@ -1,11 +1,65 @@
 # Mahalanobis distances
 
+"""
+    Mahalanobis(Q; skipchecks=false) <: Metric
+
+Create a Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
+Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
+where the latter check can be skipped by passing the keyword argument `skipchecks = true`.
+
+# Example:
+```julia
+julia> A = collect(reshape(1:9, 3, 3)); Q = A'A;
+
+julia> dist = Mahalanobis(Q)
+Mahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
+
+julia> dist = Mahalanobis(A, skipchecks=true)
+┌ Warning: matrix is not symmetric/Hermitian
+└ @ Distances ...
+Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
+"""
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
+    function Mahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
+        # TODO: turn the warnings into errors in next breaking release
+        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
+        if !skipchecks
+            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
+        end
+        return new{typeof(Q)}(Q)
+    end
 end
 
+"""
+    SqMahalanobis(Q; skipchecks=false) <: Metric
+
+Create a squared Mahalanobis distance (i.e., a bilinear form) with covariance matrix `Q`.
+Upon construction, both symmetry/self-adjointness and positive semidefiniteness are checked,
+where the latter check can be skipped by passing the keyword argument `skipchecks = true`.
+
+# Example:
+```julia
+julia> A = collect(reshape(1:9, 3, 3)); Q = A'A;
+
+julia> dist = SqMahalanobis(Q)
+SqMahalanobis{Matrix{Int64}}([14 32 50; 32 77 122; 50 122 194])
+
+julia> dist = SqMahalanobis(A, skipchecks=true)
+┌ Warning: matrix is not symmetric/Hermitian
+└ @ Distances ...
+SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
+"""
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
+    function SqMahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
+        # TODO: turn the warnings into errors in next breaking release
+        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
+        if !skipchecks
+            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
+        end
+        return new{typeof(Q)}(Q)
+    end
 end
 
 function result_type(d::Mahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
@@ -46,8 +100,7 @@ function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::A
     dot_percol!(r, Q * z, z)
 end
 
-function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m, na, nb = get_pairwise_dims(size(Q, 1), r, a, b)
 
@@ -65,8 +118,7 @@ function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis,
-                    a::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis, a::AbstractMatrix)
     Q = dist.qmat
     m, n = get_pairwise_dims(size(Q, 1), r, a)
 
@@ -90,25 +142,23 @@ end
 # Mahalanobis
 
 function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
-    sqrt(SqMahalanobis(dist.qmat)(a, b))
+    sqrt(SqMahalanobis(dist.qmat, skipchecks = true)(a, b))
 end
 
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(colwise!(r, SqMahalanobis(dist.qmat), a, b))
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Mahalanobis,
-                    a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat), a, b))
+function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Mahalanobis,
-                    a::AbstractMatrix)
-    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat), a))
+function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix)
+    sqrt!(_pairwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a))
 end
