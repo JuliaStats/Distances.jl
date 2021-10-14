@@ -200,7 +200,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
         r[i, j] = if i > j
             metric(ai, aj)
         elseif i == j
-            0
+            zero(eltype(r))
         else
             r[j, i]
         end
@@ -216,7 +216,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
         for i = 1:(j - 1)
             r[i, j] = r[j, i]   # leveraging the symmetry of SemiMetric
         end
-        r[j, j] = 0
+        r[j, j] = zero(eltype(r))
         aj = view(a, :, j)
         for i = (j + 1):n
             r[i, j] = metric(view(a, :, i), aj)
