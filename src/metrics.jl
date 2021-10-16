@@ -619,13 +619,13 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
     R = inplace ? mul!(r, a', b) : a'b
     sa2 = sum(abs2, a, dims=1)
     sb2 = sum(abs2, b, dims=1)
-    threshT = convert(eltype(r), dist.thresh)
-    @inbounds if threshT <= 0
+    z² = zero(real(eltype(R)))
+    @inbounds if dist.thresh <= 0
         # If there's no chance of triggering the threshold, we can use @simd
         for j = 1:nb
             sb = sb2[j]
             @simd for i = 1:na
-                r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2real(R[i, j]), 0)))
+                r[i, j] = eval_end(dist, (max(sa2[i] + sb - 2real(R[i, j]), z²)))
             end
         end
     else
@@ -633,8 +633,8 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean},
             sb = sb2[j]
             for i = 1:na
                 selfterms = sa2[i] + sb
-                v = max(selfterms - 2real(R[i, j]), 0)
-                if v < threshT * selfterms
+                v = max(selfterms - 2real(R[i, j]), z²)
+                if v < dist.thresh * selfterms
                     # The distance is likely to be inaccurate, recalculate directly
                     # This reflects the following:
                     #   while sqrt(x+ϵ) ≈ sqrt(x) + O(ϵ/sqrt(x)) when |x| >> ϵ,
@@ -658,22 +658,23 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqEuclidean,Euclidean}, a::Ab
     # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     R = inplace ? mul!(r, a', a) : a'a
     sa2 = sum(abs2, a, dims=1)
-    threshT = convert(eltype(r), dist.thresh)
+    safe = dist.thresh <= 0
+    z² = zero(real(eltype(R)))
     @inbounds for j = 1:n
         for i = 1:(j - 1)
             r[i, j] = r[j, i]
         end
-        r[j, j] = 0
+        r[j, j] = zero(eltype(r))
         sa2j = sa2[j]
-        if threshT <= 0
+        if safe
             @simd for i = (j + 1):n
-                r[i, j] = eval_end(dist, (max(sa2[i] + sa2j - 2real(R[i, j]), 0)))
+                r[i, j] = eval_end(dist, (max(sa2[i] + sa2j - 2real(R[i, j]), z²)))
             end
         else
             for i = (j + 1):n
                 selfterms = sa2[i] + sa2j
-                v = max(selfterms - 2real(R[i, j]), 0)
-                if v < threshT * selfterms
+                v = max(selfterms - 2real(R[i, j]), z²)
+                if v < dist.thresh * selfterms
                     v = zero(v)
                     for k = 1:m
                         v += abs2(a[k, i] - a[k, j])
@@ -698,9 +699,10 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
     R = inplace ? mul!(r, a', w .* b) : a'*Diagonal(w)*b
+    z² = zero(real(eltype(R)))
     for j = 1:nb
         @simd for i = 1:na
-            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sb2[j] - 2real(R[i, j]), 0))
+            @inbounds r[i, j] = eval_end(dist, max(sa2[i] + sb2[j] - 2real(R[i, j]), z²))
         end
     end
     r
@@ -715,14 +717,15 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     # the following checks if a'*b can be stored in r directly, it fails for complex eltypes
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
     R = inplace ? mul!(r, a', w .* a) : a'*Diagonal(w)*a
+    z² = zero(real(eltype(R)))
 
     @inbounds for j = 1:n
         for i = 1:(j - 1)
             r[i, j] = r[j, i]
         end
-        r[j, j] = 0
+        r[j, j] = zero(eltype(r))
         @simd for i = (j + 1):n
-            r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2real(R[i, j]), 0))
+            r[i, j] = eval_end(dist, max(sa2[i] + sa2[j] - 2real(R[i, j]), z²))
         end
     end
     r
@@ -734,12 +737,13 @@ function _pairwise!(r::AbstractMatrix, ::CosineDist,
                     a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
-    mul!(r, a', b)
+    inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
+    R = inplace ? mul!(r, a', b) : a'b
     ra = norm_percol(a)
     rb = norm_percol(b)
     for j = 1:nb
         @simd for i = 1:na
-            @inbounds r[i, j] = max(1 - r[i, j] / (ra[i] * rb[j]), 0)
+            @inbounds r[i, j] = max(1 - R[i, j] / (ra[i] * rb[j]), 0)
         end
     end
     r
@@ -747,15 +751,16 @@ end
 function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix)
     require_one_based_indexing(r, a)
     m, n = get_pairwise_dims(r, a)
-    mul!(r, a', a)
+    inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(a)))) === eltype(r)
+    R = inplace ? mul!(r, a', a) : a'a
     ra = norm_percol(a)
     @inbounds for j = 1:n
         for i = 1:(j - 1)
             r[i, j] = r[j, i]
         end
-        r[j, j] = 0
+        r[j, j] = zero(eltype(r))
         @simd for i = j + 1:n
-            r[i, j] = max(1 - r[i, j] / (ra[i] * ra[j]), 0)
+            r[i, j] = max(1 - R[i, j] / (ra[i] * ra[j]), 0)
         end
     end
     r

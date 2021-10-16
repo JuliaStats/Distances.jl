@@ -878,7 +878,8 @@ end
     @test bregman(G, ∇G, p, q) ≈ ISdist(p, q)
 end
 
-@testset "Unitful vectors" begin
+@testset "Unitful data" begin
+    using Distances, Unitful.DefaultSymbols, Test, LinearAlgebra
     x = [1m, 2m, 3m]; y = [2m, 3m, 4m]; w = [1, 1, 1]; p = [2m, 2m, 2m]
     @test @inferred sqeuclidean(x, y) == 3m^2
     @test @inferred euclidean(x, y) == sqrt(3)m
@@ -903,6 +904,34 @@ end
     @test @inferred wminkowski(x, y, w, 2) == euclidean(x, y)
     @test @inferred whamming(x, y, w) == hamming(x, y)
     @test @inferred peuclidean(x, y, p) == sqrt(3)m
+
+    X = [x y]; Y = [y x]
+    # check specialized pairwise implementations
+    @test pairwise(Euclidean(), X, dims=2)[1,1] == 0m
+    @test pairwise(Euclidean(), X, dims=2)[1,2] == sqrt(3)m
+    @test pairwise(SqEuclidean(), X, dims=2)[1,1] == 0m^2
+    @test pairwise(SqEuclidean(), X, dims=2)[1,2] == 3m^2
+    @test pairwise(WeightedEuclidean(w), X, dims=2)[1,1] == 0m
+    @test pairwise(WeightedEuclidean(w), X, dims=2)[1,2] == sqrt(3)m
+    @test pairwise(WeightedSqEuclidean(w), X, dims=2)[1,1] == 0m^2
+    @test pairwise(WeightedSqEuclidean(w), X, dims=2)[1,2] == 3m^2
+    @test pairwise(Euclidean(), X, Y, dims=2)[1,1] == sqrt(3)m
+    @test pairwise(Euclidean(), X, Y, dims=2)[1,2] == 0m
+    @test pairwise(SqEuclidean(), X, Y, dims=2)[1,1] == 3m^2
+    @test pairwise(SqEuclidean(), X, Y, dims=2)[1,2] == 0m^2
+    @test pairwise(WeightedEuclidean(w), X, Y, dims=2)[1,1] == sqrt(3)m
+    @test pairwise(WeightedEuclidean(w), X, Y, dims=2)[1,2] == 0m
+    @test pairwise(WeightedSqEuclidean(w), X, Y, dims=2)[1,1] == 3m^2
+    @test pairwise(WeightedSqEuclidean(w), X, Y, dims=2)[1,2] == 0m^2
+    @test pairwise(CosineDist(), X, dims=2)[1,1] == 0
+    @test pairwise(CosineDist(), X, dims=2)[1,2] == 1 - dot(x, y) / (norm(x) * norm(y))
+    @test pairwise(CorrDist(), X, dims=2)[1,1] == 0
+    @test pairwise(CorrDist(), X, dims=2)[1,2] == cosine_dist(x .- mean(x), y .- mean(y))
+    # check generic pairwise implementation for one metric
+    @test pairwise(PeriodicEuclidean(p), X, dims=2)[1,1] == 0m
+    @test pairwise(PeriodicEuclidean(p), X, dims=2)[1,2] == sqrt(3)m
+    @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,1] == sqrt(3)m
+    @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,2] == 0m
 end
 
 #=
