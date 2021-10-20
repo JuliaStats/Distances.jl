@@ -157,8 +157,8 @@ end
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
-function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    colwise!(r, dist, b, a)
+function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractVector)
+    sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
