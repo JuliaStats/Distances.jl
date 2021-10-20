@@ -72,16 +72,24 @@ function result_type(d::SqMahalanobis, ::Type{T1}, ::Type{T2}) where {T1,T2}
     return typeof(z * zero(eltype(d.qmat)) * z)
 end
 
-# SqMahalanobis
-
-function (dist::Union{SqMahalanobis,Mahalanobis})(a::AbstractVector, b::AbstractVector)
+# TODO: merge the following two once we lift the lower bound for julia (above v1.4?)
+function (dist::SqMahalanobis)(a::AbstractVector, b::AbstractVector)
     if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end
 
     Q = dist.qmat
     z = a - b
-    return eval_end(dist, dot(z, Q * z))
+    return dot(z, Q * z)
+end
+function (dist::Mahalanobis)(a::AbstractVector, b::AbstractVector)
+    if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+
+    Q = dist.qmat
+    z = a - b
+    return sqrt(dot(z, Q * z))
 end
 
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
