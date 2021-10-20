@@ -99,6 +99,9 @@ function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::A
     z = a .- b
     dot_percol!(r, Q * z, z)
 end
+function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractVector)
+    colwise!(r, dist, b, a)
+end
 
 function _pairwise!(r::AbstractMatrix, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
@@ -153,6 +156,9 @@ end
 
 function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
     sqrt!(colwise!(r, SqMahalanobis(dist.qmat, skipchecks = true), a, b))
+end
+function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
+    colwise!(r, dist, b, a))
 end
 
 function _pairwise!(r::AbstractMatrix, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
