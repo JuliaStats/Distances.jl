@@ -108,7 +108,7 @@ end
 function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::AbstractMatrix)
     _colwise!(r, dist, a, b)
 end
-function colwise!(r::AbstractArray, dist::Union{SqMahalanobis,Mahalanobis}, a::AbstractMatrix, b::AbstractVector)
+function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractVector)
     _colwise!(r, dist, a, b)
 end
 
