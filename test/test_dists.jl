@@ -375,6 +375,8 @@ end # testset
     Q = Q * Q'  # make sure Q is positive-definite
     @test_throws DimensionMismatch mahalanobis(p, q, Q)
     @test_throws DimensionMismatch mahalanobis(q, q, Q)
+    @test_throws DimensionMismatch sqmahalanobis(p, q, Q)
+    @test_throws DimensionMismatch sqmahalanobis(q, q, Q)
     mat23 = [0.3 0.2 0.0; 0.1 0.0 0.4]
     mat22 = [0.3 0.2; 0.1 0.4]
     @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
