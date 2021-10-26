@@ -734,30 +734,33 @@ end
 # MeanSqDeviation, RMSDeviation, NormRMSDeviation
 function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, SqEuclidean(), a, b)
-    r ./= size(a, 1)
+    rdiv!(r, size(a, 1))
     return r
 end
 _pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix, b::AbstractMatrix) =
     sqrt!(_pairwise!(r, MeanSqDeviation(), a, b))
 function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix, b::AbstractMatrix)
-    # this allocates a vector, but saves the repeated extrema computation
-    colext = map(x -> x[2] - x[1], vec(extrema(a, dims=1)))
     _pairwise!(r, RMSDeviation(), a, b)
-    r ./= colext
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
     return r
 end
 
 function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix)
     _pairwise!(r, SqEuclidean(), a)
-    r ./= size(a, 1)
+    rdiv!(r, size(a, 1))
     return r
 end
 _pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix) =
     sqrt!(_pairwise!(r, MeanSqDeviation(), a))
 function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix)
-    colext = map(x -> x[2] - x[1], vec(extrema(a, dims=1)))
     _pairwise!(r, RMSDeviation(), a)
-    r ./= colext
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
     return r
 end
 
