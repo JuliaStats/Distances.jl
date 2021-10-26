@@ -22,10 +22,9 @@ Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
     function Mahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
-        # TODO: turn the warnings into errors in next breaking release
-        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
+        ishermitian(Q) || throw(ArgumentError("matrix is not symmetric/Hermitian"))
         if !skipchecks
-            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
+            eigmin(Q) ≥ 0 || throw(ArgumentError("matrix is not positive semidefinite"))
         end
         return new{typeof(Q)}(Q)
     end
@@ -53,10 +52,9 @@ SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
     function SqMahalanobis(Q::AbstractMatrix; skipchecks::Bool=false)
-        # TODO: turn the warnings into errors in next breaking release
-        ishermitian(Q) || @warn "matrix is not symmetric/Hermitian"
+        ishermitian(Q) || throw(ArgumentError("matrix is not symmetric/Hermitian"))
         if !skipchecks
-            eigmin(Q) ≥ 0 || @warn "matrix is not positive semidefinite"
+            eigmin(Q) ≥ 0 || throw(ArgumentError("matrix is not positive semidefinite"))
         end
         return new{typeof(Q)}(Q)
     end
