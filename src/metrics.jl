@@ -731,10 +731,39 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     r
 end
 
+# MeanSqDeviation, RMSDeviation, NormRMSDeviation
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a, b)
+    r ./= size(a, 1)
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix, b::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a, b))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    # this allocates a vector, but saves the repeated extrema computation
+    colext = map(x -> x[2] - x[1], vec(extrema(a, dims=1)))
+    _pairwise!(r, RMSDeviation(), a, b)
+    r ./= colext
+    return r
+end
+
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a)
+    r ./= size(a, 1)
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix)
+    colext = map(x -> x[2] - x[1], vec(extrema(a, dims=1)))
+    _pairwise!(r, RMSDeviation(), a)
+    r ./= colext
+    return r
+end
+
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, ::CosineDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
@@ -772,10 +801,7 @@ end
 # 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function _pairwise!(r::AbstractMatrix, ::CorrDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function _pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
-end
