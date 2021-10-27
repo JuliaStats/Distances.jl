@@ -734,7 +734,11 @@ end
 # MeanSqDeviation, RMSDeviation, NormRMSDeviation
 function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix, b::AbstractMatrix)
     _pairwise!(r, SqEuclidean(), a, b)
-    rdiv!(r, size(a, 1))
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
     return r
 end
 _pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix, b::AbstractMatrix) =
@@ -750,7 +754,11 @@ end
 
 function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix)
     _pairwise!(r, SqEuclidean(), a)
-    rdiv!(r, size(a, 1))
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
     return r
 end
 _pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix) =
