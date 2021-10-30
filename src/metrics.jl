@@ -731,10 +731,50 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     r
 end
 
+# MeanSqDeviation, RMSDeviation, NormRMSDeviation
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a, b)
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix, b::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a, b))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, RMSDeviation(), a, b)
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
+    return r
+end
+
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a)
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix)
+    _pairwise!(r, RMSDeviation(), a)
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
+    return r
+end
+
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, ::CosineDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
@@ -772,10 +812,7 @@ end
 # 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function _pairwise!(r::AbstractMatrix, ::CorrDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function _pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
-end
