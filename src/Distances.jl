@@ -2,6 +2,7 @@ module Distances
 
 using LinearAlgebra
 using Statistics
+using SparseArrays: SparseVector, nonzeroinds, nonzeros, nnz
 import StatsAPI: pairwise, pairwise!
 
 export
@@ -112,6 +113,7 @@ end
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
+include("map_reduce_sparse.jl")
 include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")

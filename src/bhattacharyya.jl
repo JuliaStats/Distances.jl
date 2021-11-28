@@ -50,6 +50,18 @@ end
     return sqab, asum, bsum
 end
 
+function _bhattacharyya_coeff(x::SparseVector{Tx}, y::SparseVector{Ty}) where {Tx<:Number, Ty<:Number}
+    xnzind = nonzeroinds(x)
+    ynzind = nonzeroinds(y)
+    xnzval = nonzeros(x)
+    ynzval = nonzeros(y)
+    mx = nnz(x)
+    my = nnz(y)
+    s, _ = _binary_map_reduce1((a, b) -> sqrt(a * b), _ -> zero(Tx), _ -> zero(Ty), +,
+                               mx, my, xnzind, xnzval, ynzind, ynzval)
+    return s, sum(x), sum(y)
+end
+
 # Faster pair- and column-wise versions TBD...
 
 
