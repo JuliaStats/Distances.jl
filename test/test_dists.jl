@@ -500,41 +500,43 @@ end
 
 @testset "bhattacharyya / hellinger" begin
     for T in (Int, Float64, F64)
-        x, y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
-        a = T.([1, 2, 1, 3, 2, 1])
-        b = T.([1, 3, 0, 2, 2, 0])
-        p = T == Int ? rand(0:10, 12) : rand(T, 12)
-        p[p .< median(p)] .= 0
-        q = T == Int ? rand(0:10, 12) : rand(T, 12)
+        _x, _y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
+        _a = T.([1, 2, 1, 3, 2, 1])
+        _b = T.([1, 3, 0, 2, 2, 0])
+        _p = T == Int ? rand(0:10, 12) : rand(T, 12)
+        _p[_p .< median(_p)] .= 0
+        _q = T == Int ? rand(0:10, 12) : rand(T, 12)
 
-        # Bhattacharyya and Hellinger distances are defined for discrete
-        # probability distributions so to calculate the expected values
-        # we need to normalize vectors.
-        px = x ./ sum(x)
-        py = y ./ sum(y)
-        expected_bc_x_y = sum(sqrt.(px .* py))
-        for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
-            @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
-            @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
-            @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        for (x, y, a, b, p, q) in ((_x, _y, _a, _b, _p, _q), sparsevec.((_x, _y, _a, _b, _p, _q)))
+            # Bhattacharyya and Hellinger distances are defined for discrete
+            # probability distributions so to calculate the expected values
+            # we need to normalize vectors.
+            px = x ./ sum(x)
+            py = y ./ sum(y)
+            expected_bc_x_y = sum(sqrt.(px .* py))
+            for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
+                @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
+                @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
+                @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+            end
+
+            pa = a ./ sum(a)
+            pb = b ./ sum(b)
+            expected_bc_a_b = sum(sqrt.(pa .* pb))
+            @test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
+            @test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
+            @test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
+
+            pp = p ./ sum(p)
+            pq = q ./ sum(q)
+            expected_bc_p_q = sum(sqrt.(pp .* pq))
+            @test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
+            @test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
+            @test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
+
+            # Ensure it is semimetric
+            @test bhattacharyya(x, y) ≈ bhattacharyya(y, x)
         end
-
-        pa = a ./ sum(a)
-        pb = b ./ sum(b)
-        expected_bc_a_b = sum(sqrt.(pa .* pb))
-        @test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
-        @test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
-        @test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
-
-        pp = p ./ sum(p)
-        pq = q ./ sum(q)
-        expected_bc_p_q = sum(sqrt.(pp .* pq))
-        @test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
-        @test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
-        @test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
-
-        # Ensure it is semimetric
-        @test bhattacharyya(x, y) ≈ bhattacharyya(y, x)
     end
 end #testset
 
@@ -765,7 +767,7 @@ end
 
     X = rand(ComplexF64, m, nx)
     Y = rand(ComplexF64, m, ny)
-    
+
     test_pairwise(SqEuclidean(), X, Y, Float64)
     test_pairwise(Euclidean(), X, Y, Float64)
 
