@@ -1,5 +1,7 @@
 # Unit tests for Distances
 
+using SparseArrays: sparsevec
+
 struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
 
 @testset "result_type" begin
@@ -211,7 +213,7 @@ end
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
-            for (x, y) in ((x, y),
+            for (x, y) in ((x, y), (sparsevec(x), sparsevec(y)),
                            (convert(Array{Union{Missing, T}}, x), convert(Array{Union{Missing, T}}, y)),
                            ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
                            (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
