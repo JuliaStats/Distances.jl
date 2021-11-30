@@ -19,8 +19,6 @@ function bhattacharyya_coeff(a, b)
     return sqab / sqrt(asum * bsum)
 end
 
-# @inline _bhattacharyya_coeff(x::SparseVector, y::SparseVector) = (sum(sqrt, x .* y), sum(x), sum(y))
-
 @inline function _bhattacharyya_coeff(a, b)
     Ta = _eltype(a)
     Tb = _eltype(b)
@@ -52,14 +50,29 @@ end
     return sqab, asum, bsum
 end
 
-function _bhattacharyya_coeff(x::SparseVector{Tx}, y::SparseVector{Ty}) where {Tx<:Number, Ty<:Number}
+@inline function _bhattacharyya_coeff(x::SparseVector{Tx}, y::SparseVector{Ty}) where {Tx<:Number, Ty<:Number}
     xnzind = nonzeroinds(x)
     ynzind = nonzeroinds(y)
     xnzval = nonzeros(x)
     ynzval = nonzeros(y)
     mx = nnz(x)
     my = nnz(y)
-    s = _binary_map_reduce1((a, b) -> sqrt(a * b), +, mx, my, xnzind, xnzval, ynzind, ynzval)
+
+    ix = 1; iy = 1
+    s = zero(sqrt(zero(Tx) * zero(Ty)))
+    @inbounds while ix <= mx && iy <= my
+        jx = xnzind[ix]
+        jy = ynzind[iy]
+        if jx == jy
+            v = sqrt(xnzval[ix] * ynzval[iy])
+            s = v + s
+            ix += 1; iy += 1
+        elseif jx < jy
+            ix += 1
+        else
+            iy += 1
+        end
+    end
     return s, sum(x), sum(y)
 end
 

@@ -113,7 +113,6 @@ end
 include("common.jl")
 include("generic.jl")
 include("metrics.jl")
-include("map_reduce_sparse.jl")
 include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
