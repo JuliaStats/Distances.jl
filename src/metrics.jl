@@ -311,7 +311,7 @@ end
 eval_op_a(d, ai, b) = eval_op(d, ai, zero(eltype(b)))
 eval_op_b(d, bi, a) = eval_op(d, zero(eltype(a)), bi)
 
-Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::SparseVector, b::SparseVector, ::Nothing)
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::SparseVectorUnion, b::SparseVectorUnion, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
     end

@@ -50,7 +50,7 @@ end
     return sqab, asum, bsum
 end
 
-@inline function _bhattacharyya_coeff(a::SparseVector{Ta}, b::SparseVector{Tb}) where {Ta<:Number, Tb<:Number}
+@inline function _bhattacharyya_coeff(a::SparseVectorUnion{<:Number}, b::SparseVectorUnion{<:Number})
     anzind = nonzeroinds(a)
     bnzind = nonzeroinds(b)
     anzval = nonzeros(a)
@@ -60,7 +60,7 @@ end
 
     ia = 1; ib = 1
     eval_op = (a, b) -> sqrt(a * b)
-    s = zero(eval_op(zero(Ta), zero(Tb)))
+    s = zero(eval_op(zero(eltype(a)), zero(eltype(b))))
     @inbounds while ia <= ma && ib <= mb
         ja = anzind[ia]
         jb = bnzind[ib]
@@ -74,7 +74,8 @@ end
             ib += 1
         end
     end
-    return s, sum(a), sum(b)
+    # efficient method for sum for SparseVectorView is missing
+    return s, sum(anzval), sum(bnzval)
 end
 
 # Faster pair- and column-wise versions TBD...

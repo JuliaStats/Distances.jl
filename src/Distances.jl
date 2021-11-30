@@ -2,7 +2,7 @@ module Distances
 
 using LinearAlgebra
 using Statistics
-using SparseArrays: SparseVector, nonzeroinds, nonzeros, nnz
+using SparseArrays: SparseVectorUnion, nonzeroinds, nonzeros, nnz
 import StatsAPI: pairwise, pairwise!
 
 export
