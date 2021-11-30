@@ -1,6 +1,6 @@
 # Unit tests for Distances
 
-using SparseArrays: sparsevec
+using SparseArrays: sparsevec, sprand
 
 struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
 
@@ -942,6 +942,17 @@ end
     @test pairwise(PeriodicEuclidean(p), X, dims=2)[1,2] == sqrt(3)m
     @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,1] == sqrt(3)m
     @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,2] == 0m
+end
+
+@testset "SparseVector, nnz(a) != nnz(b)" begin
+    for (n, densa, densb) in ((100, .1, .8), (200, .8, .1))
+        a = sprand(n, densa)
+        b = sprand(n, densb)
+        for d in (bhattacharyya, euclidean, sqeuclidean, jaccard, cityblock, totalvariation,
+                  chebyshev, braycurtis, hamming)
+            @test d(a, b) ≈ d(Vector(a), Vector(b))
+        end
+    end
 end
 
 #=

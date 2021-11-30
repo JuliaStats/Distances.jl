@@ -50,30 +50,31 @@ end
     return sqab, asum, bsum
 end
 
-@inline function _bhattacharyya_coeff(x::SparseVector{Tx}, y::SparseVector{Ty}) where {Tx<:Number, Ty<:Number}
-    xnzind = nonzeroinds(x)
-    ynzind = nonzeroinds(y)
-    xnzval = nonzeros(x)
-    ynzval = nonzeros(y)
-    mx = nnz(x)
-    my = nnz(y)
+@inline function _bhattacharyya_coeff(a::SparseVector{Ta}, b::SparseVector{Tb}) where {Ta<:Number, Tb<:Number}
+    anzind = nonzeroinds(a)
+    bnzind = nonzeroinds(b)
+    anzval = nonzeros(a)
+    bnzval = nonzeros(b)
+    ma = nnz(a)
+    mb = nnz(b)
 
-    ix = 1; iy = 1
-    s = zero(sqrt(zero(Tx) * zero(Ty)))
-    @inbounds while ix <= mx && iy <= my
-        jx = xnzind[ix]
-        jy = ynzind[iy]
-        if jx == jy
-            v = sqrt(xnzval[ix] * ynzval[iy])
+    ia = 1; ib = 1
+    eval_op = (a, b) -> sqrt(a * b)
+    s = zero(eval_op(zero(Ta), zero(Tb)))
+    @inbounds while ia <= ma && ib <= mb
+        ja = anzind[ia]
+        jb = bnzind[ib]
+        if ja == jb
+            v = eval_op(anzval[ia], bnzval[ib])
             s = v + s
-            ix += 1; iy += 1
-        elseif jx < jy
-            ix += 1
+            ia += 1; ib += 1
+        elseif ja < jb
+            ia += 1
         else
-            iy += 1
+            ib += 1
         end
     end
-    return s, sum(x), sum(y)
+    return s, sum(a), sum(b)
 end
 
 # Faster pair- and column-wise versions TBD...
