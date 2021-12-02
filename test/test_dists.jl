@@ -198,6 +198,12 @@ end
     bf = [false, true, true]
     @test rogerstanimoto(bt, bf) == 4.0 / 5.0
     @test braycurtis(bt, bf) == 0.5
+    b1 = [true, false, false]
+    b2 = [false, true, false]
+    @test rogerstanimoto(b1, b2) == 4.0 / 5.0
+    b1 = [true, false, false]
+    b2 = [true,  true, false]
+    @test rogerstanimoto(b1, b2) == 1.0 / 2.0
 
     for w in (2, (2,))
         @test wsqeuclidean(a, b, w) === 2
