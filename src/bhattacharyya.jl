@@ -59,8 +59,7 @@ end
     mb = nnz(b)
 
     ia = 1; ib = 1
-    eval_op = (a, b) -> sqrt(a * b)
-    s = zero(eval_op(zero(eltype(a)), zero(eltype(b))))
+    s = zero(typeof(sqrt(oneunit(eltype(a))*oneunit(eltype(b)))))
     @inbounds while ia <= ma && ib <= mb
         ja = anzind[ia]
         jb = bnzind[ib]
