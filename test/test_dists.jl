@@ -1,5 +1,7 @@
 # Unit tests for Distances
 
+using SparseArrays: sparsevec, sprand
+
 struct FooDist <: PreMetric end # Julia 1.0 Compat: struct definition must be put in global scope
 
 @testset "result_type" begin
@@ -217,7 +219,7 @@ end
         for (_x, _y) in (([4.0, 5.0, 6.0, 7.0], [3.0, 9.0, 8.0, 1.0]),
                          ([4.0, 5.0, 6.0, 7.0], [3. 8.; 9. 1.0]))
             x, y = T.(_x), T.(_y)
-            for (x, y) in ((x, y),
+            for (x, y) in ((x, y), (sparsevec(x), sparsevec(y)),
                            (convert(Array{Union{Missing, T}}, x), convert(Array{Union{Missing, T}}, y)),
                            ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
                            (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
@@ -331,7 +333,8 @@ end # testset
 end #testset
 
 @testset "empty vector" begin
-    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)))
+    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)),
+                                        (sprand(T, 0, .1), sprand(T, 0, .1)))
         @test sqeuclidean(a, b) == 0.0
         @test isa(sqeuclidean(a, b), T)
         @test euclidean(a, b) == 0.0
@@ -391,6 +394,10 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
+    sv1 = sprand(10, .2)
+    sv2 = sprand(20, .2)
+    @test_throws DimensionMismatch euclidean(sv1, sv2)
+    @test_throws DimensionMismatch bhattacharyya(sv1, sv2)
 end # testset
 
 @testset "Different input types" begin
@@ -504,41 +511,43 @@ end
 
 @testset "bhattacharyya / hellinger" begin
     for T in (Int, Float64, F64)
-        x, y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
-        a = T.([1, 2, 1, 3, 2, 1])
-        b = T.([1, 3, 0, 2, 2, 0])
-        p = T == Int ? rand(0:10, 12) : rand(T, 12)
-        p[p .< median(p)] .= 0
-        q = T == Int ? rand(0:10, 12) : rand(T, 12)
+        _x, _y = T.([4, 5, 6, 7]), T.([3, 9, 8, 1])
+        _a = T.([1, 2, 1, 3, 2, 1])
+        _b = T.([1, 3, 0, 2, 2, 0])
+        _p = T == Int ? rand(0:10, 12) : rand(T, 12)
+        _p[_p .< median(_p)] .= 0
+        _q = T == Int ? rand(0:10, 12) : rand(T, 12)
 
-        # Bhattacharyya and Hellinger distances are defined for discrete
-        # probability distributions so to calculate the expected values
-        # we need to normalize vectors.
-        px = x ./ sum(x)
-        py = y ./ sum(y)
-        expected_bc_x_y = sum(sqrt.(px .* py))
-        for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
-            @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
-            @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
-            @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+        for (x, y, a, b, p, q) in ((_x, _y, _a, _b, _p, _q), sparsevec.((_x, _y, _a, _b, _p, _q)))
+            # Bhattacharyya and Hellinger distances are defined for discrete
+            # probability distributions so to calculate the expected values
+            # we need to normalize vectors.
+            px = x ./ sum(x)
+            py = y ./ sum(y)
+            expected_bc_x_y = sum(sqrt.(px .* py))
+            for (x, y) in ((x, y), (Iterators.take(x, 12), Iterators.take(y, 12)))
+                @test Distances.bhattacharyya_coeff(x, y) ≈ expected_bc_x_y
+                @test bhattacharyya(x, y) ≈ (-log(expected_bc_x_y))
+                @test hellinger(x, y) ≈ sqrt(1 - expected_bc_x_y)
+            end
+
+            pa = a ./ sum(a)
+            pb = b ./ sum(b)
+            expected_bc_a_b = sum(sqrt.(pa .* pb))
+            @test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
+            @test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
+            @test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
+
+            pp = p ./ sum(p)
+            pq = q ./ sum(q)
+            expected_bc_p_q = sum(sqrt.(pp .* pq))
+            @test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
+            @test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
+            @test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
+
+            # Ensure it is semimetric
+            @test bhattacharyya(x, y) ≈ bhattacharyya(y, x)
         end
-
-        pa = a ./ sum(a)
-        pb = b ./ sum(b)
-        expected_bc_a_b = sum(sqrt.(pa .* pb))
-        @test Distances.bhattacharyya_coeff(a, b) ≈ expected_bc_a_b
-        @test bhattacharyya(a, b) ≈ (-log(expected_bc_a_b))
-        @test hellinger(a, b) ≈ sqrt(1 - expected_bc_a_b)
-
-        pp = p ./ sum(p)
-        pq = q ./ sum(q)
-        expected_bc_p_q = sum(sqrt.(pp .* pq))
-        @test Distances.bhattacharyya_coeff(p, q) ≈ expected_bc_p_q
-        @test bhattacharyya(p, q) ≈ (-log(expected_bc_p_q))
-        @test hellinger(p, q) ≈ sqrt(1 - expected_bc_p_q)
-
-        # Ensure it is semimetric
-        @test bhattacharyya(x, y) ≈ bhattacharyya(y, x)
     end
 end #testset
 
@@ -769,7 +778,7 @@ end
 
     X = rand(ComplexF64, m, nx)
     Y = rand(ComplexF64, m, ny)
-    
+
     test_pairwise(SqEuclidean(), X, Y, Float64)
     test_pairwise(Euclidean(), X, Y, Float64)
 
@@ -944,6 +953,17 @@ end
     @test pairwise(PeriodicEuclidean(p), X, dims=2)[1,2] == sqrt(3)m
     @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,1] == sqrt(3)m
     @test pairwise(PeriodicEuclidean(p), X, Y, dims=2)[1,2] == 0m
+end
+
+@testset "SparseVector, nnz(a) != nnz(b)" begin
+    for (n, densa, densb) in ((100, .1, .8), (200, .8, .1))
+        a = sprand(n, densa)
+        b = sprand(n, densb)
+        for d in (bhattacharyya, euclidean, sqeuclidean, jaccard, cityblock, totalvariation,
+                  chebyshev, braycurtis, hamming)
+            @test d(a, b) ≈ d(Vector(a), Vector(b))
+        end
+    end
 end
 
 #=
