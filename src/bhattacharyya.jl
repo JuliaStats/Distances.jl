@@ -65,8 +65,7 @@ end
         ja = anzind[ia]
         jb = bnzind[ib]
         if ja == jb
-            v = eval_op(anzval[ia], bnzval[ib])
-            s = v + s
+            s += sqrt(anzval[ia] * bnzval[ib])
             ia += 1; ib += 1
         elseif ja < jb
             ia += 1
