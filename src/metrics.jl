@@ -311,6 +311,8 @@ end
 eval_op_a(d, ai, b) = eval_op(d, ai, zero(eltype(b)))
 eval_op_b(d, bi, a) = eval_op(d, zero(eltype(a)), bi)
 
+# It is assumed that eval_reduce(d, s, eval_op(d, zero(eltype(a)), zero(eltype(b)))) == s
+# This justifies ignoring all terms where both inputs are zero.
 Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::SparseVectorUnion, b::SparseVectorUnion, ::Nothing)
     @boundscheck if length(a) != length(b)
         throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
