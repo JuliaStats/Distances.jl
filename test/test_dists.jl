@@ -327,7 +327,8 @@ end # testset
 end #testset
 
 @testset "empty vector" begin
-    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)))
+    for T in (Float64, F64), (a, b) in ((T[], T[]), (Iterators.take(T[], 0), Iterators.take(T[], 0)),
+                                        (sprand(T, 0, .1), sprand(T, 0, .1)))
         @test sqeuclidean(a, b) == 0.0
         @test isa(sqeuclidean(a, b), T)
         @test euclidean(a, b) == 0.0
@@ -387,6 +388,10 @@ end # testset
     @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
+    sv1 = sprand(10, .2)
+    sv2 = sprand(20, .2)
+    @test_throws DimensionMismatch euclidean(sv1, sv2)
+    @test_throws DimensionMismatch bhattacharyya(sv1, sv2)
 end # testset
 
 @testset "Different input types" begin
