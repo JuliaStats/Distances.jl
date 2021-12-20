@@ -394,6 +394,20 @@ weuclidean(a, b, w) = WeightedEuclidean(w)(a, b)
     s3 = min(s2, p - s2)
     abs2(s3)
 end
+
+function (pe::PeriodicEuclidean{<:AbstractMatrix})(a::AbstractVector, b::AbstractVector)
+    p = parameters(pe)
+    ndim = length(a)
+    @assert size(p,1) == size(p, 2) == length(b) == ndim  # check dimension
+    s = p \ (a - b)      # decompose to p-basis, a - b = sx x⃗ + sy y⃗ + ...
+    mindistance = Inf
+    s = mod.(s, 1)       # move to first "quadrant"
+    @inbounds for k = 0:1<<ndim-1  # 2^{# of dimensions} possible choices
+        loc = sum(i->view(p,:,i) .* (k>>(i-1) & 1 == 0 ? s[i] : s[i]-1), 1:ndim)
+        mindistance = min(norm(loc), mindistance)
+    end
+    return mindistance
+end
 eval_end(::PeriodicEuclidean, s) = sqrt(s)
 peuclidean(a, b, p) = PeriodicEuclidean(p)(a, b)
 

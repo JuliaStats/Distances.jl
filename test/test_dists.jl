@@ -982,3 +982,11 @@ end
     end
 end
 =#
+
+@testset "periodic - non-rectangular" begin
+    # basis vectors: [10, 10], [0, 10]
+    p = PeriodicEuclidean([10 0.0; 10.0 10.0])  # each column is a basis vector.
+    @test p([10.1, 10.2], [-10.0, 0.0]) ≈ sqrt(0.1^2 + 0.2^2)
+    @test p([9.9, 10.2], [-10.0, 0.0]) ≈ sqrt(0.1^2 + 0.2^2)
+    @test p([9.9, 9.8], [-10.0, 0.0]) ≈ sqrt(0.1^2 + 0.2^2)
+end
