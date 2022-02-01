@@ -118,4 +118,6 @@ include("mahalanobis.jl")
 include("bhattacharyya.jl")
 include("bregman.jl")
 
+include("deprecated.jl")
+
 end # module end

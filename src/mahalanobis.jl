@@ -122,7 +122,7 @@ function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::Abs
     sqrt!(_colwise!(r, dist, a, b))
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Union{SqMahalanobis,Mahalanobis}, a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(dist::Union{SqMahalanobis,Mahalanobis}, r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)
     Q = dist.qmat
     m, na, nb = get_pairwise_dims(size(Q, 1), r, a, b)
 
@@ -140,7 +140,7 @@ function _pairwise!(r::AbstractMatrix, dist::Union{SqMahalanobis,Mahalanobis}, a
     r
 end
 
-function _pairwise!(r::AbstractMatrix, dist::Union{SqMahalanobis,Mahalanobis}, a::AbstractMatrix)
+function _pairwise!(dist::Union{SqMahalanobis,Mahalanobis}, r::AbstractMatrix, a::AbstractMatrix)
     Q = dist.qmat
     m, n = get_pairwise_dims(size(Q, 1), r, a)
 

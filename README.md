@@ -134,8 +134,8 @@ storage (without creating a new array) using the following syntax
 
 ```julia
 colwise!(r, dist, X, Y)
-pairwise!(R, dist, X, Y, dims=i)
-pairwise!(R, dist, X, dims=i)
+pairwise!(dist, R, X, Y, dims=i)
+pairwise!(dist, R, X, dims=i)
 ```
 
 Please pay attention to the difference, the functions for inplace computation are

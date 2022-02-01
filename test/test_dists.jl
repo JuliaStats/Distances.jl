@@ -673,8 +673,20 @@ function test_pairwise(dist, x, y, T)
         for (vecx, vecy) in ((vecx, vecy), (collect(vecx), collect(vecy)))
             @test pairwise(dist, vecx, vecy) ≈ rxy
             @test pairwise(dist, vecx) ≈ rxx
-            @test pairwise!(similar(rxy), dist, vecx, vecy) ≈ rxy
-            @test pairwise!(similar(rxx), dist, vecx) ≈ rxx
+
+            rxy2 = similar(rxy)
+            @test @test_deprecated(pairwise!(rxy2, dist, vecx, vecy)) ≈ rxy
+            @test rxy2 ≈ rxy
+            rxy3 = similar(rxy)
+            @test pairwise!(dist, rxy3, vecx, vecy) ≈ rxy
+            @test rxy3 ≈ rxy
+
+            rxx2 = similar(rxx)
+            @test @test_deprecated(pairwise!(rxx2, dist, vecx)) ≈ rxx
+            @test rxx2 ≈ rxx
+            rxx3 = similar(rxx)
+            @test pairwise!(dist, rxx3, vecx) ≈ rxx
+            @test rxx3 ≈ rxx
         end
     end
 end
