@@ -46,7 +46,7 @@ __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 # Generic column-wise evaluation
 
 """
-    colwise!(r::AbstractArray, metric::PreMetric, a, b)
+    colwise!(metric::PreMetric, r::AbstractArray, a, b)
 
 Compute distances between corresponding elements of the iterable collections
 `a` and `b` according to distance `metric`, and store the result in `r`.
@@ -54,7 +54,7 @@ Compute distances between corresponding elements of the iterable collections
 `a` and `b` must have the same number of elements, `r` must be an array of length
 `length(a) == length(b)`.
 """
-function colwise!(r::AbstractArray, metric::PreMetric, a, b)
+function colwise!(metric::PreMetric, r::AbstractArray, a, b)
     require_one_based_indexing(r)
     n = length(a)
     length(b) == n || throw(DimensionMismatch("iterators have different lengths"))
@@ -65,7 +65,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a, b)
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
     require_one_based_indexing(r)
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -75,7 +75,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
     require_one_based_indexing(r)
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -86,11 +86,11 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
 end
 
 """
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractVector, b::AbstractMatrix)
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractMatrix, b::AbstractVector)
 
 Compute distances between each corresponding columns of `a` and `b` according
@@ -105,7 +105,7 @@ vector. `r` must be an array of length `maximum(size(a, 2), size(b, 2))`.
     If both `a` and `b` are vectors, the generic, iterator-based method of
     `colwise` applies.
 """
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -126,7 +126,7 @@ Compute distances between corresponding elements of the iterable collections
 function colwise(metric::PreMetric, a, b)
     n = get_common_length(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 """
@@ -148,19 +148,19 @@ vector.
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
     n = size(b, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 

@@ -388,10 +388,10 @@ end # testset
     @test_throws DimensionMismatch sqmahalanobis(q, q, Q)
     mat23 = [0.3 0.2 0.0; 0.1 0.0 0.4]
     mat22 = [0.3 0.2; 0.1 0.4]
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
-    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, mat23)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, q)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, mat22)
+    @test_throws DimensionMismatch colwise!(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat23, mat22)
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
     sv1 = sprand(10, .2)
@@ -559,6 +559,7 @@ function test_colwise(dist, x, y, T)
         r2 = zeros(T, n)
         r3 = zeros(T, n)
         r4 = zeros(T, 1, n)
+        r5 = zeros(T, 1, n)
         for j = 1:n
             r1[j] = dist(x[:, j], y[:, j])
             r2[j] = dist(x[:, 1], y[:, j])
@@ -567,7 +568,10 @@ function test_colwise(dist, x, y, T)
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
-        colwise!(r4, dist, x, y)
+        
+        @test colwise!(dist, r4, x, y) ≈ @test_deprecated(colwise!(r5, dist, x, y))
+        @test r4 ≈ r5
+
         @test all(r4[i] ≈ r1[i] for i in 1:n)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
@@ -984,13 +988,13 @@ end
     a = rand(2, 41)
     b = rand(2, 41)
     z = zeros(41)
-    colwise!(z, d, a, b)
+    colwise!(d, z, a, b)
     # This fails when bounds checking is enforced
     bounds = Base.JLOptions().check_bounds
     if bounds == 0
-        @test (@allocated colwise!(z, d, a, b)) == 0
+        @test (@allocated colwise!(d, z, a, b)) == 0
     else
-        @test_broken (@allocated colwise!(z, d, a, b)) == 0
+        @test_broken (@allocated colwise!(d, z, a, b)) == 0
     end
 end
 =#

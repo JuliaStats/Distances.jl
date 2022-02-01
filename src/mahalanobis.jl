@@ -95,31 +95,31 @@ end
 sqmahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = SqMahalanobis(Q)(a, b)
 mahalanobis(a::AbstractVector, b::AbstractVector, Q::AbstractMatrix) = Mahalanobis(Q)(a, b)
 
-function _colwise!(r, dist, a, b)
+function _colwise!(dist, r, a, b)
     Q = dist.qmat
     get_colwise_dims(size(Q, 1), r, a, b)
     z = a .- b
     dot_percol!(r, Q * z, z)
 end
 
-function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    _colwise!(r, dist, a, b)
+function colwise!(dist::SqMahalanobis, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
+    _colwise!(dist, r, a, b)
 end
-function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractVector, b::AbstractMatrix)
-    _colwise!(r, dist, a, b)
+function colwise!(dist::SqMahalanobis, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
+    _colwise!(dist, r, a, b)
 end
-function colwise!(r::AbstractArray, dist::SqMahalanobis, a::AbstractMatrix, b::AbstractVector)
-    _colwise!(r, dist, a, b)
+function colwise!(dist::SqMahalanobis, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
+    _colwise!(dist, r, a, b)
 end
 
-function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractMatrix)
-    sqrt!(_colwise!(r, dist, a, b))
+function colwise!(dist::Mahalanobis, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
+    sqrt!(_colwise!(dist, r, a, b))
 end
-function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractVector, b::AbstractMatrix)
-    sqrt!(_colwise!(r, dist, a, b))
+function colwise!(dist::Mahalanobis, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
+    sqrt!(_colwise!(dist, r, a, b))
 end
-function colwise!(r::AbstractArray, dist::Mahalanobis, a::AbstractMatrix, b::AbstractVector)
-    sqrt!(_colwise!(r, dist, a, b))
+function colwise!(dist::Mahalanobis, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
+    sqrt!(_colwise!(dist, r, a, b))
 end
 
 function _pairwise!(dist::Union{SqMahalanobis,Mahalanobis}, r::AbstractMatrix, a::AbstractMatrix, b::AbstractMatrix)

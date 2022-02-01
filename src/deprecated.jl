@@ -9,3 +9,5 @@ Base.@deprecate pairwise!(
     r::AbstractMatrix, dist::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     dims::Union{Nothing,Integer}=nothing
 ) pairwise!(dist, r, a, b; dims=dims)
+
+Base.@deprecate colwise!(r::AbstractArray, dist::PreMetric, a, b) colwise!(dist, r, a, b)

@@ -133,7 +133,7 @@ storage (without creating a new array) using the following syntax
 (`i` being either `1` or `2`):
 
 ```julia
-colwise!(r, dist, X, Y)
+colwise!(dist, r, X, Y)
 pairwise!(dist, R, X, Y, dims=i)
 pairwise!(dist, R, X, dims=i)
 ```
