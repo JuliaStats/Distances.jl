@@ -452,17 +452,13 @@ end
         end
         A = rand(T, length(x), length(x))
         S = A + A' - I
-        # TODO: let Distances.jl throw in next breaking release
-        # @test_throws ArgumentError SqMahalanobis(A)
-        @test_logs (:warn, "matrix is not positive semidefinite") SqMahalanobis(S)
-        # TODO: let Distances.jl throw in next breaking release
-        # @test_throws ArgumentError Mahalanobis(A)
-        @test_logs (:warn, "matrix is not positive semidefinite") Mahalanobis(S)
+        @test_throws ArgumentError SqMahalanobis(A)
+        @test_throws ArgumentError SqMahalanobis(S)
+        @test_throws ArgumentError Mahalanobis(A)
+        @test_throws ArgumentError Mahalanobis(S)
         # test that semiposdef'ness can be overwritten, avoiding all checks
-        @test_logs (:warn, "matrix is not symmetric/Hermitian") SqMahalanobis(A, skipchecks=true)
-        @test SqMahalanobis(A, skipchecks=true) isa SemiMetric
-        @test_logs (:warn, "matrix is not symmetric/Hermitian") Mahalanobis(A, skipchecks=true)
-        @test Mahalanobis(A, skipchecks=true) isa Metric
+        @test_throws ArgumentError SqMahalanobis(A, skipchecks=true)
+        @test_throws ArgumentError Mahalanobis(A, skipchecks=true)
         @test SqMahalanobis(S, skipchecks=true) isa SemiMetric
         @test Mahalanobis(S, skipchecks=true) isa Metric
     end
