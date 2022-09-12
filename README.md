@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/JuliaStats/Distances.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaStats/Distances.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![Coverage Status](http://codecov.io/github/JuliaStats/Distances.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaStats/Distances.jl?branch=master)
 
-A Julia package for evaluating distances(metrics) between vectors.
+A Julia package for evaluating distances (metrics) between vectors.
 
 This package also provides optimized functions to compute column-wise and
 pairwise distances, which are often substantially faster than a straightforward

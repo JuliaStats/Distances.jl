@@ -308,6 +308,55 @@ Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::AbstractArray, b
     end
 end
 
+eval_op_a(d, ai, b) = eval_op(d, ai, zero(eltype(b)))
+eval_op_b(d, bi, a) = eval_op(d, zero(eltype(a)), bi)
+
+# It is assumed that eval_reduce(d, s, eval_op(d, zero(eltype(a)), zero(eltype(b)))) == s
+# This justifies ignoring all terms where both inputs are zero.
+Base.@propagate_inbounds function _evaluate(d::UnionMetrics, a::SparseVectorUnion, b::SparseVectorUnion, ::Nothing)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    if length(a) == 0
+        return zero(result_type(d, a, b))
+    end
+    anzind = nonzeroinds(a)
+    bnzind = nonzeroinds(b)
+    anzval = nonzeros(a)
+    bnzval = nonzeros(b)
+    ma = nnz(a)
+    mb = nnz(b)
+    ia = 1; ib = 1
+    s = eval_start(d, a, b)
+    @inbounds while ia <= ma && ib <= mb
+        ja = anzind[ia]
+        jb = bnzind[ib]
+        if ja == jb
+            v = eval_op(d, anzval[ia], bnzval[ib])
+            ia += 1; ib += 1
+        elseif ja < jb
+            v = eval_op_a(d, anzval[ia], b)
+            ia += 1
+        else
+            v = eval_op_b(d, bnzval[ib], a)
+            ib += 1
+        end
+        s = eval_reduce(d, s, v)
+    end
+    @inbounds while ia <= ma
+        v = eval_op_a(d, anzval[ia], b)
+        s = eval_reduce(d, s, v)
+        ia += 1
+    end
+    @inbounds while ib <= mb
+        v = eval_op_b(d, bnzval[ib], a)
+        s = eval_reduce(d, s, v)
+        ib += 1
+    end
+    return eval_end(d, s)
+end
+
+
 _evaluate(dist::UnionMetrics, a::Number, b::Number, ::Nothing) = eval_end(dist, eval_op(dist, a, b))
 function _evaluate(dist::UnionMetrics, a::Number, b::Number, p)
     length(p) != 1 && throw(DimensionMismatch("inputs are scalars but parameters have length $(length(p))."))
@@ -574,7 +623,7 @@ end
         a = s1[1] + s2[1]
         b = s1[2] + s2[2]
         c = s1[3] + s2[3]
-        d = s1[4] + s1[4]
+        d = s1[4] + s2[4]
     end
     a, b, c, d
 end
@@ -731,10 +780,50 @@ function _pairwise!(r::AbstractMatrix, dist::Union{WeightedSqEuclidean,WeightedE
     r
 end
 
+# MeanSqDeviation, RMSDeviation, NormRMSDeviation
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a, b)
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix, b::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a, b))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix, b::AbstractMatrix)
+    _pairwise!(r, RMSDeviation(), a, b)
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
+    return r
+end
+
+function _pairwise!(r::AbstractMatrix, dist::MeanSqDeviation, a::AbstractMatrix)
+    _pairwise!(r, SqEuclidean(), a)
+    # TODO: Replace by rdiv!(r, size(a, 1)) once julia compat ≥v1.2
+    s = size(a, 1)
+    @simd for I in eachindex(r)
+        @inbounds r[I] /= s
+    end
+    return r
+end
+_pairwise!(r::AbstractMatrix, dist::RMSDeviation, a::AbstractMatrix) =
+    sqrt!(_pairwise!(r, MeanSqDeviation(), a))
+function _pairwise!(r::AbstractMatrix, dist::NormRMSDeviation, a::AbstractMatrix)
+    _pairwise!(r, RMSDeviation(), a)
+    @views for (i, j) in zip(axes(r, 1), axes(a, 2))
+        amin, amax = extrema(a[:,j])
+        r[i,:] ./= amax - amin
+    end
+    return r
+end
+
 # CosineDist
 
-function _pairwise!(r::AbstractMatrix, ::CosineDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+function _pairwise!(r::AbstractMatrix, ::CosineDist, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     m, na, nb = get_pairwise_dims(r, a, b)
     inplace = promote_type(eltype(r), typeof(oneunit(eltype(a))'oneunit(eltype(b)))) === eltype(r)
@@ -772,10 +861,7 @@ end
 # 2. pre-calculated `_centralize_colwise` avoids four times of redundant computations
 #    of `_centralize` -- ~4x speed up
 _centralize_colwise(x::AbstractMatrix) = x .- mean(x, dims=1)
-function _pairwise!(r::AbstractMatrix, ::CorrDist,
-                    a::AbstractMatrix, b::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix, b::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a), _centralize_colwise(b))
-end
-function _pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix)
+_pairwise!(r::AbstractMatrix, ::CorrDist, a::AbstractMatrix) =
     _pairwise!(r, CosineDist(), _centralize_colwise(a))
-end

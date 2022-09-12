@@ -2,6 +2,7 @@ module Distances
 
 using LinearAlgebra
 using Statistics
+using SparseArrays: SparseVectorUnion, nonzeroinds, nonzeros, nnz
 import StatsAPI: pairwise, pairwise!
 
 export
@@ -102,8 +103,8 @@ export
 
 if VERSION < v"1.2-"
     import Base: has_offset_axes
-    require_one_based_indexing(A...) = 
-        !has_offset_axes(A...) || 
+    require_one_based_indexing(A...) =
+        !has_offset_axes(A...) ||
             throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
 else
     import Base: require_one_based_indexing
