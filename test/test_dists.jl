@@ -672,25 +672,56 @@ function test_pairwise(dist, x, y, T)
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
+
+        # In-place computations
+        rxy2 = zeros(T, nx, ny)
+        @test @test_deprecated(pairwise!(rxy2, dist, x, y; dims=2)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(T))
+        @test pairwise!(dist, rxy2, x, y; dims=2) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        rxx2 = zeros(T, nx, nx)
+        @test @test_deprecated(pairwise!(rxx2, dist, x; dims=2)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(T))
+        @test pairwise!(dist, rxx2, x; dims=2) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        fill!(rxy2, zero(T))
+        @test @test_deprecated(pairwise!(rxy2, dist, permutedims(x), permutedims(y); dims=1)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(T))
+        @test pairwise!(dist, rxy2, permutedims(x), permutedims(y); dims=1) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        fill!(rxx2, zero(T))
+        @test @test_deprecated(pairwise!(rxx2, dist, permutedims(x); dims=1)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(T))
+        @test pairwise!(dist, rxx2, permutedims(x); dims=1) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        # General arguments (iterators and vectors of vectors)
         vecx = (x[:, i] for i in 1:nx)
         vecy = (y[:, i] for i in 1:ny)
         for (vecx, vecy) in ((vecx, vecy), (collect(vecx), collect(vecy)))
             @test pairwise(dist, vecx, vecy) ≈ rxy
             @test pairwise(dist, vecx) ≈ rxx
 
-            rxy2 = similar(rxy)
+            fill!(rxy2, zero(T))
             @test @test_deprecated(pairwise!(rxy2, dist, vecx, vecy)) ≈ rxy
             @test rxy2 ≈ rxy
-            rxy3 = similar(rxy)
-            @test pairwise!(dist, rxy3, vecx, vecy) ≈ rxy
-            @test rxy3 ≈ rxy
+            fill!(rxy2, zero(T))
+            @test pairwise!(dist, rxy2, vecx, vecy) ≈ rxy
+            @test rxy2 ≈ rxy
 
-            rxx2 = similar(rxx)
+            fill!(rxx2, zero(T))
             @test @test_deprecated(pairwise!(rxx2, dist, vecx)) ≈ rxx
             @test rxx2 ≈ rxx
-            rxx3 = similar(rxx)
-            @test pairwise!(dist, rxx3, vecx) ≈ rxx
-            @test rxx3 ≈ rxx
+            fill!(rxx2, zero(T))
+            @test pairwise!(dist, rxx2, vecx) ≈ rxx
+            @test rxx2 ≈ rxx
         end
     end
 end
@@ -814,6 +845,37 @@ function test_scalar_pairwise(dist, x, y, T)
         @test pairwise(dist, permutedims(x), permutedims(y), dims=2) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=2) ≈ rxx
         @test_throws DimensionMismatch pairwise(dist, permutedims(x), permutedims(y), dims=1)
+
+        # In-place computations
+        rxy2 = similar(rxy)
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test @test_deprecated(pairwise!(rxy2, dist, x, y)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test pairwise!(dist, rxy2, x, y) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        rxx2 = similar(rxx)
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test @test_deprecated(pairwise!(rxx2, dist, x)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test pairwise!(dist, rxx2, x) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test @test_deprecated(pairwise!(rxy2, dist, permutedims(x), permutedims(y); dims=2)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test pairwise!(dist, rxy2, permutedims(x), permutedims(y); dims=2) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test @test_deprecated(pairwise!(rxx2, dist, permutedims(x); dims=2)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test pairwise!(dist, rxx2, permutedims(x); dims=2) ≈ rxx
+        @test rxx2 ≈ rxx
     end
 end
 
