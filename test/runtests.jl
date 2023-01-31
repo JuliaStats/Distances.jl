@@ -11,3 +11,8 @@ using Unitful.DefaultSymbols
 
 include("F64.jl")
 include("test_dists.jl")
+
+# Test ChainRules definitions on Julia versions that support weak dependencies
+if isdefined(Base, :get_extension)
+    include("chainrules.jl")
+end
