@@ -36,7 +36,7 @@ using ChainRulesTestUtils
             # Pairwise distances
             # Finite differencing yields impressively inaccurate derivatives for `Euclidean`,
             # see https://github.com/FluxML/Zygote.jl/blob/45bf883491d2b52580d716d577e2fa8577a07230/test/gradcheck.jl#L1206
-            kwargs = metric isa Euclidean ? (rtol = 1e-5,) : ()
+            kwargs = metric isa Euclidean ? (rtol = 1e-4,) : ()
             test_rrule(pairwise, metric ⊢ NoTangent(), X, X; kwargs...)
             test_rrule(pairwise, metric ⊢ NoTangent(), X, X; fkwargs=(dims=1,), kwargs...)
             test_rrule(pairwise, metric ⊢ NoTangent(), X, X; fkwargs=(dims=2,), kwargs...)
