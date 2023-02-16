@@ -12,7 +12,7 @@ StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 
 [extensions]
-ChainRulesCoreExt = "ChainRulesCore"
+DistancesChainRulesCoreExt = "ChainRulesCore"
 
 [compat]
 ChainRulesCore = "1"

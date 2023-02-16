@@ -1,4 +1,4 @@
-module ChainRulesCoreExt
+module DistancesChainRulesCoreExt
 
 using Distances
 
