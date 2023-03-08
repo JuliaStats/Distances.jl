@@ -50,7 +50,7 @@ end
     return sqab, asum, bsum
 end
 
-@inline function _bhattacharyya_coeff(a::SparseVectorUnion{<:Number}, b::SparseVectorUnion{<:Number})
+@inline function _bhattacharyya_coeff(a::SparseVectorUnion, b::SparseVectorUnion)
     anzind = nonzeroinds(a)
     bnzind = nonzeroinds(b)
     anzval = nonzeros(a)
