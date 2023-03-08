@@ -34,11 +34,11 @@ end
     end
     return sqab, asum, bsum
 end
-@inline function _bhattacharyya_coeff(a::AbstractVector{Ta}, b::AbstractVector{Tb}) where {Ta<:Number,Tb<:Number}
-    T = typeof(sqrt(oneunit(Ta)*oneunit(Tb)))
+@inline function _bhattacharyya_coeff(a::AbstractVector, b::AbstractVector)
+    T = typeof(sqrt(oneunit(eltype(a))*oneunit(eltype(b))))
     sqab = zero(T)
-    asum = zero(Ta)
-    bsum = zero(Tb)
+    asum = zero(eltype(a))
+    bsum = zero(eltype(b))
 
     @simd for i in eachindex(a, b)
         @inbounds ai = a[i]
