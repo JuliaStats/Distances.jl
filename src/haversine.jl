@@ -14,21 +14,7 @@ end
 Haversine{T}() where {T<:Number} = Haversine(T(6_371_000))
 Haversine() = Haversine{Int}()
 
-function (dist::Haversine)(x, y)
-    length(x) == length(y) == 2 || haversine_error(dist)
-
-    @inbounds λ₁, φ₁ = x
-    @inbounds λ₂, φ₂ = y
-
-    Δλ = λ₂ - λ₁  # longitudes
-    Δφ = φ₂ - φ₁  # latitudes
-
-    # haversine formula
-    a = sind(Δφ/2)^2 + cosd(φ₁)*cosd(φ₂)*sind(Δλ/2)^2
-
-    # distance on the sphere
-    2 * (dist.radius * asin( min(√a, one(a)) )) # take care of floating point errors
-end
+(dist::Haversine)(x, y) = dist.radius * spherical_angle(x, y)
 
 haversine(x, y, radius::Number=6_371_000) = Haversine(radius)(x, y)
 
