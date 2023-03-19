@@ -14,9 +14,9 @@ end
 Haversine{T}() where {T<:Number} = Haversine(T(6_371_000))
 Haversine() = Haversine{Int}()
 
-(dist::Haversine)(x, y) = dist.radius * spherical_angle(x, y)
+(dist::Haversine)(x, y) = dist.radius * spherical_angle(deg2rad.(x), deg2rad.(y))
 
-haversine(x, y, radius::Number=6_371_000) = Haversine(radius)(x, y)
+haversine(x, y, radius::Number=6_371_000) = radius * SphericalAngle()(deg2rad.(x), deg2rad.(y))
 
 @noinline haversine_error(dist) = throw(ArgumentError("expected both inputs to have length 2 in $dist distance"))
 
