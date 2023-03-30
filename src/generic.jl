@@ -317,7 +317,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     m = size(a, dims)
     n = size(b, dims)
-    r = Matrix{result_type(metric, a, b)}(undef, m, n)
+    r = similar(a, result_type(metric, a, b), m, n)
     pairwise!(r, metric, a, b, dims=dims)
 end
 
@@ -326,7 +326,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     n = size(a, dims)
-    r = Matrix{result_type(metric, a, a)}(undef, n, n)
+    r = similar(a, result_type(metric, a, a), n, n)
     pairwise!(r, metric, a, dims=dims)
 end
 
