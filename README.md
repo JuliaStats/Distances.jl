@@ -141,6 +141,21 @@ pairwise!(dist, R, X, dims=i)
 Please pay attention to the difference, the functions for inplace computation are
 `colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
 
+#### Deprecated alternative syntax
+
+The syntax
+
+```julia
+colwise!(r, dist, X, Y)
+pairwise!(R, dist, X, Y, dims=i)
+pairwise!(R, dist, X, dims=i)
+```
+
+with the first two arguments (metric and results) interchanged is supported as well.
+However, its use is discouraged since
+[it is deprecated](https://github.com/JuliaStats/Distances.jl/pull/239) and will be
+removed in a future release.
+
 ## Distance type hierarchy
 
 The distances are organized into a type hierarchy.
