@@ -7,7 +7,8 @@ A Julia package for evaluating distances (metrics) between vectors.
 
 This package also provides optimized functions to compute column-wise and
 pairwise distances, which are often substantially faster than a straightforward
-loop implementation. (See the benchmark section below for details).
+loop implementation.
+(See the benchmark section below for details).
 
 ## Supported distances
 
