@@ -8,7 +8,12 @@ const CRC = ChainRulesCore
 
 ## SqEuclidean
 
-function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, dist::SqEuclidean, x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
+function CRC.rrule(
+    ::CRC.RuleConfig{>:CRC.HasReverseMode},
+    dist::SqEuclidean,
+    x::AbstractVector{<:Real},
+    y::AbstractVector{<:Real}
+)
     Ω = dist(x, y)
 
     function SqEuclidean_pullback(ΔΩ)
