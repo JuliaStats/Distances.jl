@@ -22,7 +22,7 @@ loop implementation. (See the benchmark section below for details).
 * Minkowski distance
 * Hamming distance
 * Cosine distance
-* Correlation distance
+* Correlation distance (requires loading `Statistics.jl`)
 * Chi-square distance
 * Kullback-Leibler divergence
 * Generalized Kullback-Leibler divergence

@@ -1,8 +1,6 @@
 module Distances
 
 using LinearAlgebra
-using Statistics
-using SparseArrays: SparseVectorUnion, nonzeroinds, nonzeros, nnz
 import StatsAPI: pairwise, pairwise!
 
 export
@@ -119,5 +117,10 @@ include("bhattacharyya.jl")
 include("bregman.jl")
 
 include("deprecated.jl")
+
+@static if !isdefined(Base, :get_extension)
+    include("../ext/DistancesSparseArraysExt.jl")
+    include("../ext/DistancesStatisticsExt.jl")
+end
 
 end # module end
