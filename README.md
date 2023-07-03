@@ -133,13 +133,28 @@ storage (without creating a new array) using the following syntax
 (`i` being either `1` or `2`):
 
 ```julia
+colwise!(dist, r, X, Y)
+pairwise!(dist, R, X, Y, dims=i)
+pairwise!(dist, R, X, dims=i)
+```
+
+Please pay attention to the difference, the functions for inplace computation are
+`colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
+
+#### Deprecated alternative syntax
+
+The syntax
+
+```julia
 colwise!(r, dist, X, Y)
 pairwise!(R, dist, X, Y, dims=i)
 pairwise!(R, dist, X, dims=i)
 ```
 
-Please pay attention to the difference, the functions for inplace computation are
-`colwise!` and `pairwise!` (instead of `colwise` and `pairwise`).
+with the first two arguments (metric and results) interchanged is supported as well.
+However, its use is discouraged since
+[it is deprecated](https://github.com/JuliaStats/Distances.jl/pull/239) and will be
+removed in a future release.
 
 ## Distance type hierarchy
 

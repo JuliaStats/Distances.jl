@@ -46,7 +46,7 @@ __eltype(::Base.EltypeUnknown, a) = _eltype(typeof(first(a)))
 # Generic column-wise evaluation
 
 """
-    colwise!(r::AbstractArray, metric::PreMetric, a, b)
+    colwise!(metric::PreMetric, r::AbstractArray, a, b)
 
 Compute distances between corresponding elements of the iterable collections
 `a` and `b` according to distance `metric`, and store the result in `r`.
@@ -54,7 +54,7 @@ Compute distances between corresponding elements of the iterable collections
 `a` and `b` must have the same number of elements, `r` must be an array of length
 `length(a) == length(b)`.
 """
-function colwise!(r::AbstractArray, metric::PreMetric, a, b)
+function colwise!(metric::PreMetric, r::AbstractArray, a, b)
     require_one_based_indexing(r)
     n = length(a)
     length(b) == n || throw(DimensionMismatch("iterators have different lengths"))
@@ -65,7 +65,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a, b)
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractVector, b::AbstractMatrix)
     require_one_based_indexing(r)
     n = size(b, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -75,7 +75,7 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractVector, b::Abs
     r
 end
 
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractMatrix, b::AbstractVector)
     require_one_based_indexing(r)
     n = size(a, 2)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -86,11 +86,11 @@ function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::Abs
 end
 
 """
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractMatrix, b::AbstractMatrix)
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractVector, b::AbstractMatrix)
-    colwise!(r::AbstractArray, metric::PreMetric,
+    colwise!(metric::PreMetric, r::AbstractArray,
              a::AbstractMatrix, b::AbstractVector)
 
 Compute distances between each corresponding columns of `a` and `b` according
@@ -105,7 +105,7 @@ vector. `r` must be an array of length `maximum(size(a, 2), size(b, 2))`.
     If both `a` and `b` are vectors, the generic, iterator-based method of
     `colwise` applies.
 """
-function colwise!(r::AbstractArray, metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
+function colwise!(metric::PreMetric, r::AbstractArray, a::AbstractMatrix, b::AbstractMatrix)
     require_one_based_indexing(r, a, b)
     n = get_common_ncols(a, b)
     length(r) == n || throw(DimensionMismatch("Incorrect size of r."))
@@ -126,7 +126,7 @@ Compute distances between corresponding elements of the iterable collections
 function colwise(metric::PreMetric, a, b)
     n = get_common_length(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 """
@@ -148,25 +148,25 @@ vector.
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix)
     n = get_common_ncols(a, b)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractVector, b::AbstractMatrix)
     n = size(b, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 function colwise(metric::PreMetric, a::AbstractMatrix, b::AbstractVector)
     n = size(a, 2)
     r = Vector{result_type(metric, a, b)}(undef, n)
-    colwise!(r, metric, a, b)
+    colwise!(metric, r, a, b)
 end
 
 
 # Generic pairwise evaluation
 
-function _pairwise!(r::AbstractMatrix, metric::PreMetric, a, b=a)
+function _pairwise!(metric::PreMetric, r::AbstractMatrix, a, b=a)
     require_one_based_indexing(r)
     na = length(a)
     nb = length(b)
@@ -177,7 +177,7 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric, a, b=a)
     r
 end
 
-function _pairwise!(r::AbstractMatrix, metric::PreMetric,
+function _pairwise!(metric::PreMetric, r::AbstractMatrix,
                     a::AbstractMatrix, b::AbstractMatrix=a)
     require_one_based_indexing(r, a, b)
     na = size(a, 2)
@@ -192,7 +192,7 @@ function _pairwise!(r::AbstractMatrix, metric::PreMetric,
     r
 end
 
-function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
+function _pairwise!(metric::SemiMetric, r::AbstractMatrix, a)
     require_one_based_indexing(r)
     n = length(a)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
@@ -208,7 +208,7 @@ function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a)
     r
 end
 
-function _pairwise!(r::AbstractMatrix, metric::SemiMetric, a::AbstractMatrix)
+function _pairwise!(metric::SemiMetric, r::AbstractMatrix, a::AbstractMatrix)
     require_one_based_indexing(r)
     n = size(a, 2)
     size(r) == (n, n) || throw(DimensionMismatch("Incorrect size of r."))
@@ -237,7 +237,7 @@ function deprecated_dims(dims::Union{Nothing,Integer})
 end
 
 """
-    pairwise!(r::AbstractMatrix, metric::PreMetric,
+    pairwise!(metric::PreMetric, r::AbstractMatrix,
               a::AbstractMatrix, b::AbstractMatrix=a; dims)
 
 Compute distances between each pair of rows (if `dims=1`) or columns (if `dims=2`)
@@ -247,7 +247,7 @@ If a single matrix `a` is provided, compute distances between its rows or column
 `a` and `b` must have the same numbers of columns if `dims=1`, or of rows if `dims=2`.
 `r` must be a matrix with size `size(a, dims) × size(b, dims)`.
 """
-function pairwise!(r::AbstractMatrix, metric::PreMetric,
+function pairwise!(metric::PreMetric, r::AbstractMatrix,
                    a::AbstractMatrix, b::AbstractMatrix;
                    dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
@@ -266,13 +266,13 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric,
     size(r) == (na, nb) ||
         throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((na, nb)))."))
     if dims == 1
-        _pairwise!(r, metric, permutedims(a), permutedims(b))
+        _pairwise!(metric, r, permutedims(a), permutedims(b))
     else
-        _pairwise!(r, metric, a, b)
+        _pairwise!(metric, r, a, b)
     end
 end
 
-function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
+function pairwise!(metric::PreMetric, r::AbstractMatrix, a::AbstractMatrix;
                    dims::Union{Nothing,Integer}=nothing)
     dims = deprecated_dims(dims)
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
@@ -284,14 +284,14 @@ function pairwise!(r::AbstractMatrix, metric::PreMetric, a::AbstractMatrix;
     size(r) == (n, n) ||
         throw(DimensionMismatch("Incorrect size of r (got $(size(r)), expected $((n, n)))."))
     if dims == 1
-        _pairwise!(r, metric, permutedims(a))
+        _pairwise!(metric, r, permutedims(a))
     else
-        _pairwise!(r, metric, a)
+        _pairwise!(metric, r, a)
     end
 end
 
 """
-    pairwise!(r::AbstractMatrix, metric::PreMetric, a, b=a)
+    pairwise!(metric::PreMetric, r::AbstractMatrix, a, b=a)
 
 Compute distances between each element of collection `a` and each element of
 collection `b` according to distance `metric`, and store the result in `r`.
@@ -299,8 +299,8 @@ If a single iterable `a` is provided, compute distances between its elements.
 
 `r` must be a matrix with size `length(a) × length(b)`.
 """
-pairwise!(r::AbstractMatrix, metric::PreMetric, a, b) = _pairwise!(r, metric, a, b)
-pairwise!(r::AbstractMatrix, metric::PreMetric, a) = _pairwise!(r, metric, a)
+pairwise!(metric::PreMetric, r::AbstractMatrix, a, b) = _pairwise!(metric, r, a, b)
+pairwise!(metric::PreMetric, r::AbstractMatrix, a) = _pairwise!(metric, r, a)
 
 """
     pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix=a; dims)
@@ -318,7 +318,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix, b::AbstractMatrix;
     m = size(a, dims)
     n = size(b, dims)
     r = Matrix{result_type(metric, a, b)}(undef, m, n)
-    pairwise!(r, metric, a, b, dims=dims)
+    pairwise!(metric, r, a, b, dims=dims)
 end
 
 function pairwise(metric::PreMetric, a::AbstractMatrix;
@@ -327,7 +327,7 @@ function pairwise(metric::PreMetric, a::AbstractMatrix;
     dims in (1, 2) || throw(ArgumentError("dims should be 1 or 2 (got $dims)"))
     n = size(a, dims)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
-    pairwise!(r, metric, a, dims=dims)
+    pairwise!(metric, r, a, dims=dims)
 end
 
 """
@@ -341,11 +341,11 @@ function pairwise(metric::PreMetric, a, b)
     m = length(a)
     n = length(b)
     r = Matrix{result_type(metric, a, b)}(undef, m, n)
-    _pairwise!(r, metric, a, b)
+    _pairwise!(metric, r, a, b)
 end
 
 function pairwise(metric::PreMetric, a)
     n = length(a)
     r = Matrix{result_type(metric, a, a)}(undef, n, n)
-    _pairwise!(r, metric, a)
+    _pairwise!(metric, r, a)
 end
