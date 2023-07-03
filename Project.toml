@@ -17,7 +17,7 @@ DistancesSparseArraysExt = "SparseArrays"
 DistancesStatisticsExt = "Statistics"
 
 [compat]
-Statistics = "1"
+Statistics = "0, 1"
 StatsAPI = "1"
 julia = "1"
 
