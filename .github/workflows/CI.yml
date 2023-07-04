@@ -33,7 +33,11 @@ jobs:
           arch: ${{ matrix.arch }}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        with:
+          coverage: ${{ matrix.version != '1' }}
       - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.version != '1'
       - uses: codecov/codecov-action@v1
+        if: matrix.version != '1'
         with:
           file: lcov.info
