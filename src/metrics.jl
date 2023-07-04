@@ -412,6 +412,9 @@ end
 const cosine_dist = CosineDist()
 
 # CorrDist
+_centralize(x) = x .- mean(x)
+(::CorrDist)(a, b) = CosineDist()(_centralize(a), _centralize(b))
+(::CorrDist)(a::Number, b::Number) = CosineDist()(zero(mean(a)), zero(mean(b)))
 const corr_dist = CorrDist()
 
 # ChiSqDist

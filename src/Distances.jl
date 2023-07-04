@@ -1,6 +1,7 @@
 module Distances
 
 using LinearAlgebra
+using Statistics: mean
 import StatsAPI: pairwise, pairwise!
 
 export
@@ -120,7 +121,6 @@ include("deprecated.jl")
 
 @static if !isdefined(Base, :get_extension)
     include("../ext/DistancesSparseArraysExt.jl")
-    include("../ext/DistancesStatisticsExt.jl")
 end
 
 end # module end
