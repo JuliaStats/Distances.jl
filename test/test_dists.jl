@@ -388,10 +388,10 @@ end # testset
     @test_throws DimensionMismatch sqmahalanobis(q, q, Q)
     mat23 = [0.3 0.2 0.0; 0.1 0.0 0.4]
     mat22 = [0.3 0.2; 0.1 0.4]
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat23)
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, q)
-    @test_throws DimensionMismatch colwise!(mat23, Euclidean(), mat23, mat22)
-    @test_throws DimensionMismatch colwise!(mat23, Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat22)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, mat23)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, q)
+    @test_throws DimensionMismatch colwise!(Euclidean(), mat23, mat23, mat22)
+    @test_throws DimensionMismatch colwise!(Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x), mat23, mat23, mat22)
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> 2*x)([1, 2, 3], [1, 2])
     @test_throws DimensionMismatch Bregman(x -> sqeuclidean(x, zero(x)), x -> [1, 2])([1, 2, 3], [1, 2, 3])
     sv1 = sprand(10, .2)
@@ -559,6 +559,7 @@ function test_colwise(dist, x, y, T)
         r2 = zeros(T, n)
         r3 = zeros(T, n)
         r4 = zeros(T, 1, n)
+        r5 = zeros(T, 1, n)
         for j = 1:n
             r1[j] = dist(x[:, j], y[:, j])
             r2[j] = dist(x[:, 1], y[:, j])
@@ -567,7 +568,10 @@ function test_colwise(dist, x, y, T)
         # ≈ and all( .≈ ) seem to behave slightly differently for F64
         @test all(colwise(dist, x, y) .≈ r1)
         @test all(colwise(dist, (x[:,i] for i in axes(x, 2)), (y[:,i] for i in axes(y, 2))) .≈ r1)
-        colwise!(r4, dist, x, y)
+        
+        @test colwise!(dist, r4, x, y) ≈ @test_deprecated(colwise!(r5, dist, x, y))
+        @test r4 ≈ r5
+
         @test all(r4[i] ≈ r1[i] for i in 1:n)
         @test all(colwise(dist, x[:, 1], y) .≈ r2)
         @test all(colwise(dist, x, y[:, 1]) .≈ r3)
@@ -668,13 +672,56 @@ function test_pairwise(dist, x, y, T)
         @test pairwise(dist, x, dims=2) ≈ rxx
         @test pairwise(dist, permutedims(x), permutedims(y), dims=1) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=1) ≈ rxx
+
+        # In-place computations
+        rxy2 = zeros(T, nx, ny)
+        @test @test_deprecated(pairwise!(rxy2, dist, x, y; dims=2)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(T))
+        @test pairwise!(dist, rxy2, x, y; dims=2) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        rxx2 = zeros(T, nx, nx)
+        @test @test_deprecated(pairwise!(rxx2, dist, x; dims=2)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(T))
+        @test pairwise!(dist, rxx2, x; dims=2) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        fill!(rxy2, zero(T))
+        @test @test_deprecated(pairwise!(rxy2, dist, permutedims(x), permutedims(y); dims=1)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(T))
+        @test pairwise!(dist, rxy2, permutedims(x), permutedims(y); dims=1) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        fill!(rxx2, zero(T))
+        @test @test_deprecated(pairwise!(rxx2, dist, permutedims(x); dims=1)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(T))
+        @test pairwise!(dist, rxx2, permutedims(x); dims=1) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        # General arguments (iterators and vectors of vectors)
         vecx = (x[:, i] for i in 1:nx)
         vecy = (y[:, i] for i in 1:ny)
         for (vecx, vecy) in ((vecx, vecy), (collect(vecx), collect(vecy)))
             @test pairwise(dist, vecx, vecy) ≈ rxy
             @test pairwise(dist, vecx) ≈ rxx
-            @test pairwise!(similar(rxy), dist, vecx, vecy) ≈ rxy
-            @test pairwise!(similar(rxx), dist, vecx) ≈ rxx
+
+            fill!(rxy2, zero(T))
+            @test @test_deprecated(pairwise!(rxy2, dist, vecx, vecy)) ≈ rxy
+            @test rxy2 ≈ rxy
+            fill!(rxy2, zero(T))
+            @test pairwise!(dist, rxy2, vecx, vecy) ≈ rxy
+            @test rxy2 ≈ rxy
+
+            fill!(rxx2, zero(T))
+            @test @test_deprecated(pairwise!(rxx2, dist, vecx)) ≈ rxx
+            @test rxx2 ≈ rxx
+            fill!(rxx2, zero(T))
+            @test pairwise!(dist, rxx2, vecx) ≈ rxx
+            @test rxx2 ≈ rxx
         end
     end
 end
@@ -798,6 +845,37 @@ function test_scalar_pairwise(dist, x, y, T)
         @test pairwise(dist, permutedims(x), permutedims(y), dims=2) ≈ rxy
         @test pairwise(dist, permutedims(x), dims=2) ≈ rxx
         @test_throws DimensionMismatch pairwise(dist, permutedims(x), permutedims(y), dims=1)
+
+        # In-place computations
+        rxy2 = similar(rxy)
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test @test_deprecated(pairwise!(rxy2, dist, x, y)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test pairwise!(dist, rxy2, x, y) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        rxx2 = similar(rxx)
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test @test_deprecated(pairwise!(rxx2, dist, x)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test pairwise!(dist, rxx2, x) ≈ rxx
+        @test rxx2 ≈ rxx
+
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test @test_deprecated(pairwise!(rxy2, dist, permutedims(x), permutedims(y); dims=2)) ≈ rxy
+        @test rxy2 ≈ rxy
+        fill!(rxy2, zero(eltype(rxy2)))
+        @test pairwise!(dist, rxy2, permutedims(x), permutedims(y); dims=2) ≈ rxy
+        @test rxy2 ≈ rxy
+
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test @test_deprecated(pairwise!(rxx2, dist, permutedims(x); dims=2)) ≈ rxx
+        @test rxx2 ≈ rxx
+        fill!(rxx2, zero(eltype(rxx2)))
+        @test pairwise!(dist, rxx2, permutedims(x); dims=2) ≈ rxx
+        @test rxx2 ≈ rxx
     end
 end
 
@@ -972,13 +1050,13 @@ end
     a = rand(2, 41)
     b = rand(2, 41)
     z = zeros(41)
-    colwise!(z, d, a, b)
+    colwise!(d, z, a, b)
     # This fails when bounds checking is enforced
     bounds = Base.JLOptions().check_bounds
     if bounds == 0
-        @test (@allocated colwise!(z, d, a, b)) == 0
+        @test (@allocated colwise!(d, z, a, b)) == 0
     else
-        @test_broken (@allocated colwise!(z, d, a, b)) == 0
+        @test_broken (@allocated colwise!(d, z, a, b)) == 0
     end
 end
 =#

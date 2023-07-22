@@ -34,11 +34,11 @@ end
     end
     return sqab, asum, bsum
 end
-@inline function _bhattacharyya_coeff(a::AbstractVector{Ta}, b::AbstractVector{Tb}) where {Ta<:Number,Tb<:Number}
-    T = typeof(sqrt(oneunit(Ta)*oneunit(Tb)))
+@inline function _bhattacharyya_coeff(a::AbstractVector, b::AbstractVector)
+    T = typeof(sqrt(oneunit(eltype(a))*oneunit(eltype(b))))
     sqab = zero(T)
-    asum = zero(Ta)
-    bsum = zero(Tb)
+    asum = zero(eltype(a))
+    bsum = zero(eltype(b))
 
     @simd for i in eachindex(a, b)
         @inbounds ai = a[i]
@@ -48,32 +48,6 @@ end
         bsum += bi
     end
     return sqab, asum, bsum
-end
-
-@inline function _bhattacharyya_coeff(a::SparseVectorUnion{<:Number}, b::SparseVectorUnion{<:Number})
-    anzind = nonzeroinds(a)
-    bnzind = nonzeroinds(b)
-    anzval = nonzeros(a)
-    bnzval = nonzeros(b)
-    ma = nnz(a)
-    mb = nnz(b)
-
-    ia = 1; ib = 1
-    s = zero(typeof(sqrt(oneunit(eltype(a))*oneunit(eltype(b)))))
-    @inbounds while ia <= ma && ib <= mb
-        ja = anzind[ia]
-        jb = bnzind[ib]
-        if ja == jb
-            s += sqrt(anzval[ia] * bnzval[ib])
-            ia += 1; ib += 1
-        elseif ja < jb
-            ia += 1
-        else
-            ib += 1
-        end
-    end
-    # efficient method for sum for SparseVectorView is missing
-    return s, sum(anzval), sum(bnzval)
 end
 
 # Faster pair- and column-wise versions TBD...
