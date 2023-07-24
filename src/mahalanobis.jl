@@ -18,6 +18,7 @@ julia> dist = Mahalanobis(A, skipchecks=true)
 ┌ Warning: matrix is not symmetric/Hermitian
 └ @ Distances ...
 Mahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
+```
 """
 struct Mahalanobis{M<:AbstractMatrix} <: Metric
     qmat::M
@@ -49,6 +50,7 @@ julia> dist = SqMahalanobis(A, skipchecks=true)
 ┌ Warning: matrix is not symmetric/Hermitian
 └ @ Distances ...
 SqMahalanobis{Matrix{Int64}}([1 4 7; 2 5 8; 3 6 9])
+```
 """
 struct SqMahalanobis{M<:AbstractMatrix} <: SemiMetric
     qmat::M
