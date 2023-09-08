@@ -1,12 +1,14 @@
 using ChainRulesCore
 using ChainRulesTestUtils
+using StableRNGs
 
 @testset "ChainRulesCore extension" begin
     n = 4
-    x = randn(n)
-    y = randn(n)
-    X = randn(n, 3)
-    Y = randn(n, 3)
+    rng = StableRNG(100)
+    x = randn(rng, n)
+    y = randn(rng, n)
+    X = randn(rng, n, 3)
+    Y = randn(rng, n, 3)
     Xrep = repeat(x, 1, 3)
     Yrep = repeat(y, 1, 3)
 
