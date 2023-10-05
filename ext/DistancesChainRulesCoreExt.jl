@@ -81,6 +81,7 @@ end
 ## Euclidean
 
 _normalize(x::Real, nrm::Real) = iszero(nrm) && !isnan(x) ? one(x / nrm) : x / nrm
+_normalize(::CRC.ZeroTangent, ::Real) = CRC.ZeroTangent()
 
 function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, dist::Euclidean, x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
     Ω = dist(x, y)
