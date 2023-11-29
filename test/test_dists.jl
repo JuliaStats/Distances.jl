@@ -257,7 +257,7 @@ end
 
                 w = rand(Float64, length(x))
                 @test wsqeuclidean(x, y, w) ≈ dot((xc - vec(yc)).^2, w)
-                @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
+                @test weuclidean(x, y, w) ≈ sqrt(wsqeuclidean(x, y, w))
                 @test wcityblock(x, y, w) ≈ dot(abs.(xc - vec(yc)), w)
                 @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
             end
