@@ -272,7 +272,7 @@ end
         w = rand(T, size(a))
 
         @test whamming(a, a, w) === T(0.0)
-        @test whamming(a, b, w) === sum((a .!= b) .* w)
+        @test whamming(a, b, w) ≈ (a .≠ b) ⋅ w
 
         # Minimal test of Jaccard - test return type stability.
         @inferred Jaccard()(rand(T, 3), rand(T, 3))
