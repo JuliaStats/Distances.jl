@@ -487,7 +487,7 @@ end
 
 # JSDivergence
 
-@inline function eval_op(::JSDivergence, ai::T, bi::T) where T <: Real
+@inline function eval_op(::JSDivergence, ai::T, bi::T) where T
     u = (ai + bi) / 2
     ta = ai == zero(T) ? zero(log(one(T))) : ai * log(ai) / 2
     tb = bi == zero(T) ? zero(log(one(T))) : bi * log(bi) / 2
