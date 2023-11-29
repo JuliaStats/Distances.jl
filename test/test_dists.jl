@@ -330,6 +330,9 @@ end # testset
     a = [NaN, 0]; b = [0, 1]
     @test isnan(chebyshev(a, b)) == isnan(maximum(a - b))
     @test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
+    @test isnan(kl_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
+    @test isnan(gkl_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
+    @test isnan(js_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
 end #testset
 
 @testset "empty vector" begin
@@ -364,6 +367,12 @@ end #testset
 end # testset
 
 @testset "DimensionMismatch throwing" begin
+    a = 1.0:2; b = 1:3.0
+    @test_throws DimensionMismatch cosine_dist(a, b)
+    @test_throws DimensionMismatch kl_divergence(a, b)
+    @test_throws DimensionMismatch gkl_divergence(a, b)
+    @test_throws DimensionMismatch js_divergence(a, b)
+    @test_throws DimensionMismatch renyi_divergence(a, b, 1.0)
     a = [1, 0]; b = [2]
     @test_throws DimensionMismatch sqeuclidean(a, b)
     a = (1, 0); b = (2,)
@@ -414,7 +423,6 @@ end # testset
         @test (@inferred peuclidean(x, y, fill(10, 4))) == sqrt(37)
         @test (@inferred peuclidean(x - vec(y), zero(y), fill(10, 4))) == peuclidean(x, y, fill(10, 4))
         @test (@inferred peuclidean(x, y, [10.0, 10.0, 10.0, Inf])) == sqrt(57)
-        @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
         @test (@inferred cosine_dist(x, y)) ≈ (1 - 112 / sqrt(19530))
         @test (@inferred corr_dist(x, y)) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
         @test (@inferred chisq_dist(x, y)) == sum((x - vec(y)).^2 ./ (x + vec(y)))
