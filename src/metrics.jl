@@ -422,13 +422,13 @@ const corr_dist = CorrDist()
 const chisq_dist = ChiSqDist()
 
 # KLDivergence
-@inline eval_op(dist::KLDivergence, ai, bi) =
-    ai > 0 ? ai * log(ai / bi) : zero(eval_op(dist, oneunit(ai), bi))
+@inline eval_op(dist::KLDivergence, ai::T, bi::T) where T =
+    ai == zero(T) ? zero(eval_op(dist, oneunit(ai), bi)) : ai * log(ai / bi)
 const kl_divergence = KLDivergence()
 
 # GenKLDivergence
-@inline eval_op(dist::GenKLDivergence, ai, bi) =
-    ai > 0 ? ai * log(ai / bi) - ai + bi : oftype(eval_op(dist, oneunit(ai), bi), bi)
+@inline eval_op(dist::GenKLDivergence, ai::T, bi::T) where T =
+    ai == zero(T) ? oftype(eval_op(dist, oneunit(ai), bi), bi) : ai * log(ai / bi) - ai + bi
 const gkl_divergence = GenKLDivergence()
 
 # RenyiDivergence
@@ -437,7 +437,7 @@ Base.@propagate_inbounds function eval_start(::RenyiDivergence, a, b)
     zero(T), zero(T), T(sum(a)), T(sum(b))
 end
 
-@inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where {T <: Real}
+@inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where T
     if ai == zero(T)
         return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
@@ -452,8 +452,8 @@ end
 end
 
 @inline function eval_reduce(dist::RenyiDivergence,
-                                               s1::Tuple{T,T,T,T},
-                                               s2::Tuple{T,T,T,T}) where {T <: Real}
+                             s1::Tuple{T,T,T,T},
+                             s2::Tuple{T,T,T,T}) where T
     if dist.is_inf
         if s1[1] == zero(T)
             return (s2[1], s2[2], s1[3], s1[4])
@@ -487,11 +487,11 @@ end
 
 # JSDivergence
 
-@inline function eval_op(::JSDivergence, ai::T, bi::T) where {T}
+@inline function eval_op(::JSDivergence, ai::T, bi::T) where T <: Real
     u = (ai + bi) / 2
-    ta = ai > 0 ? ai * log(ai) / 2 : zero(log(one(T)))
-    tb = bi > 0 ? bi * log(bi) / 2 : zero(log(one(T)))
-    tu = u > 0 ? u * log(u) : zero(log(one(T)))
+    ta = ai == zero(T) ? zero(log(one(T))) : ai * log(ai) / 2
+    tb = bi == zero(T) ? zero(log(one(T))) : bi * log(bi) / 2
+    tu = u == zero(T) ? zero(log(one(T))) : u * log(u)
     ta + tb - tu
 end
 const js_divergence = JSDivergence()
