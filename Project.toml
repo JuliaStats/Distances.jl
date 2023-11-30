@@ -18,6 +18,9 @@ DistancesSparseArraysExt = "SparseArrays"
 
 [compat]
 ChainRulesCore = "1"
+LinearAlgebra = "1"
+SparseArrays = "1"
+Statistics = "1"
 StatsAPI = "1"
 julia = "1"
 
