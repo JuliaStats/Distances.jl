@@ -244,9 +244,9 @@ end
                 @test corr_dist(OffsetVector(xc, eachindex(xc).-2), yc) == corr_dist(x, y)
                 @test chisq_dist(x, y) == sum((xc - vec(yc)).^2 ./ (xc + vec(yc)))
                 @test spannorm_dist(x, y) == maximum(xc - vec(yc)) - minimum(xc - vec(yc))
-
+                @test kl_divergence(x, y) ≈ sum(xc[i] * log(xc[i] / yc[i]) for i in eachindex(xc, yc))
                 @test gkl_divergence(x, y) ≈ sum(xc[i] * log(xc[i] / yc[i]) - xc[i] + yc[i] for i in eachindex(xc, yc))
-
+                @test bhattacharyya(x, y) == bhattacharyya(xc, yc)
                 @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in eachindex(xc, yc)])
                 @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in eachindex(xc, yc)])
                 @test rmsd(x, y) ≈ sqrt(msd(x, y))
