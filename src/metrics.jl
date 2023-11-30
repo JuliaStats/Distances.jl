@@ -422,13 +422,13 @@ const corr_dist = CorrDist()
 const chisq_dist = ChiSqDist()
 
 # KLDivergence
-@inline eval_op(dist::KLDivergence, ai::T, bi::T) where T =
-    ai == zero(T) ? zero(eval_op(dist, oneunit(ai), bi)) : ai * log(ai / bi)
+@inline eval_op(dist::KLDivergence, ai, bi) =
+    iszero(ai) ? zero(eval_op(dist, oneunit(ai), bi)) : ai * log(ai / bi)
 const kl_divergence = KLDivergence()
 
 # GenKLDivergence
-@inline eval_op(dist::GenKLDivergence, ai::T, bi::T) where T =
-    ai == zero(T) ? oftype(eval_op(dist, oneunit(ai), bi), bi) : ai * log(ai / bi) - ai + bi
+@inline eval_op(dist::GenKLDivergence, ai, bi) =
+    iszero(ai) ? oftype(eval_op(dist, oneunit(ai), bi), bi) : ai * log(ai / bi) - ai + bi
 const gkl_divergence = GenKLDivergence()
 
 # RenyiDivergence
@@ -438,7 +438,7 @@ Base.@propagate_inbounds function eval_start(::RenyiDivergence, a, b)
 end
 
 @inline function eval_op(dist::RenyiDivergence, ai::T, bi::T) where T
-    if ai == zero(T)
+    if iszero(ai)
         return zero(T), zero(T), zero(T), zero(T)
     elseif dist.is_normal
         return ai, ai * ((ai / bi)^dist.p), zero(T), zero(T)
@@ -455,9 +455,9 @@ end
                              s1::Tuple{T,T,T,T},
                              s2::Tuple{T,T,T,T}) where T
     if dist.is_inf
-        if s1[1] == zero(T)
+        if iszero(s1[1])
             return (s2[1], s2[2], s1[3], s1[4])
-        elseif s2[1] == zero(T)
+        elseif iszero(s2[1])
             return s1
         else
             return s1[2] > s2[2] ? s1 : (s2[1], s2[2], s1[3], s1[4])
@@ -489,9 +489,9 @@ end
 
 @inline function eval_op(::JSDivergence, ai::T, bi::T) where T
     u = (ai + bi) / 2
-    ta = ai == zero(T) ? zero(log(one(T))) : ai * log(ai) / 2
-    tb = bi == zero(T) ? zero(log(one(T))) : bi * log(bi) / 2
-    tu = u == zero(T) ? zero(log(one(T))) : u * log(u)
+    ta = iszero(ai) ? zero(log(one(T))) : ai * log(ai) / 2
+    tb = iszero(bi) ? zero(log(one(T))) : bi * log(bi) / 2
+    tu = iszero(u) ? zero(log(one(T))) : u * log(u)
     ta + tb - tu
 end
 const js_divergence = JSDivergence()
