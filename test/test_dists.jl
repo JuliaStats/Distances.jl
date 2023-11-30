@@ -427,6 +427,8 @@ end # testset
         @test (@inferred corr_dist(x, y)) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
         @test (@inferred chisq_dist(x, y)) == sum((x - vec(y)).^2 ./ (x + vec(y)))
         @test (@inferred spannorm_dist(x, y)) == maximum(x - vec(y)) - minimum(x - vec(y))
+        @test (@inferred kl_divergence(x, y)) ≈ sum(x[i] * log(x[i] / y[i]) for i in eachindex(x, y))
+        @test (@inferred gkl_divergence(x, y)) ≈ sum(x[i] * log(x[i] / y[i]) - x[i] + y[i] for i in eachindex(x, y))
         @test (@inferred meanad(x, y)) ≈ mean(Float64[abs(x[i] - y[i]) for i in eachindex(x, y)])
         @test (@inferred msd(x, y)) ≈ mean(Float64[abs2(x[i] - y[i]) for i in eachindex(x, y)])
         @test (@inferred rmsd(x, y)) ≈ sqrt(msd(x, y))
