@@ -119,8 +119,16 @@ include("bregman.jl")
 
 include("deprecated.jl")
 
+# This symbol is only defined on Julia versions that support extensions
+if !isdefined(Base, :get_extension)
+    using Requires
+end
+
 @static if !isdefined(Base, :get_extension)
-    include("../ext/DistancesSparseArraysExt.jl")
+function __init__()
+    @require SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf" include("../ext/DistancesSparseArraysExt.jl")
+    @require ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4" include("../ext/DistancesChainRulesCoreExt.jl")
+end
 end
 
 end # module end
