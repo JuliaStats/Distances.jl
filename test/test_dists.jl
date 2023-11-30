@@ -222,7 +222,7 @@ end
             for (x, y) in ((x, y), (sparsevec(x), sparsevec(y)),
                            (convert(Array{Union{Missing, T}}, x), convert(Array{Union{Missing, T}}, y)),
                            ((Iterators.take(x, 4), Iterators.take(y, 4))), # iterator
-                           (((x[i] for i in 1:length(x)), (y[i] for i in 1:length(y)))), # generator
+                           (((x[i] for i in eachindex(x)), (y[i] for i in eachindex(y)))), # generator
                           )
                 xc, yc = collect(x), collect(y)
                 @test sqeuclidean(x, y) == 57.0
@@ -241,14 +241,14 @@ end
                 x_int, y_int = Int64.(x), Int64.(y)
                 @test cosine_dist(x_int, y_int) == (1.0 - 112.0 / sqrt(19530.0))
                 @test corr_dist(x, y) ≈ cosine_dist(x .- mean(x), vec(yc) .- mean(y))
-                @test corr_dist(OffsetVector(xc, -1:length(xc)-2), yc) == corr_dist(x, y)
+                @test corr_dist(OffsetVector(xc, eachindex(xc).-2), yc) == corr_dist(x, y)
                 @test chisq_dist(x, y) == sum((xc - vec(yc)).^2 ./ (xc + vec(yc)))
                 @test spannorm_dist(x, y) == maximum(xc - vec(yc)) - minimum(xc - vec(yc))
-
-                @test gkl_divergence(x, y) ≈ sum(i -> xc[i] * log(xc[i] / yc[i]) - xc[i] + yc[i], 1:length(x))
-
-                @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in 1:length(x)])
-                @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in 1:length(x)])
+                @test kl_divergence(x, y) ≈ sum(xc[i] * log(xc[i] / yc[i]) for i in eachindex(xc, yc))
+                @test gkl_divergence(x, y) ≈ sum(xc[i] * log(xc[i] / yc[i]) - xc[i] + yc[i] for i in eachindex(xc, yc))
+                @test bhattacharyya(x, y) == bhattacharyya(xc, yc)
+                @test meanad(x, y) ≈ mean(Float64[abs(xc[i] - yc[i]) for i in eachindex(xc, yc)])
+                @test msd(x, y) ≈ mean(Float64[abs2(xc[i] - yc[i]) for i in eachindex(xc, yc)])
                 @test rmsd(x, y) ≈ sqrt(msd(x, y))
                 @test nrmsd(x, y) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
 
@@ -257,7 +257,7 @@ end
 
                 w = rand(Float64, length(x))
                 @test wsqeuclidean(x, y, w) ≈ dot((xc - vec(yc)).^2, w)
-                @test weuclidean(x, y, w) == sqrt(wsqeuclidean(x, y, w))
+                @test weuclidean(x, y, w) ≈ sqrt(wsqeuclidean(x, y, w))
                 @test wcityblock(x, y, w) ≈ dot(abs.(xc - vec(yc)), w)
                 @test wminkowski(x, y, w, 2) ≈ weuclidean(x, y, w)
             end
@@ -272,7 +272,7 @@ end
         w = rand(T, size(a))
 
         @test whamming(a, a, w) === T(0.0)
-        @test whamming(a, b, w) === sum((a .!= b) .* w)
+        @test whamming(a, b, w) ≈ (a .≠ b) ⋅ w
 
         # Minimal test of Jaccard - test return type stability.
         @inferred Jaccard()(rand(T, 3), rand(T, 3))
@@ -295,7 +295,7 @@ end
         q /= sum(q)
 
         klv = 0.0
-        for i = 1:length(p)
+        for i in eachindex(p, q)
             if p[i] > 0
                 klv += p[i] * log(p[i] / q[i])
             end
@@ -304,7 +304,7 @@ end
         pm = (p + q) / 2
         for (r, p, pm) in ((r, p, pm),
                            (Iterators.take(r, length(r)), Iterators.take(p, length(p)), Iterators.take(pm, length(pm))),
-                           ((r[i] for i in 1:length(r)), (p[i] for i in 1:length(p)), (pm[i] for i in 1:length(pm))),
+                           ((r[i] for i in eachindex(r)), (p[i] for i in eachindex(p)), (pm[i] for i in eachindex(pm))),
                           )
             @test kl_divergence(p, q) ≈ klv
             @test typeof(kl_divergence(p, q)) == T
@@ -330,6 +330,9 @@ end # testset
     a = [NaN, 0]; b = [0, 1]
     @test isnan(chebyshev(a, b)) == isnan(maximum(a - b))
     @test isnan(renyi_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN], 2))
+    @test isnan(kl_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
+    @test isnan(gkl_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
+    @test isnan(js_divergence([0.5, 0.0, 0.5], [0.5, 0.5, NaN]))
 end #testset
 
 @testset "empty vector" begin
@@ -364,6 +367,12 @@ end #testset
 end # testset
 
 @testset "DimensionMismatch throwing" begin
+    a = 1.0:2; b = 1:3.0
+    @test_throws DimensionMismatch cosine_dist(a, b)
+    @test_throws DimensionMismatch kl_divergence(a, b)
+    @test_throws DimensionMismatch gkl_divergence(a, b)
+    @test_throws DimensionMismatch js_divergence(a, b)
+    @test_throws DimensionMismatch renyi_divergence(a, b, 1.0)
     a = [1, 0]; b = [2]
     @test_throws DimensionMismatch sqeuclidean(a, b)
     a = (1, 0); b = (2,)
@@ -414,23 +423,21 @@ end # testset
         @test (@inferred peuclidean(x, y, fill(10, 4))) == sqrt(37)
         @test (@inferred peuclidean(x - vec(y), zero(y), fill(10, 4))) == peuclidean(x, y, fill(10, 4))
         @test (@inferred peuclidean(x, y, [10.0, 10.0, 10.0, Inf])) == sqrt(57)
-        @test_throws DimensionMismatch cosine_dist(1.0:2, 1.0:3)
         @test (@inferred cosine_dist(x, y)) ≈ (1 - 112 / sqrt(19530))
         @test (@inferred corr_dist(x, y)) ≈ cosine_dist(x .- mean(x), vec(y) .- mean(y))
         @test (@inferred chisq_dist(x, y)) == sum((x - vec(y)).^2 ./ (x + vec(y)))
         @test (@inferred spannorm_dist(x, y)) == maximum(x - vec(y)) - minimum(x - vec(y))
-
-        @test (@inferred gkl_divergence(x, y)) ≈ sum(i -> x[i] * log(x[i] / y[i]) - x[i] + y[i], 1:length(x))
-
-        @test (@inferred meanad(x, y)) ≈ mean(Float64[abs(x[i] - y[i]) for i in 1:length(x)])
-        @test (@inferred msd(x, y)) ≈ mean(Float64[abs2(x[i] - y[i]) for i in 1:length(x)])
+        @test (@inferred kl_divergence(x, y)) ≈ sum(x[i] * log(x[i] / y[i]) for i in eachindex(x, y))
+        @test (@inferred gkl_divergence(x, y)) ≈ sum(x[i] * log(x[i] / y[i]) - x[i] + y[i] for i in eachindex(x, y))
+        @test (@inferred meanad(x, y)) ≈ mean(Float64[abs(x[i] - y[i]) for i in eachindex(x, y)])
+        @test (@inferred msd(x, y)) ≈ mean(Float64[abs2(x[i] - y[i]) for i in eachindex(x, y)])
         @test (@inferred rmsd(x, y)) ≈ sqrt(msd(x, y))
         @test (@inferred nrmsd(x, y)) ≈ sqrt(msd(x, y)) / (maximum(x) - minimum(x))
 
         w = ones(Int, 4)
         @test sqeuclidean(x, y) ≈ wsqeuclidean(x, y, w)
 
-        w = rand(1:length(x), size(x))
+        w = rand(eachindex(x), size(x))
         @test (@inferred wsqeuclidean(x, y, w)) ≈ dot((x - vec(y)).^2, w)
         @test (@inferred weuclidean(x, y, w)) == sqrt(wsqeuclidean(x, y, w))
         @test (@inferred wcityblock(x, y, w)) ≈ dot(abs.(x - vec(y)), w)
@@ -972,7 +979,7 @@ end
     G(p) = -1 * sum(log.(p))
     ∇G(p) = map(x -> -1 * x^(-1), p)
     function ISdist(p::AbstractVector, q::AbstractVector)
-        return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in 1:length(p)])
+        return sum([p[i]/q[i] - log(p[i]/q[i]) - 1 for i in eachindex(p, q)])
     end
     @test bregman(G, ∇G, p, q) ≈ ISdist(p, q)
 end

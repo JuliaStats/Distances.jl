@@ -4,7 +4,6 @@ using Distances
 import Distances: _evaluate
 using Distances: UnionMetrics, result_type, eval_start, eval_op, eval_reduce, eval_end
 using SparseArrays: SparseVectorUnion, nonzeroinds, nonzeros, nnz
-using SparseArrays: SparseVectorUnion
 
 eval_op_a(d, ai, b) = eval_op(d, ai, zero(eltype(b)))
 eval_op_b(d, bi, a) = eval_op(d, zero(eltype(a)), bi)

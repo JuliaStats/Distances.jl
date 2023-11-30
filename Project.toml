@@ -1,6 +1,6 @@
 name = "Distances"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.10.10"
+version = "0.10.11"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -18,6 +18,9 @@ DistancesSparseArraysExt = "SparseArrays"
 
 [compat]
 ChainRulesCore = "1"
+LinearAlgebra = "<0.0.1, 1"
+SparseArrays = "<0.0.1, 1"
+Statistics = "<0.0.1, 1"
 StatsAPI = "1"
 julia = "1"
 
