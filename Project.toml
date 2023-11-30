@@ -19,10 +19,10 @@ DistancesSparseArraysExt = "SparseArrays"
 
 [compat]
 ChainRulesCore = "1"
-LinearAlgebra = "1"
+LinearAlgebra = "<0.0.1, 1"
 Requires = "1"
-SparseArrays = "1"
-Statistics = "1"
+SparseArrays = "<0.0.1, 1"
+Statistics = "<0.0.1, 1"
 StatsAPI = "1"
 julia = "1"
 
