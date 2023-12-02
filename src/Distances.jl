@@ -58,6 +58,7 @@ export
     RMSDeviation,
     NormRMSDeviation,
     Bregman,
+    Wasserstein,
 
     # convenient functions
     euclidean,
@@ -91,6 +92,7 @@ export
     bhattacharyya,
     hellinger,
     bregman,
+    wasserstein,
 
     haversine,
     spherical_angle,
@@ -116,6 +118,7 @@ include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
 include("bregman.jl")
+include("wasserstein.jl")
 
 include("deprecated.jl")
 
