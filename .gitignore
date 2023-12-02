@@ -2,5 +2,6 @@
 *.jl.*.cov
 *.jl.mem
 *.ji
+.vscode/
 benchmark/params.json
 Manifest.toml
