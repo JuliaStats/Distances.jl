@@ -1,6 +1,7 @@
 module Distances
 
 using LinearAlgebra
+using Missings
 using Statistics: mean
 import StatsAPI: pairwise, pairwise!
 
@@ -116,6 +117,7 @@ include("haversine.jl")
 include("mahalanobis.jl")
 include("bhattacharyya.jl")
 include("bregman.jl")
+include("missing.jl")
 
 include("deprecated.jl")
 
