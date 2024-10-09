@@ -21,6 +21,13 @@ abstract type SemiMetric <: PreMetric end
 #
 abstract type Metric <: SemiMetric end
 
+# a minkowski metric is a metric that is defined by the formula:
+#
+#   d(x, y) = sum((x - y) .^ p) ^ (1 / p)
+#
+# where the `p` parameter defines the metric.
+abstract type MinkowskiMetric <: Metric end
+
 evaluate(dist::PreMetric, a, b) = dist(a, b)
 
 # Generic functions
