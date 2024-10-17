@@ -12,7 +12,12 @@ abstract type UnionSemiMetric <: SemiMetric end
 
 abstract type UnionMetric <: Metric end
 
-abstract type UnionMinkowskiMetric <: MinkowskiMetric end
+# a minkowski metric is a metric that is defined by the formula:
+#
+#   d(x, y) = sum((x - y) .^ p) ^ (1 / p)
+#
+# where the `p` parameter defines the metric.
+abstract type MinkowskiMetric <: UnionMetric end
 
 ###########################################################
 #
@@ -20,7 +25,7 @@ abstract type UnionMinkowskiMetric <: MinkowskiMetric end
 #
 ###########################################################
 
-struct Euclidean <: UnionMinkowskiMetric
+struct Euclidean <: MinkowskiMetric
     thresh::Float64
 end
 
@@ -54,7 +59,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W} <: UnionMinkowskiMetric
+struct WeightedEuclidean{W} <: MinkowskiMetric
     weights::W
 end
 
@@ -96,10 +101,10 @@ struct WeightedSqEuclidean{W} <: UnionSemiMetric
     weights::W
 end
 
-struct Chebyshev <: UnionMinkowskiMetric end
+struct Chebyshev <: MinkowskiMetric end
 
-struct Cityblock <: UnionMinkowskiMetric end
-struct WeightedCityblock{W} <: UnionMinkowskiMetric
+struct Cityblock <: MinkowskiMetric end
+struct WeightedCityblock{W} <: MinkowskiMetric
     weights::W
 end
 
@@ -107,10 +112,10 @@ struct TotalVariation <: UnionMetric end
 struct Jaccard <: UnionMetric end
 struct RogersTanimoto <: UnionMetric end
 
-struct Minkowski{T <: Real} <: UnionMinkowskiMetric
+struct Minkowski{T <: Real} <: MinkowskiMetric
     p::T
 end
-struct WeightedMinkowski{W,T <: Real} <: UnionMinkowskiMetric
+struct WeightedMinkowski{W,T <: Real} <: MinkowskiMetric
     weights::W
     p::T
 end
@@ -199,7 +204,7 @@ struct NormRMSDeviation <: PreMetric end
 # Union types
 const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric,UnionMinkowskiMetric}
+const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
 
 ###########################################################
 #
@@ -210,7 +215,6 @@ const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric,UnionMinko
 parameters(::UnionPreMetric) = nothing
 parameters(::UnionSemiMetric) = nothing
 parameters(::UnionMetric) = nothing
-parameters(::UnionMinkowskiMetric) = nothing
 parameters(d::PeriodicEuclidean) = d.periods
 for dist in weightedmetrics
     @eval parameters(d::$dist) = d.weights
