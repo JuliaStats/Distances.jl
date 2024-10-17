@@ -14,9 +14,10 @@ abstract type UnionMetric <: Metric end
 
 # a minkowski metric is a metric that is defined by the formula:
 #
-#   d(x, y) = sum((x - y) .^ p) ^ (1 / p)
+#   d(x, y) = sum(w .* (x - y) .^ p) ^ (1 / p)
 #
-# where the `p` parameter defines the metric.
+# where the `p` parameter defines the metric 
+# and `w` is a potential weight vector (all 1's by default).
 abstract type MinkowskiMetric <: UnionMetric end
 
 ###########################################################
