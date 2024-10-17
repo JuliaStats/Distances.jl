@@ -175,9 +175,9 @@ At the top of this hierarchy is an abstract class **PreMetric**, which is define
 
 **MinkowskiMetric** is an abstract type that encompasses a family of metrics defined by the formula
 
-    d(x, y) = sum((x - y) .^ p) ^ (1 / p)
+    d(x, y) = sum(w .* (x - y) .^ p) ^ (1 / p)
 
-where the `p` parameter defines the metric.
+where the `p` parameter defines the metric and `w` is a potential weight vector (all 1's by default).
 
 This type system has practical significance. For example, when computing pairwise distances
 between a set of vectors, you may only perform computation for half of the pairs, derive the
