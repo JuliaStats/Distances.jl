@@ -12,28 +12,7 @@ abstract type UnionSemiMetric <: SemiMetric end
 
 abstract type UnionMetric <: Metric end
 
-"""
-    MinkowskiMetric
-
-A Minkowski metric is a metric that is defined by the formula:
-
-`d(x, y) = sum(w .* (x - y) .^ p) ^ (1 / p)`
-
-where the `p` parameter defines the metric 
-and `w` is a potential weight vector (all 1's by default).
-
-Common Minkowski metrics:
-* `Cityblock`/`WeightedCityblock`: Minkowski metric with `p=1`;
-* `Euclidean`/`WeightedEuclidean`: Minkowski metric with `p=2`;
-* `Chebyshev`: Limit of `d` as `p` approaches infinity;
-* `Minkowski`/`WeightedMinkowski`: generic Minkowski metric for any `p`.
-
-## Notes
-* The difference between `Minkowski`/`WeightedMinkowski` and `MinkowskiMetric` 
-  is that while the first are generic Minkowski metrics, 
-  the second is the parent type of these metrics.
-"""
-abstract type MinkowskiMetric <: UnionMetric end
+abstract type UnionMinkowskiMetric <: MinkowskiMetric end
 
 ###########################################################
 #
@@ -41,7 +20,7 @@ abstract type MinkowskiMetric <: UnionMetric end
 #
 ###########################################################
 
-struct Euclidean <: MinkowskiMetric
+struct Euclidean <: UnionMinkowskiMetric
     thresh::Float64
 end
 
@@ -75,7 +54,7 @@ julia> pairwise(Euclidean(1e-12), x, x)
 """
 Euclidean() = Euclidean(0)
 
-struct WeightedEuclidean{W} <: MinkowskiMetric
+struct WeightedEuclidean{W} <: UnionMinkowskiMetric
     weights::W
 end
 
@@ -117,10 +96,10 @@ struct WeightedSqEuclidean{W} <: UnionSemiMetric
     weights::W
 end
 
-struct Chebyshev <: MinkowskiMetric end
+struct Chebyshev <: UnionMinkowskiMetric end
 
-struct Cityblock <: MinkowskiMetric end
-struct WeightedCityblock{W} <: MinkowskiMetric
+struct Cityblock <: UnionMinkowskiMetric end
+struct WeightedCityblock{W} <: UnionMinkowskiMetric
     weights::W
 end
 
@@ -128,10 +107,10 @@ struct TotalVariation <: UnionMetric end
 struct Jaccard <: UnionMetric end
 struct RogersTanimoto <: UnionMetric end
 
-struct Minkowski{T <: Real} <: MinkowskiMetric
+struct Minkowski{T <: Real} <: UnionMinkowskiMetric
     p::T
 end
-struct WeightedMinkowski{W,T <: Real} <: MinkowskiMetric
+struct WeightedMinkowski{W,T <: Real} <: UnionMinkowskiMetric
     weights::W
     p::T
 end
@@ -220,7 +199,7 @@ struct NormRMSDeviation <: PreMetric end
 # Union types
 const metrics = (Euclidean,SqEuclidean,PeriodicEuclidean,Chebyshev,Cityblock,TotalVariation,Minkowski,Hamming,Jaccard,RogersTanimoto,CosineDist,ChiSqDist,KLDivergence,RenyiDivergence,BrayCurtis,JSDivergence,SpanNormDist,GenKLDivergence)
 const weightedmetrics = (WeightedEuclidean,WeightedSqEuclidean,WeightedCityblock,WeightedMinkowski,WeightedHamming)
-const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
+const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric,UnionMinkowskiMetric}
 
 ###########################################################
 #
@@ -231,6 +210,7 @@ const UnionMetrics = Union{UnionPreMetric,UnionSemiMetric,UnionMetric}
 parameters(::UnionPreMetric) = nothing
 parameters(::UnionSemiMetric) = nothing
 parameters(::UnionMetric) = nothing
+parameters(::UnionMinkowskiMetric) = nothing
 parameters(d::PeriodicEuclidean) = d.periods
 for dist in weightedmetrics
     @eval parameters(d::$dist) = d.weights
