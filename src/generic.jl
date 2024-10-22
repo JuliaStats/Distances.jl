@@ -22,7 +22,7 @@ abstract type SemiMetric <: PreMetric end
 abstract type Metric <: SemiMetric end
 
 """
-    MinkowskiMetric
+    MinkowskiMetric <: Metric
 
 A Minkowski metric is a metric that is defined by the formula:
 
