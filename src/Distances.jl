@@ -9,6 +9,7 @@ export
     PreMetric,
     SemiMetric,
     Metric,
+    MinkowskiMetric,
 
     # generic functions
     result_type,
