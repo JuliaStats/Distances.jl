@@ -165,13 +165,19 @@ At the top of this hierarchy is an abstract class **PreMetric**, which is define
     d(x, x) == 0  for all x
     d(x, y) >= 0  for all x, y
 
-**SemiMetric** is a abstract type that refines **PreMetric**. Formally, a *semi-metric* is a *pre-metric* that is also symmetric, as
+**SemiMetric** is an abstract type that refines **PreMetric**. Formally, a *semi-metric* is a *pre-metric* that is also symmetric, as
 
     d(x, y) == d(y, x)  for all x, y
 
-**Metric** is a abstract type that further refines **SemiMetric**. Formally, a *metric* is a *semi-metric* that also satisfies triangle inequality, as
+**Metric** is an abstract type that further refines **SemiMetric**. Formally, a *metric* is a *semi-metric* that also satisfies triangle inequality, as
 
     d(x, z) <= d(x, y) + d(y, z)  for all x, y, z
+
+**MinkowskiMetric** is an abstract type that encompasses a family of metrics defined by the formula
+
+    d(x, y) = sum(w .* (x - y) .^ p) ^ (1 / p)
+
+where the `p` parameter defines the metric and `w` is a potential weight vector (all 1's by default).
 
 This type system has practical significance. For example, when computing pairwise distances
 between a set of vectors, you may only perform computation for half of the pairs, derive the
