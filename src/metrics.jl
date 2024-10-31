@@ -348,6 +348,24 @@ weuclidean(a, b, w) = WeightedEuclidean(w)(a, b)
     s3 = min(s2, p - s2)
     abs2(s3)
 end
+
+function _evaluate(dist::PeriodicEuclidean, a::AbstractVector, b::AbstractVector, p::AbstractMatrix)
+    ndim = LinearAlgebra.checksquare(p)
+    @boundscheck if length(a) != length(b)
+        throw(DimensionMismatch("first array has length $(length(a)) which does not match the length of the second, $(length(b))."))
+    end
+    @boundscheck if length(a) != ndim
+        throw(DimensionMismatch("arrays have length $(length(a)) but basis vectors have length $ndim."))
+    end
+    s = p \ (a - b)      # decompose to p-basis, a - b = sx x⃗ + sy y⃗ + ...
+    mindistance = Inf
+    s = mod.(s, 1)       # move to first "quadrant"
+    @inbounds for k = 0:1<<ndim-1  # 2^{# of dimensions} possible choices
+        loc = sum(i->view(p,:,i) .* (k>>(i-1) & 1 == 0 ? s[i] : s[i]-1), 1:ndim)
+        mindistance = min(norm(loc), mindistance)
+    end
+    return mindistance
+end
 eval_end(::PeriodicEuclidean, s) = sqrt(s)
 peuclidean(a, b, p) = PeriodicEuclidean(p)(a, b)
 
