@@ -6,8 +6,12 @@
 A Julia package for evaluating distances (metrics) between vectors.
 
 This package also provides optimized functions to compute column-wise and
-pairwise distances, which are often substantially faster than a straightforward
-loop implementation. (See the benchmark section below for details).
+pairwise distances with matrices (i.e., 2D arrays), which are often
+substantially faster than a straightforward loop implementation.
+(See the benchmark section below for details).
+
+For distances between tables with heterogeneous columns, please
+check [TableDistances.jl](https://github.com/JuliaML/TableDistances.jl).
 
 ## Supported distances
 
